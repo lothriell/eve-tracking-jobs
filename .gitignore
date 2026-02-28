@@ -47,3 +47,18 @@ coverage/
 tmp/
 temp/
 *.tmp
+
+# Docker data (if mounted locally)
+docker-data/
+.docker/
+
+# Backups
+*.bak
+*.backup
+
+# Environment specific
+.env.development
+.env.staging
+
+# Generated PDFs
+*.pdf

@@ -216,6 +216,34 @@ The redirect URI must match exactly what's configured in your EVE application.
 ### Slot Counts Incorrect
 Slot counts are calculated from character skills. Ensure `esi-skills.read_skills.v1` scope is authorized.
 
+## Git & Collaboration
+
+This project uses Git for version control. For detailed setup instructions, see [GIT_SETUP.md](GIT_SETUP.md).
+
+### Quick Start for Cloning
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd eve-esi-app
+
+# Copy environment template
+cp .env.example .env
+
+# Edit .env with your EVE API credentials
+# Then run with Docker
+docker-compose up --build
+```
+
+### Security
+
+See [SECURITY.md](SECURITY.md) for:
+- Handling sensitive credentials
+- What files should never be committed
+- What to do if credentials are accidentally exposed
+
+**Important**: The `.env` file contains sensitive credentials and is NOT committed to the repository. Each environment needs its own `.env` file configured from `.env.example`.
+
 ## Future Enhancements
 
 - Corporation job support
