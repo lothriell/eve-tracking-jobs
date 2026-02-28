@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: eve-esi-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DB_PATH=/app/database/data/eve_esi.db
+      - EVE_CLIENT_ID=${EVE_CLIENT_ID}
+      - EVE_CLIENT_SECRET=${EVE_CLIENT_SECRET}
+      - EVE_REDIRECT_URI=${EVE_REDIRECT_URI:-http://10.69.10.15:9000/auth/callback}
+      - APP_USERNAME=${APP_USERNAME}
+      - APP_PASSWORD=${APP_PASSWORD}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - FRONTEND_URL=${FRONTEND_URL:-http://10.69.10.15:9000}
+    volumes:
+      - eve-esi-data:/app/database/data
+    networks:
+      - eve-esi-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_API_URL=http://10.69.10.15:3001
+    container_name: eve-esi-frontend
+    restart: unless-stopped
+    ports:
+      - "9000:80"
+    depends_on:
+      - backend
+    networks:
+      - eve-esi-network
+
+volumes:
+  eve-esi-data:
+    driver: local
+
+networks:
+  eve-esi-network:
+    driver: bridge
