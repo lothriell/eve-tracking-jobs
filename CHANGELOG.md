@@ -1,5 +1,18 @@
 # Changelog
 
+## [v1.0.2] - 2026-02-28
+
+### Fixed
+- **"Cannot GET /auth/callback" routing issue**: Added `/callback` route handler in `backend/routes/auth.js` to match the EVE SSO redirect URI (`/auth/callback`). Previously only `/eve/callback` was registered, causing a route mismatch.
+
+### Instructions to Apply Fix
+```bash
+cd /home/ubuntu/eve_esi_app
+docker-compose down
+docker-compose build backend
+docker-compose up -d
+```
+
 ## [1.0.1] - 2026-02-28
 
 ### Fixed

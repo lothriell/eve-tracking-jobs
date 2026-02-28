@@ -11,4 +11,7 @@ router.get('/check', authController.checkAuth);
 router.get('/eve/authorize', authController.initiateEveAuth);
 router.get('/eve/callback', authController.handleEveCallback);
 
+// Handle callback at /auth/callback (matches EVE_REDIRECT_URI)
+router.get('/callback', authController.handleEveCallback);
+
 module.exports = router;
