@@ -1,21 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '../services/api';
-import CharacterInfo from '../components/CharacterInfo';
+import Sidebar from '../components/Sidebar';
+import Dashboard from '../components/Dashboard';
 import IndustryJobs from '../components/IndustryJobs';
 import './Main.css';
 
 function Main({ onLogout }) {
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const [selectedCharacter, setSelectedCharacter] = useState(null);
+  const [currentView, setCurrentView] = useState('dashboard');
 
-  // Handle errors from child components
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const urlError = urlParams.get('error');
     if (urlError) {
       setError(getErrorMessage(urlError));
-      // Clear error from URL
       window.history.replaceState({}, document.title, '/');
     }
   }, []);
@@ -40,20 +41,64 @@ function Main({ onLogout }) {
     }
   };
 
+  const handleSelectCharacter = (character) => {
+    setSelectedCharacter(character);
+    setCurrentView('jobs');
+  };
+
+  const handleShowAllCharacters = () => {
+    setSelectedCharacter(null);
+  };
+
+  const handleViewChange = (view) => {
+    setCurrentView(view);
+  };
+
+  const renderContent = () => {
+    switch (currentView) {
+      case 'jobs':
+        return <IndustryJobs selectedCharacter={selectedCharacter} onError={setError} />;
+      case 'dashboard':
+      default:
+        return <Dashboard onError={setError} />;
+    }
+  };
+
   return (
-    <div className="main-container">
-      <div className="container">
-        <div className="header">
-          <h1>EVE ESI Dashboard</h1>
-          <button onClick={handleLogout} className="button button-secondary">
+    <div className="main-layout">
+      <Sidebar 
+        selectedCharacter={selectedCharacter}
+        onSelectCharacter={handleSelectCharacter}
+        onShowAllCharacters={handleShowAllCharacters}
+        currentView={currentView}
+        onViewChange={handleViewChange}
+      />
+      
+      <div className="main-content">
+        <div className="main-header">
+          <div className="header-title">
+            <h1>EVE ESI Dashboard</h1>
+            {selectedCharacter && (
+              <span className="selected-character">
+                Viewing: {selectedCharacter.name}
+              </span>
+            )}
+          </div>
+          <button onClick={handleLogout} className="logout-btn">
             Logout
           </button>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <div className="error-banner">
+            <span>{error}</span>
+            <button onClick={() => setError('')} className="dismiss-btn">×</button>
+          </div>
+        )}
 
-        <CharacterInfo onError={setError} />
-        <IndustryJobs onError={setError} />
+        <div className="content-area">
+          {renderContent()}
+        </div>
       </div>
     </div>
   );

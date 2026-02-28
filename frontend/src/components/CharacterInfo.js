@@ -1,97 +1,90 @@
 import React, { useEffect, useState } from 'react';
-import { getCharacter, getCharacterPortrait, initiateEveAuth } from '../services/api';
+import { getCharacterById, getCharacterPortrait, initiateEveAuth } from '../services/api';
 import './CharacterInfo.css';
 
-function CharacterInfo({ onError }) {
+function CharacterInfo({ characterId, onError }) {
   const [character, setCharacter] = useState(null);
-  const [portraitUrl, setPortraitUrl] = useState('');
+  const [portraitUrl, setPortraitUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [linking, setLinking] = useState(false);
 
   useEffect(() => {
-    loadCharacter();
-  }, []);
+    if (characterId) {
+      loadCharacter();
+    } else {
+      setLoading(false);
+    }
+  }, [characterId]);
 
   const loadCharacter = async () => {
     try {
-      const response = await getCharacter();
-      if (response.data.linked) {
-        setCharacter(response.data.character);
-        loadPortrait();
-      }
+      setLoading(true);
+      const [charResponse, portraitResponse] = await Promise.all([
+        getCharacterById(characterId),
+        getCharacterPortrait(characterId)
+      ]);
+      setCharacter(charResponse.data);
+      setPortraitUrl(portraitResponse.data.portraitUrl);
     } catch (error) {
       console.error('Failed to load character:', error);
-      onError('Failed to load character information');
+      onError?.('Failed to load character info');
     } finally {
       setLoading(false);
     }
   };
 
-  const loadPortrait = async () => {
-    try {
-      const response = await getCharacterPortrait();
-      setPortraitUrl(response.data.portraitUrl);
-    } catch (error) {
-      console.error('Failed to load portrait:', error);
-    }
-  };
-
   const handleLinkCharacter = async () => {
-    setLinking(true);
     try {
+      setLinking(true);
       const response = await initiateEveAuth();
-      // Redirect to EVE SSO
-      window.location.href = response.data.authUrl;
+      if (response.data.authUrl) {
+        window.location.href = response.data.authUrl;
+      }
     } catch (error) {
       console.error('Failed to initiate EVE auth:', error);
-      onError('Failed to initiate EVE authentication');
+      onError?.('Failed to start character linking');
       setLinking(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="card">
-        <div className="loading-state">
-          <div className="spinner"></div>
-          <p>Loading character...</p>
-        </div>
+      <div className="character-info loading">
+        <div className="spinner"></div>
       </div>
     );
   }
 
-  if (!character) {
+  if (!characterId || !character) {
     return (
-      <div className="card">
-        <h2>Link EVE Character</h2>
-        <p className="info-text">
-          Connect your EVE Online character to access industry jobs and other features.
-        </p>
+      <div className="character-info empty">
+        <h3>Link EVE Character</h3>
+        <p>Connect your EVE Online character to access industry jobs and other features.</p>
         <button 
           onClick={handleLinkCharacter} 
-          className="button"
+          className="button button-primary"
           disabled={linking}
         >
-          {linking ? 'Redirecting to EVE SSO...' : 'Link EVE Character'}
+          {linking ? 'Connecting...' : 'Link EVE Character'}
         </button>
       </div>
     );
   }
 
   return (
-    <div className="card character-card">
-      <div className="character-info">
+    <div className="character-info">
+      <div className="character-content">
         {portraitUrl && (
           <img 
             src={portraitUrl} 
-            alt={character.name} 
-            className="character-portrait"
+            alt={character.name}
+            className="character-portrait-large"
           />
         )}
         <div className="character-details">
-          <h2>{character.name}</h2>
-          <p className="character-id">Character ID: {character.id}</p>
-          <p className="status-badge">✓ Linked</p>
+          <h3 className="character-name-large">{character.name}</h3>
+          <span className="character-id">Character ID: {character.character_id}</span>
+          <span className="linked-badge">✓ Linked</span>
         </div>
       </div>
     </div>

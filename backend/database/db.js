@@ -56,7 +56,6 @@ class Database {
     }
 
     return new Promise((resolve, reject) => {
-      // Check if user already exists
       this.db.get('SELECT id FROM users WHERE username = ?', [username], async (err, row) => {
         if (err) {
           reject(err);
@@ -69,7 +68,6 @@ class Database {
           return;
         }
 
-        // Create new user
         const passwordHash = await bcrypt.hash(password, 10);
         this.db.run(
           'INSERT INTO users (username, password_hash) VALUES (?, ?)',
@@ -98,12 +96,23 @@ class Database {
     });
   }
 
-  // Character operations
+  // Character operations - Multiple character support
   async getCharacterByUserId(userId) {
+    // Returns first character for backward compatibility
     return new Promise((resolve, reject) => {
-      this.db.get('SELECT * FROM characters WHERE user_id = ?', [userId], (err, row) => {
+      this.db.get('SELECT * FROM characters WHERE user_id = ? ORDER BY created_at ASC LIMIT 1', [userId], (err, row) => {
         if (err) reject(err);
         else resolve(row);
+      });
+    });
+  }
+
+  // Get all characters for a user
+  async getAllCharactersByUserId(userId) {
+    return new Promise((resolve, reject) => {
+      this.db.all('SELECT * FROM characters WHERE user_id = ? ORDER BY created_at ASC', [userId], (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows || []);
       });
     });
   }
@@ -117,18 +126,49 @@ class Database {
     });
   }
 
+  async getCharacterByDbId(id) {
+    return new Promise((resolve, reject) => {
+      this.db.get('SELECT * FROM characters WHERE id = ?', [id], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+  }
+
   async saveCharacter(userId, characterId, characterName, accessToken, refreshToken, tokenExpiry, scopes) {
     return new Promise((resolve, reject) => {
-      this.db.run(
-        `INSERT OR REPLACE INTO characters 
-         (user_id, character_id, character_name, access_token, refresh_token, token_expiry, scopes, updated_at) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-        [userId, characterId, characterName, accessToken, refreshToken, tokenExpiry, scopes],
-        function(err) {
-          if (err) reject(err);
-          else resolve(this.lastID);
+      // Check if character already exists for any user
+      this.db.get('SELECT id, user_id FROM characters WHERE character_id = ?', [characterId], (err, existing) => {
+        if (err) {
+          reject(err);
+          return;
         }
-      );
+
+        if (existing) {
+          // Update existing character
+          this.db.run(
+            `UPDATE characters 
+             SET user_id = ?, character_name = ?, access_token = ?, refresh_token = ?, token_expiry = ?, scopes = ?, updated_at = CURRENT_TIMESTAMP 
+             WHERE character_id = ?`,
+            [userId, characterName, accessToken, refreshToken, tokenExpiry, scopes, characterId],
+            function(err) {
+              if (err) reject(err);
+              else resolve(existing.id);
+            }
+          );
+        } else {
+          // Insert new character
+          this.db.run(
+            `INSERT INTO characters (user_id, character_id, character_name, access_token, refresh_token, token_expiry, scopes, updated_at) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+            [userId, characterId, characterName, accessToken, refreshToken, tokenExpiry, scopes],
+            function(err) {
+              if (err) reject(err);
+              else resolve(this.lastID);
+            }
+          );
+        }
+      });
     });
   }
 
@@ -139,6 +179,19 @@ class Database {
          SET access_token = ?, refresh_token = ?, token_expiry = ?, updated_at = CURRENT_TIMESTAMP 
          WHERE character_id = ?`,
         [accessToken, refreshToken, tokenExpiry, characterId],
+        function(err) {
+          if (err) reject(err);
+          else resolve(this.changes);
+        }
+      );
+    });
+  }
+
+  async deleteCharacter(characterId, userId) {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        'DELETE FROM characters WHERE character_id = ? AND user_id = ?',
+        [characterId, userId],
         function(err) {
           if (err) reject(err);
           else resolve(this.changes);

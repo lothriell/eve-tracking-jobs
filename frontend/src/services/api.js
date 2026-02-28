@@ -32,12 +32,50 @@ export const getCharacter = () => {
   return api.get('/api/character');
 };
 
-export const getCharacterPortrait = () => {
+export const getCharacterPortrait = (characterId = null) => {
+  if (characterId) {
+    return api.get(`/api/character/portrait/${characterId}`);
+  }
   return api.get('/api/character/portrait');
 };
 
-export const getIndustryJobs = () => {
-  return api.get('/api/industry/jobs');
+// Multiple character endpoints
+export const getAllCharacters = () => {
+  return api.get('/api/characters');
+};
+
+export const getCharacterById = (characterId) => {
+  return api.get(`/api/characters/${characterId}`);
+};
+
+export const deleteCharacter = (characterId) => {
+  return api.delete(`/api/characters/${characterId}`);
+};
+
+// Industry endpoints
+export const getIndustryJobs = (characterId = null, all = false) => {
+  const params = new URLSearchParams();
+  if (all) {
+    params.append('all', 'true');
+  } else if (characterId) {
+    params.append('characterId', characterId);
+  }
+  return api.get(`/api/industry/jobs?${params.toString()}`);
+};
+
+export const getJobSlots = (characterId = null, all = false) => {
+  const params = new URLSearchParams();
+  if (all) {
+    params.append('all', 'true');
+  } else if (characterId) {
+    params.append('characterId', characterId);
+  }
+  return api.get(`/api/industry/slots?${params.toString()}`);
+};
+
+// Dashboard endpoint
+export const getDashboardStats = () => {
+  return api.get('/api/dashboard/stats');
 };
 
 export default api;

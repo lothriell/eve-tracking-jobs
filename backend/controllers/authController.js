@@ -140,12 +140,13 @@ exports.handleEveCallback = async (req, res) => {
     const codeVerifier = req.session.pkce.codeVerifier;
 
     // Exchange code for tokens
+    // Note: Client credentials are sent ONLY in the Authorization header (Basic Auth)
+    // Do NOT include client_id/client_secret in the body - EVE SSO rejects duplicate credentials
     const tokenResponse = await axios.post(
       EVE_SSO_TOKEN_URL,
       new URLSearchParams({
         grant_type: 'authorization_code',
         code: code,
-        client_id: process.env.EVE_CLIENT_ID,
         code_verifier: codeVerifier
       }),
       {

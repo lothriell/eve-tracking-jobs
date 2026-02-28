@@ -1,485 +1,230 @@
-# EVE Online ESI Web Application - Phase 1
+# EVE Online ESI Web Application
 
-A local LAN web application for EVE Online ESI (EVE Swagger Interface) integration, featuring character authentication, industry job tracking, and automatic token management.
+A web application for tracking EVE Online industry jobs across multiple characters using the EVE Swagger Interface (ESI).
 
-## 📋 Table of Contents
+## Features
 
-- [Features](#features)
-- [Prerequisites](#prerequisites)
-- [EVE SSO Application Setup](#eve-sso-application-setup)
-- [Installation & Configuration](#installation--configuration)
-- [Deployment](#deployment)
-- [Usage](#usage)
-- [Technical Details](#technical-details)
-- [Troubleshooting](#troubleshooting)
-- [Future Enhancements](#future-enhancements)
+### Phase 2 (Current Version)
 
-## ✨ Features
+#### Multiple Character Support
+- Link multiple EVE Online characters to a single account
+- Support for characters across different accounts
+- Character management via sidebar
 
-### Phase 1 (Current)
-- **Simple Authentication**: Username/password login (credentials stored in `.env`)
-- **EVE SSO Integration**: OAuth2 with PKCE flow to securely link one EVE character
-- **Character Management**: 
-  - Display character portrait from EVE image service
-  - Show character name and ID
-  - Automatic token refresh (EVE tokens expire after 20 minutes)
-- **Industry Jobs**: View personal industry jobs for the linked character
-- **Modern UI**: Clean, responsive React-based interface
-- **Persistent Storage**: SQLite database with Docker volume
-- **LAN Access**: Accessible from any PC on your local network
+#### Sidebar Navigation
+- Collapsible sidebar with character list
+- Character portraits with thumbnails
+- Quick character switching
+- Navigation between Dashboard and Industry Jobs views
+- "Add Character" button for linking additional characters
 
-## 🔧 Prerequisites
+#### Dashboard
+- Aggregate statistics across all characters
+- Total job slot summary (Manufacturing, Science, Reactions)
+- Per-character job counts and slot usage
+- Jobs breakdown by activity type
+- Visual progress bars
 
-Before you begin, ensure you have the following installed on your Arch Linux host (10.69.10.15):
+#### Industry Jobs View
+- **EVE-like Time Display**: Time remaining shown as "XD HH:MM:SS" format
+- **Real-time Countdown**: Live updating time remaining
+- **Blueprint Icons**: Fetched from EVE image service
+- **Blueprint Names**: Resolved from ESI
+- **Activity Categories**: Manufacturing, Science (TE/ME Research, Copying, Invention), Reactions
+- **Status Badges**: Active, Ready, Delivered, Paused, Cancelled
+- **Progress Bars**: Visual job completion indicator
+- **Installer Names**: Shows who installed each job
 
-- **Docker**: Container runtime
-  ```bash
-  sudo pacman -S docker
-  sudo systemctl enable --now docker
-  ```
+#### Job Slot Tracking
+- Manufacturing jobs: X / Y (current/max slots)
+- Science jobs: X / Y
+- Reactions: X / Y
+- Color coding: Green (available), Yellow (near full), Red (full)
+- Slot counts calculated from character skills
 
-- **Docker Compose**: Container orchestration
-  ```bash
-  sudo pacman -S docker-compose
-  ```
+#### Filters
+- Filter by activity type (All, Manufacturing, Science, Reactions)
+- Filter by status (All, Active, Ready, Delivered)
+- View all characters or specific character
 
-- **User Permissions**: Add your user to the docker group
-  ```bash
-  sudo usermod -aG docker $USER
-  # Log out and log back in for changes to take effect
-  ```
+### Phase 1 Features
+- Simple username/password authentication
+- Single character linking via EVE SSO
+- Basic industry jobs display
+- Character portrait display
 
-## 🎮 EVE SSO Application Setup
+## Prerequisites
 
-You need to create an EVE Online SSO application to get your Client ID and Secret. Follow these steps:
+- Docker and Docker Compose
+- EVE Online Developer Application credentials
 
-### Step 1: Access EVE Developers Portal
-1. Go to [https://developers.eveonline.com/](https://developers.eveonline.com/)
-2. Log in with your EVE Online account
+## Setup
 
-### Step 2: Create New Application
-1. Click on **"Manage Applications"** in the top menu
-2. Click **"Create New Application"**
-3. Fill in the application details:
-   - **Application Name**: `EVE ESI Local App` (or any name you prefer)
-   - **Description**: `Personal EVE industry management application`
-   - **Connection Type**: Select **"Authentication & API Access"**
+### 1. Create EVE SSO Application
 
-### Step 3: Configure Callback URL
-**IMPORTANT**: The callback URL must match your network configuration.
+1. Go to [EVE Developers](https://developers.eveonline.com/)
+2. Create a new application
+3. Set the callback URL to: `http://YOUR_SERVER_IP:9000/auth/callback`
+4. Select the following scopes:
+   - `esi-industry.read_character_jobs.v1`
+   - `esi-skills.read_skills.v1`
+5. Note your Client ID and Secret Key
 
-- **Callback URL**: `http://10.69.10.15:9000/auth/callback`
+### 2. Configure Environment Variables
 
-⚠️ **Note**: This URL must be exact. The port `9000` must match the port in your docker-compose.yml.
-
-### Step 4: Select Scopes
-Select the following ESI scopes (required for Phase 1):
-
-- ✅ `esi-industry.read_character_jobs.v1` - View character industry jobs
-- ✅ `esi-assets.read_assets.v1` - View character assets (for future use)
-- ✅ `esi-corporations.read_corporation_membership.v1` - View corporation membership (for future use)
-
-### Step 5: Get Your Credentials
-1. Click **"Create Application"**
-2. You'll see your application details
-3. **Copy the following**:
-   - **Client ID**: A long string like `abc123def456...`
-   - **Secret Key**: Click "View Secret Key" and copy it
-   
-⚠️ **IMPORTANT**: Keep these credentials secure! Do not share them or commit them to version control.
-
-## 📦 Installation & Configuration
-
-### Step 1: Download/Clone the Application
-
-If you received this as a directory, navigate to it:
 ```bash
-cd /path/to/eve_esi_app
+cp .env.example .env
 ```
 
-### Step 2: Configure Environment Variables
+Edit `.env` with your values:
 
-1. Copy the example environment file:
-   ```bash
-   cp .env.example .env
-   ```
+```env
+# EVE Online SSO Configuration
+EVE_CLIENT_ID=your_client_id
+EVE_CLIENT_SECRET=your_secret_key
+EVE_REDIRECT_URI=http://YOUR_SERVER_IP:9000/auth/callback
 
-2. Edit the `.env` file with your favorite text editor:
-   ```bash
-   nano .env
-   # or
-   vim .env
-   ```
+# Application Credentials
+APP_USERNAME=your_username
+APP_PASSWORD=your_secure_password
 
-3. Fill in your credentials:
-   ```env
-   # EVE Online SSO Configuration
-   EVE_CLIENT_ID=your_client_id_from_eve_developers
-   EVE_CLIENT_SECRET=your_secret_from_eve_developers
-   EVE_REDIRECT_URI=http://10.69.10.15:9000/auth/callback
-   
-   # Application Credentials (choose your own)
-   APP_USERNAME=admin
-   APP_PASSWORD=YourSecurePassword123!
-   
-   # Session Secret (generate a random string)
-   SESSION_SECRET=your_random_secret_here
-   ```
-
-4. Generate a secure session secret (recommended):
-   ```bash
-   openssl rand -base64 32
-   ```
-   Copy the output and use it as your `SESSION_SECRET`.
-
-## 🚀 Deployment
-
-### Start the Application
-
-1. Build and start the Docker containers:
-   ```bash
-   docker-compose up -d
-   ```
-
-2. Check that containers are running:
-   ```bash
-   docker-compose ps
-   ```
-
-   You should see two containers running:
-   - `eve-esi-backend` on port 3001
-   - `eve-esi-frontend` on port 9000
-
-3. View logs (optional):
-   ```bash
-   # All services
-   docker-compose logs -f
-   
-   # Backend only
-   docker-compose logs -f backend
-   
-   # Frontend only
-   docker-compose logs -f frontend
-   ```
-
-### Access the Application
-
-From any PC on your LAN (including the host):
-- Open a web browser
-- Navigate to: **http://10.69.10.15:9000**
-
-## 📱 Usage
-
-### Step 1: Login
-1. Open http://10.69.10.15:9000 in your browser
-2. You'll see the login page
-3. Enter your credentials:
-   - **Username**: The `APP_USERNAME` from your `.env` file
-   - **Password**: The `APP_PASSWORD` from your `.env` file
-4. Click **Login**
-
-### Step 2: Link Your EVE Character
-1. After login, you'll see the dashboard
-2. Click the **"Link EVE Character"** button
-3. You'll be redirected to EVE Online's SSO login page
-4. Login with your EVE Online account
-5. Select the character you want to link
-6. Click **"Authorize"** to grant the required permissions
-7. You'll be redirected back to the application
-
-### Step 3: View Character & Industry Jobs
-Once linked, you'll see:
-- **Character Information**:
-  - Character portrait (256x256 image)
-  - Character name
-  - Character ID
-  - Linked status badge
-
-- **Industry Jobs Table**:
-  - Job ID
-  - Activity type (Manufacturing, Research, Copying, etc.)
-  - Status (Active, Ready, etc.)
-  - Number of runs
-  - Start and end dates
-
-### Additional Actions
-
-- **Refresh Jobs**: Reload the page to fetch latest jobs
-- **Logout**: Click the "Logout" button in the top-right corner
-- **Token Management**: Tokens are automatically refreshed when they expire (every 20 minutes)
-
-## 🔍 Technical Details
-
-### Architecture
-
-```
-┌─────────────────┐
-│  Browser (LAN)  │
-│  10.69.10.15    │
-└────────┬────────┘
-         │ Port 9000
-         ▼
-┌─────────────────────────────────────┐
-│  Frontend Container (nginx)         │
-│  - React SPA                        │
-│  - Routes: /, /login                │
-└────────┬────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────────┐
-│  Backend Container (Node.js)        │
-│  - Express API (Port 3001)          │
-│  - Routes:                          │
-│    • /auth/* - Authentication       │
-│    • /api/* - Character & Jobs      │
-│  - SQLite Database (Volume)         │
-└────────┬────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────────┐
-│  EVE Online ESI API                 │
-│  https://esi.evetech.net/latest/    │
-└─────────────────────────────────────┘
+# Session Secret (generate with: openssl rand -hex 32)
+SESSION_SECRET=your_session_secret
 ```
 
-### Technology Stack
+### 3. Build and Run
 
-**Backend:**
-- Node.js 18 (Alpine Linux)
-- Express.js - Web framework
-- SQLite3 - Database
-- bcrypt - Password hashing
-- axios - HTTP client for ESI API
-- express-session - Session management
+```bash
+# Build and start the application
+docker-compose up -d --build
 
-**Frontend:**
-- React 18 - UI framework
-- React Router v6 - Client-side routing
-- axios - API communication
-- nginx - Production web server
+# View logs
+docker-compose logs -f
+```
 
-**DevOps:**
-- Docker - Containerization
-- Docker Compose - Multi-container orchestration
-- Volume - Persistent SQLite storage
+### 4. Access the Application
 
-### Database Schema
+Open `http://YOUR_SERVER_IP:9000` in your browser.
 
-**users table:**
-- `id` - Primary key
-- `username` - Unique username
-- `password_hash` - bcrypt hashed password
-- `created_at` - Timestamp
+## Usage
 
-**characters table:**
-- `id` - Primary key
-- `user_id` - Foreign key to users
-- `character_id` - EVE character ID (unique)
-- `character_name` - Character name
-- `access_token` - Current OAuth access token
-- `refresh_token` - OAuth refresh token
-- `token_expiry` - Token expiration timestamp
-- `scopes` - Granted ESI scopes
-- `created_at` - Timestamp
-- `updated_at` - Last update timestamp
+### Linking Characters
 
-### API Endpoints
+1. Log in with your application credentials
+2. Click "Add Character" in the sidebar
+3. Authorize the application with your EVE account
+4. Repeat for additional characters
 
-**Authentication:**
-- `POST /auth/login` - Username/password login
-- `POST /auth/logout` - Logout
+### Viewing Industry Jobs
+
+1. Select "Industry Jobs" from the navigation
+2. Choose a specific character or view all characters
+3. Use filters to narrow down results
+4. Jobs update in real-time with countdown timers
+
+### Dashboard
+
+1. Select "Dashboard" from the navigation
+2. View aggregate statistics across all characters
+3. See per-character job summaries
+4. Monitor slot usage across all characters
+
+## API Endpoints
+
+### Authentication
+- `POST /auth/login` - User login
+- `POST /auth/logout` - User logout
 - `GET /auth/check` - Check authentication status
-- `GET /auth/eve/authorize` - Initiate EVE SSO flow
-- `GET /auth/eve/callback` - EVE SSO callback handler
+- `GET /auth/eve/authorize` - Initiate EVE SSO
+- `GET /auth/callback` - EVE SSO callback
 
-**Character & Data:**
-- `GET /api/character` - Get linked character info
-- `GET /api/character/portrait` - Get character portrait URL
-- `GET /api/industry/jobs` - Get character industry jobs
+### Characters
+- `GET /api/character` - Get first linked character (legacy)
+- `GET /api/characters` - Get all linked characters
+- `GET /api/characters/:characterId` - Get specific character
+- `DELETE /api/characters/:characterId` - Remove character
+- `GET /api/character/portrait/:characterId` - Get portrait URL
 
-### Security Features
+### Industry
+- `GET /api/industry/jobs` - Get industry jobs
+  - Query params: `characterId`, `all=true`
+- `GET /api/industry/slots` - Get job slot usage
+  - Query params: `characterId`, `all=true`
 
-- **Password Hashing**: bcrypt with salt rounds
-- **PKCE OAuth2**: Prevents authorization code interception
-- **Session Management**: Secure HTTP-only cookies
-- **Automatic Token Refresh**: Tokens refreshed before expiry
-- **Rate Limiting**: ESI API rate limit compliance (20 req/s)
-- **Error Handling**: Graceful handling of expired tokens and missing scopes
+### Dashboard
+- `GET /api/dashboard/stats` - Get aggregate statistics
 
-## 🐛 Troubleshooting
+## Technology Stack
 
-### Cannot Access Application from Other PCs
+### Backend
+- Node.js with Express
+- SQLite database
+- EVE ESI API integration
+- Session-based authentication
 
-**Problem**: http://10.69.10.15:9000 doesn't load from other computers on the LAN.
+### Frontend
+- React 18
+- React Router for navigation
+- Axios for API calls
+- CSS with EVE-inspired dark theme
 
-**Solutions**:
-1. Check firewall on the host:
-   ```bash
-   sudo ufw allow 9000/tcp
-   sudo ufw allow 3001/tcp
-   ```
+### Infrastructure
+- Docker & Docker Compose
+- Nginx reverse proxy
 
-2. Verify containers are running:
-   ```bash
-   docker-compose ps
-   ```
+## Development
 
-3. Check if ports are listening:
-   ```bash
-   sudo netstat -tulpn | grep -E '9000|3001'
-   ```
+### Local Development
 
-### EVE SSO Login Fails
+```bash
+# Backend
+cd backend
+npm install
+npm run dev
 
-**Problem**: OAuth redirect doesn't work or shows error.
-
-**Solutions**:
-1. Verify your callback URL in EVE Developers console exactly matches:
-   ```
-   http://10.69.10.15:9000/auth/callback
-   ```
-
-2. Check environment variables are set correctly:
-   ```bash
-   docker-compose exec backend env | grep EVE
-   ```
-
-3. Look for errors in backend logs:
-   ```bash
-   docker-compose logs backend
-   ```
-
-### No Industry Jobs Showing
-
-**Problem**: Character linked but no jobs display.
-
-**Solutions**:
-1. **Check Scopes**: Ensure you granted `esi-industry.read_character_jobs.v1` during authorization
-2. **Re-link Character**: If scopes were missing, re-link your character
-3. **Check ESI Status**: Visit https://eve-offline.net/ to check if ESI is online
-4. **No Active Jobs**: You might not have any active industry jobs
-
-### Database Errors
-
-**Problem**: SQLite errors or data not persisting.
-
-**Solutions**:
-1. Check volume exists:
-   ```bash
-   docker volume ls | grep eve-esi
-   ```
-
-2. Recreate volume:
-   ```bash
-   docker-compose down -v
-   docker-compose up -d
-   ```
-   ⚠️ **Warning**: This deletes all data!
-
-### Port Conflicts
-
-**Problem**: Port 9000 or 3001 already in use.
-
-**Solutions**:
-1. Change ports in `docker-compose.yml`:
-   ```yaml
-   frontend:
-     ports:
-       - "8080:80"  # Change 9000 to 8080
-   ```
-
-2. Update callback URL in:
-   - EVE Developers console
-   - `.env` file (`EVE_REDIRECT_URI`)
-
-### Forgot Login Credentials
-
-**Problem**: Can't remember APP_USERNAME or APP_PASSWORD.
-
-**Solutions**:
-1. Check your `.env` file:
-   ```bash
-   cat .env | grep APP_
-   ```
-
-2. Change password in `.env` and restart:
-   ```bash
-   nano .env  # Edit APP_PASSWORD
-   docker-compose restart backend
-   ```
-
-## 🔮 Future Enhancements
-
-The following features are planned for future phases:
-
-### Phase 2 - Multi-Character & Enhanced UI
-- Support for multiple characters per user
-- Sidebar navigation with dashboard layout
-- Character switcher
-- Enhanced industry job filtering and sorting
-- Real-time job notifications
-- Export jobs to CSV
-
-### Phase 3 - Corporation Features
-- Corporation industry job tracking
-- Member management
-- Corporation assets overview
-- Shared bookmarks and locations
-
-### Phase 4 - Advanced Features
-- Planetary Interaction (PI) management
-- Customs office tracking
-- Market data integration
-- Manufacturing profit calculator
-- Blueprint library
-- Asset tracking and search
-- Contract monitoring
-
-### Phase 5 - Analytics & Automation
-- Industry job analytics and charts
-- Automated notifications (Discord/Email)
-- Job profitability analysis
-- Historical data tracking
-- API webhooks for external integrations
-
-## 📄 License
-
-This project is for personal use. EVE Online and all related content are property of CCP Games.
-
-## 🙏 Acknowledgments
-
-- CCP Games for EVE Online and ESI API
-- EVE Swagger Interface (ESI) documentation
-- Docker and the open-source community
-
----
-
-**Project Structure:**
-```
-eve_esi_app/
-├── backend/
-│   ├── controllers/
-│   ├── database/
-│   ├── routes/
-│   ├── services/
-│   ├── Dockerfile
-│   ├── package.json
-│   └── server.js
-├── frontend/
-│   ├── public/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   └── services/
-│   ├── Dockerfile
-│   ├── nginx.conf
-│   └── package.json
-├── docker-compose.yml
-├── .env.example
-├── .gitignore
-└── README.md
+# Frontend
+cd frontend
+npm install
+npm start
 ```
 
-**Support**: For issues or questions, check the Troubleshooting section above or review Docker logs.
+### Environment Variables
 
-**Version**: 1.0.0 (Phase 1)
+| Variable | Description |
+|----------|-------------|
+| `EVE_CLIENT_ID` | EVE SSO Client ID |
+| `EVE_CLIENT_SECRET` | EVE SSO Secret Key |
+| `EVE_REDIRECT_URI` | OAuth callback URL |
+| `APP_USERNAME` | Application login username |
+| `APP_PASSWORD` | Application login password |
+| `SESSION_SECRET` | Express session secret |
+| `DB_PATH` | SQLite database path |
+
+## Troubleshooting
+
+### "invalid_scope" Error
+Ensure your EVE SSO application has the required scopes enabled.
+
+### "Cannot GET /auth/callback"
+The redirect URI must match exactly what's configured in your EVE application.
+
+### Jobs Not Loading
+1. Check that the character has the required ESI scopes
+2. Verify the character's tokens haven't expired
+3. Check backend logs for ESI errors
+
+### Slot Counts Incorrect
+Slot counts are calculated from character skills. Ensure `esi-skills.read_skills.v1` scope is authorized.
+
+## Future Enhancements
+
+- Corporation job support
+- Job completion notifications
+- Blueprint library management
+- Material efficiency tracking
+- Cost calculations
+- Export to CSV/Excel
+
+## License
+
+MIT License
