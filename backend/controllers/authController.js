@@ -8,11 +8,11 @@ const EVE_SSO_AUTH_URL = 'https://login.eveonline.com/v2/oauth/authorize';
 const EVE_SSO_TOKEN_URL = 'https://login.eveonline.com/v2/oauth/token';
 const EVE_SSO_VERIFY_URL = 'https://login.eveonline.com/oauth/verify';
 
-// Required scopes for Phase 1
+// Required scopes for Phase 1 (personal data only)
+// Note: Corporation scopes will be added in Phase 2
 const REQUIRED_SCOPES = [
-  'esi-industry.read_character_jobs.v1',
-  'esi-assets.read_assets.v1',
-  'esi-corporations.read_corporation_membership.v1'
+  'esi-industry.read_character_jobs.v1'  // Required for viewing personal industry jobs
+  // 'esi-assets.read_assets.v1'          // Reserved for future asset tracking feature
 ];
 
 // PKCE helper functions
