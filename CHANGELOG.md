@@ -2,6 +2,78 @@
 
 All notable changes to the EVE ESI Application will be documented in this file.
 
+## [v3.0.0-alpha] - 2026-03-01 (Phase 3A-1: Corporation Industry Jobs)
+
+### Added
+
+#### Corporation Industry Jobs
+- **New "Corporation Jobs" view** in sidebar navigation
+- View industry jobs across all corporations you have access to
+- Corporation summary cards showing:
+  - Corporation name and ticker
+  - Characters with industry roles (Director/Factory Manager)
+- Jobs table with corporation-specific columns:
+  - Corporation ticker and name
+  - Installer name (who started the job)
+  - All existing job fields (blueprint, activity, progress, time remaining)
+
+#### Corporation Roles Support
+- Automatic detection of Director and Factory Manager roles
+- Clear messaging when characters lack required roles
+- Role badges showing access level per character
+
+#### New ESI Scopes
+- `esi-industry.read_corporation_jobs.v1` - Required for corp industry jobs
+- `esi-corporations.read_corporation_membership.v1` - Required for corp membership
+- `esi-characters.read_corporation_roles.v1` - Required for role checking
+
+**⚠️ BREAKING CHANGE**: All characters must be re-authorized to use corporation features. Characters authorized before this update will not have the required scopes.
+
+#### Dashboard Updates
+- Corporation industry summary section
+- Shows corporations with industry access
+- Active corp job count
+- Quick access to corporation roles
+
+#### Backend Enhancements
+- New `corporationService.js` - Corporation data handling
+- New API endpoints:
+  - `GET /api/corporations` - List all user's corporations
+  - `GET /api/corporation/jobs` - All corporation jobs
+  - `GET /api/corporation/jobs/:characterId` - Corp jobs for specific character
+  - `GET /api/corporation/roles/:characterId` - Character's corp roles
+- Corporation data caching (1 hour)
+- Graceful error handling for missing roles/scopes
+
+#### Frontend Components
+- `CorporationJobs.js` - Full corporation jobs view
+- `CorporationJobs.css` - Styling with blue accent theme
+- Corporation filter dropdown
+- Activity and status filters
+- Real-time countdown timers
+
+### How to Update
+```bash
+cd ~/docker/eve_esi_app
+git pull origin main
+docker-compose down
+docker-compose up -d --build
+```
+
+### Re-authorization Required
+After updating, all characters need to be re-authorized:
+1. Log into the application
+2. Remove existing characters (×button in sidebar)
+3. Click "Add Character" to re-link with new scopes
+4. Authorize with EVE SSO (will request new permissions)
+
+### Notes
+- Only characters with Director or Factory Manager role can view corp jobs
+- Multiple corporations supported (if you have alts in different corps)
+- Personal jobs and corporation jobs are shown separately
+
+---
+
 ## [v2.0.2] - 2026-03-01
 
 ### Added

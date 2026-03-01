@@ -10,9 +10,11 @@ const EVE_SSO_VERIFY_URL = 'https://login.eveonline.com/oauth/verify';
 
 // Required scopes for industry tracking
 const REQUIRED_SCOPES = [
-  'esi-industry.read_character_jobs.v1',  // Required for viewing personal industry jobs
-  'esi-skills.read_skills.v1'              // Required for calculating max job slots
-  // 'esi-assets.read_assets.v1'           // Reserved for future asset tracking feature
+  'esi-industry.read_character_jobs.v1',      // Required for viewing personal industry jobs
+  'esi-skills.read_skills.v1',                // Required for calculating max job slots
+  'esi-industry.read_corporation_jobs.v1',    // Required for corporation industry jobs
+  'esi-corporations.read_corporation_membership.v1', // Required for corp membership/roles
+  'esi-characters.read_corporation_roles.v1'  // Required for character's corporation roles
 ];
 
 // PKCE helper functions

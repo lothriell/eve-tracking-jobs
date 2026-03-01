@@ -24,6 +24,12 @@ router.delete('/characters/:characterId', requireAuth, characterController.delet
 router.get('/industry/jobs', requireAuth, characterController.getIndustryJobs);
 router.get('/industry/slots', requireAuth, characterController.getJobSlots);
 
+// Corporation endpoints
+router.get('/corporations', requireAuth, characterController.getCorporations);
+router.get('/corporation/jobs', requireAuth, characterController.getAllCorporationJobs);
+router.get('/corporation/jobs/:characterId', requireAuth, characterController.getCorporationJobs);
+router.get('/corporation/roles/:characterId', requireAuth, characterController.getCorporationRoles);
+
 // Dashboard endpoint
 router.get('/dashboard/stats', requireAuth, characterController.getDashboardStats);
 

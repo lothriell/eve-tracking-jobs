@@ -378,6 +378,68 @@ async function getCharacterNames(characterIds) {
   }
 }
 
+/**
+ * Transform corporation industry jobs with enhanced data
+ */
+async function transformCorporationJobs(jobs, corporationInfo) {
+  if (!jobs || jobs.length === 0) {
+    return [];
+  }
+
+  // Collect all type IDs for batch fetching
+  const typeIds = new Set();
+  jobs.forEach(job => {
+    if (job.blueprint_type_id) typeIds.add(job.blueprint_type_id);
+    if (job.product_type_id) typeIds.add(job.product_type_id);
+  });
+
+  // Batch fetch type names
+  const typeNames = await getTypeNames([...typeIds]);
+
+  // Transform jobs
+  const transformedJobs = jobs.map(job => {
+    const activityInfo = getActivityInfo(job.activity_id);
+    const now = new Date();
+    const endDate = new Date(job.end_date);
+    const startDate = new Date(job.start_date);
+    const totalDuration = endDate - startDate;
+    const elapsed = now - startDate;
+    const progress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+    const timeRemaining = Math.max(0, endDate - now);
+
+    return {
+      job_id: job.job_id,
+      activity_id: job.activity_id,
+      activity: activityInfo.name,
+      activity_category: activityInfo.category,
+      status: job.status,
+      runs: job.runs,
+      licensed_runs: job.licensed_runs,
+      start_date: job.start_date,
+      end_date: job.end_date,
+      installer_id: job.installer_id,
+      facility_id: job.facility_id,
+      location_id: job.location_id,
+      blueprint_type_id: job.blueprint_type_id,
+      blueprint_name: typeNames[job.blueprint_type_id] || `Blueprint ${job.blueprint_type_id}`,
+      product_type_id: job.product_type_id,
+      product_name: job.product_type_id ? typeNames[job.product_type_id] : null,
+      progress: progress,
+      time_remaining_ms: timeRemaining,
+      output_location_id: job.output_location_id,
+      cost: job.cost,
+      probability: job.probability,
+      // Corporation-specific fields
+      corporation_id: corporationInfo?.corporation_id,
+      corporation_name: corporationInfo?.name,
+      corporation_ticker: corporationInfo?.ticker,
+      is_corporation_job: true
+    };
+  }).sort((a, b) => a.time_remaining_ms - b.time_remaining_ms);
+
+  return transformedJobs;
+}
+
 module.exports = {
   makeESIRequest,
   getCharacterIndustryJobs,
@@ -389,5 +451,6 @@ module.exports = {
   getLocationName,
   getCharacterNames,
   getActivityInfo,
+  transformCorporationJobs,
   ACTIVITY_MAP
 };

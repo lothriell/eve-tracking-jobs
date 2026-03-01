@@ -4,6 +4,7 @@ import { logout } from '../services/api';
 import Sidebar from '../components/Sidebar';
 import Dashboard from '../components/Dashboard';
 import IndustryJobs from '../components/IndustryJobs';
+import CorporationJobs from '../components/CorporationJobs';
 import './Main.css';
 
 function Main({ onLogout }) {
@@ -58,6 +59,8 @@ function Main({ onLogout }) {
     switch (currentView) {
       case 'jobs':
         return <IndustryJobs selectedCharacter={selectedCharacter} onError={setError} />;
+      case 'corp-jobs':
+        return <CorporationJobs selectedCharacter={selectedCharacter} onError={setError} />;
       case 'dashboard':
       default:
         return <Dashboard onError={setError} />;

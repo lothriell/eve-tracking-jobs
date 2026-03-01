@@ -171,6 +171,13 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
               <span className="nav-icon">🏭</span>
               <span>Industry Jobs</span>
             </div>
+            <div 
+              className={`nav-item ${currentView === 'corp-jobs' ? 'active' : ''}`}
+              onClick={() => onViewChange('corp-jobs')}
+            >
+              <span className="nav-icon">🏢</span>
+              <span>Corporation Jobs</span>
+            </div>
           </div>
         </>
       )}

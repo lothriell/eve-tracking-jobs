@@ -4,7 +4,28 @@ A web application for tracking EVE Online industry jobs across multiple characte
 
 ## Features
 
-### Phase 2 (Current Version)
+### Phase 3A-1 (Current Version) - Corporation Industry Jobs
+
+#### Corporation Jobs View
+- **View corporation industry jobs** across all corporations you have access to
+- Corporation summary cards showing name, ticker, and characters with roles
+- Jobs table with corporation-specific columns (ticker, name, installer)
+- Filter by corporation, activity type, and status
+- Real-time countdown timers
+
+#### Corporation Roles Support
+- Automatic detection of Director and Factory Manager roles
+- Clear messaging when characters lack required roles
+- Role badges showing access level per character
+
+#### Required ESI Scopes (NEW)
+- `esi-industry.read_corporation_jobs.v1` - Corporation industry jobs
+- `esi-corporations.read_corporation_membership.v1` - Corporation membership
+- `esi-characters.read_corporation_roles.v1` - Character roles
+
+**⚠️ Characters must be re-authorized after updating to v3.0.0**
+
+### Phase 2 Features
 
 #### Multiple Character Support
 - Link multiple EVE Online characters to a single account
@@ -15,7 +36,7 @@ A web application for tracking EVE Online industry jobs across multiple characte
 - Collapsible sidebar with character list
 - Character portraits with thumbnails
 - Quick character switching
-- Navigation between Dashboard and Industry Jobs views
+- Navigation between Dashboard, Industry Jobs, and Corporation Jobs views
 - "Add Character" button for linking additional characters
 
 #### Dashboard
@@ -66,8 +87,11 @@ A web application for tracking EVE Online industry jobs across multiple characte
 2. Create a new application
 3. Set the callback URL to: `http://YOUR_SERVER_IP:9000/auth/callback`
 4. Select the following scopes:
-   - `esi-industry.read_character_jobs.v1`
-   - `esi-skills.read_skills.v1`
+   - `esi-industry.read_character_jobs.v1` - Personal industry jobs
+   - `esi-skills.read_skills.v1` - Character skills for slot calculation
+   - `esi-industry.read_corporation_jobs.v1` - Corporation industry jobs
+   - `esi-corporations.read_corporation_membership.v1` - Corporation membership
+   - `esi-characters.read_corporation_roles.v1` - Character's corporation roles
 5. Note your Client ID and Secret Key
 
 ### 2. Configure Environment Variables
@@ -146,10 +170,16 @@ Open `http://YOUR_SERVER_IP:9000` in your browser.
 - `GET /api/character/portrait/:characterId` - Get portrait URL
 
 ### Industry
-- `GET /api/industry/jobs` - Get industry jobs
+- `GET /api/industry/jobs` - Get personal industry jobs
   - Query params: `characterId`, `all=true`
 - `GET /api/industry/slots` - Get job slot usage
   - Query params: `characterId`, `all=true`
+
+### Corporation
+- `GET /api/corporations` - Get all corporations from linked characters
+- `GET /api/corporation/jobs` - Get all corporation jobs (across all corps with access)
+- `GET /api/corporation/jobs/:characterId` - Get corp jobs for specific character
+- `GET /api/corporation/roles/:characterId` - Get character's corporation roles
 
 ### Dashboard
 - `GET /api/dashboard/stats` - Get aggregate statistics
@@ -246,7 +276,8 @@ See [SECURITY.md](SECURITY.md) for:
 
 ## Future Enhancements
 
-- Corporation job support
+- ~~Corporation job support~~ ✅ (v3.0.0-alpha)
+- Planetary Interaction tracking
 - Job completion notifications
 - Blueprint library management
 - Material efficiency tracking

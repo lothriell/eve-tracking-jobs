@@ -1,17 +1,41 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { getDashboardStats } from '../services/api';
+import { getDashboardStats, getCorporationJobs, getCorporations } from '../services/api';
 import JobSlotSummary from './JobSlotSummary';
 import './Dashboard.css';
 
 function Dashboard({ onError }) {
   const [stats, setStats] = useState(null);
+  const [corpStats, setCorpStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const loadStats = useCallback(async () => {
     try {
       setLoading(true);
+      
+      // Load personal stats
       const response = await getDashboardStats();
       setStats(response.data);
+      
+      // Load corporation stats
+      try {
+        const corpsResponse = await getCorporations();
+        const hasCorpAccess = corpsResponse.data.corporations?.some(c => c.has_industry_access);
+        
+        if (hasCorpAccess) {
+          const corpJobsResponse = await getCorporationJobs();
+          setCorpStats({
+            corporations: corpsResponse.data.corporations,
+            total_jobs: corpJobsResponse.data.total_jobs || 0,
+            active_jobs: corpJobsResponse.data.active_jobs || 0,
+            corps_with_access: corpsResponse.data.corporations.filter(c => c.has_industry_access).length
+          });
+        } else {
+          setCorpStats(null);
+        }
+      } catch (corpError) {
+        console.log('No corporation access:', corpError.message);
+        setCorpStats(null);
+      }
     } catch (error) {
       console.error('Failed to load dashboard stats:', error);
       onError?.('Failed to load dashboard statistics');
@@ -70,7 +94,7 @@ function Dashboard({ onError }) {
           <div className="stat-icon">🏭</div>
           <div className="stat-content">
             <span className="stat-value">{stats.total_active_jobs}</span>
-            <span className="stat-label">Active Jobs</span>
+            <span className="stat-label">Personal Jobs</span>
           </div>
         </div>
 
@@ -95,6 +119,40 @@ function Dashboard({ onError }) {
           </div>
         </div>
       </div>
+
+      {/* Corporation Jobs Summary */}
+      {corpStats && (
+        <div className="corp-stats-section">
+          <h3>🏢 Corporation Industry</h3>
+          <div className="corp-stats-grid">
+            <div className="stat-card corp-card">
+              <div className="stat-icon">🏢</div>
+              <div className="stat-content">
+                <span className="stat-value">{corpStats.corps_with_access}</span>
+                <span className="stat-label">Corps with Access</span>
+              </div>
+            </div>
+            <div className="stat-card corp-card">
+              <div className="stat-icon">📋</div>
+              <div className="stat-content">
+                <span className="stat-value">{corpStats.active_jobs}</span>
+                <span className="stat-label">Corp Active Jobs</span>
+              </div>
+            </div>
+          </div>
+          <div className="corp-list">
+            {corpStats.corporations.filter(c => c.has_industry_access).map(corp => (
+              <div key={corp.corporation_id} className="corp-item">
+                <span className="corp-ticker">[{corp.ticker}]</span>
+                <span className="corp-name">{corp.name}</span>
+                <span className="corp-access-badge">
+                  {corp.characters.filter(c => c.has_industry_role).map(c => c.industry_role_name).join(', ')}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Scope Warning Banner */}
       {stats.jobs_by_character.some(char => char.slots?.needsReauthorization) && (

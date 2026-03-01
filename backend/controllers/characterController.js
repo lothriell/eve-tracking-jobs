@@ -4,8 +4,18 @@ const {
   getCharacterIndustryJobs, 
   getJobSlotUsage, 
   getCharacterNames,
-  getLocationName 
+  getLocationName,
+  transformCorporationJobs
 } = require('../services/esiClient');
+const {
+  getCharacterCorporation,
+  getCharacterRoles,
+  hasIndustryRole,
+  getIndustryRoleName,
+  getCorporationInfo,
+  getCorporationJobs,
+  getCorporationMemberNames
+} = require('../services/corporationService');
 
 // Get first character (backward compatibility)
 exports.getCharacter = async (req, res) => {
@@ -357,5 +367,291 @@ exports.getDashboardStats = async (req, res) => {
   } catch (error) {
     console.error('Get dashboard stats error:', error);
     res.status(500).json({ error: 'Failed to get dashboard stats' });
+  }
+};
+
+
+
+// ============== CORPORATION ENDPOINTS ==============
+
+// Get corporation roles for a specific character
+exports.getCorporationRoles = async (req, res) => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const { characterId } = req.params;
+    const character = await db.getCharacterById(parseInt(characterId));
+    
+    if (!character || character.user_id !== req.session.userId) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
+
+    const accessToken = await getValidAccessToken(character);
+    
+    // Get corporation info
+    const corpData = await getCharacterCorporation(character.character_id, accessToken);
+    const corpInfo = await getCorporationInfo(corpData.corporation_id);
+    
+    // Get character roles
+    const roles = await getCharacterRoles(character.character_id, accessToken);
+    
+    if (roles.needsReauthorization) {
+      return res.json({
+        character_id: character.character_id,
+        character_name: character.character_name,
+        corporation: corpInfo,
+        roles: [],
+        has_industry_role: false,
+        industry_role_name: null,
+        needs_reauthorization: true,
+        message: 'Character needs to be re-authorized with corporation role scopes'
+      });
+    }
+
+    res.json({
+      character_id: character.character_id,
+      character_name: character.character_name,
+      corporation: corpInfo,
+      roles: roles.roles,
+      has_industry_role: hasIndustryRole(roles),
+      industry_role_name: getIndustryRoleName(roles),
+      needs_reauthorization: false
+    });
+  } catch (error) {
+    console.error('Get corporation roles error:', error);
+    res.status(500).json({ error: 'Failed to get corporation roles' });
+  }
+};
+
+// Get corporation industry jobs for a specific character
+exports.getCorporationJobs = async (req, res) => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const { characterId } = req.params;
+    const character = await db.getCharacterById(parseInt(characterId));
+    
+    if (!character || character.user_id !== req.session.userId) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
+
+    const accessToken = await getValidAccessToken(character);
+    
+    // Get corporation info
+    const corpData = await getCharacterCorporation(character.character_id, accessToken);
+    const corpInfo = await getCorporationInfo(corpData.corporation_id);
+    
+    // Check character roles
+    const roles = await getCharacterRoles(character.character_id, accessToken);
+    
+    if (roles.needsReauthorization) {
+      return res.json({
+        jobs: [],
+        corporation: corpInfo,
+        has_access: false,
+        error: 'needs_reauthorization',
+        message: 'Character needs to be re-authorized with corporation role scopes'
+      });
+    }
+
+    if (!hasIndustryRole(roles)) {
+      return res.json({
+        jobs: [],
+        corporation: corpInfo,
+        has_access: false,
+        error: 'missing_role',
+        message: `Character lacks Director or Factory Manager role in ${corpInfo.name}`
+      });
+    }
+
+    // Fetch corporation jobs
+    const rawJobs = await getCorporationJobs(corpData.corporation_id, accessToken);
+    
+    // Handle error responses from getCorporationJobs
+    if (rawJobs.error) {
+      return res.json({
+        jobs: [],
+        corporation: corpInfo,
+        has_access: false,
+        error: rawJobs.error,
+        message: rawJobs.message
+      });
+    }
+
+    // Transform jobs with additional data
+    const jobs = await transformCorporationJobs(rawJobs, corpInfo);
+    
+    // Get installer names
+    const installerIds = [...new Set(jobs.map(j => j.installer_id).filter(id => id))];
+    const installerNames = await getCorporationMemberNames(installerIds);
+    
+    jobs.forEach(job => {
+      job.installer_name = installerNames[job.installer_id] || `Character ${job.installer_id}`;
+    });
+
+    res.json({
+      jobs,
+      corporation: corpInfo,
+      has_access: true,
+      role: getIndustryRoleName(roles),
+      total_jobs: jobs.length,
+      active_jobs: jobs.filter(j => j.status === 'active').length
+    });
+  } catch (error) {
+    console.error('Get corporation jobs error:', error);
+    if (error.response?.status === 403) {
+      return res.status(403).json({
+        error: 'forbidden',
+        message: 'Missing required ESI scopes for corporation jobs'
+      });
+    }
+    res.status(500).json({ error: 'Failed to get corporation jobs' });
+  }
+};
+
+// Get all corporations from user's characters
+exports.getCorporations = async (req, res) => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const characters = await db.getAllCharactersByUserId(req.session.userId);
+    
+    if (characters.length === 0) {
+      return res.json({ corporations: [] });
+    }
+
+    const corporationsMap = new Map();
+    const charactersByCorpMap = new Map();
+
+    for (const character of characters) {
+      try {
+        const accessToken = await getValidAccessToken(character);
+        const corpData = await getCharacterCorporation(character.character_id, accessToken);
+        const corpInfo = await getCorporationInfo(corpData.corporation_id);
+        const roles = await getCharacterRoles(character.character_id, accessToken);
+        
+        if (!corporationsMap.has(corpData.corporation_id)) {
+          corporationsMap.set(corpData.corporation_id, corpInfo);
+          charactersByCorpMap.set(corpData.corporation_id, []);
+        }
+        
+        charactersByCorpMap.get(corpData.corporation_id).push({
+          character_id: character.character_id,
+          character_name: character.character_name,
+          db_id: character.id,
+          has_industry_role: hasIndustryRole(roles),
+          industry_role_name: getIndustryRoleName(roles),
+          needs_reauthorization: roles.needsReauthorization || false
+        });
+      } catch (error) {
+        console.error(`Failed to get corp for character ${character.character_id}:`, error.message);
+      }
+    }
+
+    const corporations = [];
+    for (const [corpId, corpInfo] of corporationsMap) {
+      const chars = charactersByCorpMap.get(corpId) || [];
+      corporations.push({
+        ...corpInfo,
+        characters: chars,
+        has_industry_access: chars.some(c => c.has_industry_role)
+      });
+    }
+
+    res.json({ corporations });
+  } catch (error) {
+    console.error('Get corporations error:', error);
+    res.status(500).json({ error: 'Failed to get corporations' });
+  }
+};
+
+// Get all corporation jobs across all characters
+exports.getAllCorporationJobs = async (req, res) => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const characters = await db.getAllCharactersByUserId(req.session.userId);
+    
+    if (characters.length === 0) {
+      return res.json({ jobs: [], corporations: [] });
+    }
+
+    const allJobs = [];
+    const corporationsWithAccess = [];
+    const processedCorps = new Set();
+
+    for (const character of characters) {
+      try {
+        const accessToken = await getValidAccessToken(character);
+        const corpData = await getCharacterCorporation(character.character_id, accessToken);
+        
+        // Skip if we already processed this corporation
+        if (processedCorps.has(corpData.corporation_id)) {
+          continue;
+        }
+
+        const corpInfo = await getCorporationInfo(corpData.corporation_id);
+        const roles = await getCharacterRoles(character.character_id, accessToken);
+
+        if (!hasIndustryRole(roles) || roles.needsReauthorization) {
+          continue;
+        }
+
+        // Mark as processed
+        processedCorps.add(corpData.corporation_id);
+
+        // Fetch corporation jobs
+        const rawJobs = await getCorporationJobs(corpData.corporation_id, accessToken);
+        
+        if (rawJobs.error) {
+          continue;
+        }
+
+        // Transform and add jobs
+        const jobs = await transformCorporationJobs(rawJobs, corpInfo);
+        
+        // Get installer names
+        const installerIds = [...new Set(jobs.map(j => j.installer_id).filter(id => id))];
+        const installerNames = await getCorporationMemberNames(installerIds);
+        
+        jobs.forEach(job => {
+          job.installer_name = installerNames[job.installer_id] || `Character ${job.installer_id}`;
+          job.accessing_character_id = character.character_id;
+          job.accessing_character_name = character.character_name;
+        });
+
+        allJobs.push(...jobs);
+        corporationsWithAccess.push({
+          ...corpInfo,
+          role: getIndustryRoleName(roles),
+          accessing_character: character.character_name,
+          job_count: jobs.length,
+          active_jobs: jobs.filter(j => j.status === 'active').length
+        });
+      } catch (error) {
+        console.error(`Failed to get corp jobs for character ${character.character_id}:`, error.message);
+      }
+    }
+
+    // Sort all jobs by time remaining
+    allJobs.sort((a, b) => a.time_remaining_ms - b.time_remaining_ms);
+
+    res.json({
+      jobs: allJobs,
+      corporations: corporationsWithAccess,
+      total_jobs: allJobs.length,
+      active_jobs: allJobs.filter(j => j.status === 'active').length
+    });
+  } catch (error) {
+    console.error('Get all corporation jobs error:', error);
+    res.status(500).json({ error: 'Failed to get corporation jobs' });
   }
 };

@@ -78,4 +78,20 @@ export const getDashboardStats = () => {
   return api.get('/api/dashboard/stats');
 };
 
+// Corporation endpoints
+export const getCorporations = () => {
+  return api.get('/api/corporations');
+};
+
+export const getCorporationJobs = (characterId = null) => {
+  if (characterId) {
+    return api.get(`/api/corporation/jobs/${characterId}`);
+  }
+  return api.get('/api/corporation/jobs');
+};
+
+export const getCorporationRoles = (characterId) => {
+  return api.get(`/api/corporation/roles/${characterId}`);
+};
+
 export default api;

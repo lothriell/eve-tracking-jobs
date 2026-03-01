@@ -296,3 +296,73 @@
   font-size: 11px;
   margin-bottom: 4px;
 }
+
+
+
+/* Corporation Stats Section */
+.corp-stats-section {
+  margin-top: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, #1a2a3a 0%, #0d1a26 100%);
+  border: 1px solid #3a4a5a;
+  border-radius: 8px;
+}
+
+.corp-stats-section h3 {
+  color: #4da6ff;
+  margin: 0 0 15px 0;
+  font-size: 1.1rem;
+}
+
+.corp-stats-grid {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.stat-card.corp-card {
+  background: rgba(77, 166, 255, 0.1);
+  border-color: #4da6ff;
+}
+
+.corp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.corp-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(26, 42, 58, 0.5);
+  border-radius: 4px;
+  border-left: 3px solid #4da6ff;
+}
+
+.corp-ticker {
+  color: #4da6ff;
+  font-weight: bold;
+  font-family: 'Consolas', monospace;
+}
+
+.corp-name {
+  color: #e0e0e0;
+  flex: 1;
+}
+
+.corp-access-badge {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .corp-stats-grid {
+    flex-direction: column;
+  }
+}
