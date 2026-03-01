@@ -15,12 +15,13 @@ async function refreshAccessToken(character) {
   try {
     console.log(`Refreshing token for character ${character.character_name}`);
 
+    // Note: Client credentials are sent ONLY in the Authorization header (Basic Auth)
+    // Do NOT include client_id in the body - EVE SSO rejects duplicate credentials
     const response = await axios.post(
       EVE_SSO_TOKEN_URL,
       new URLSearchParams({
         grant_type: 'refresh_token',
-        refresh_token: character.refresh_token,
-        client_id: process.env.EVE_CLIENT_ID
+        refresh_token: character.refresh_token
       }),
       {
         headers: {

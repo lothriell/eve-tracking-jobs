@@ -2,6 +2,34 @@
 
 All notable changes to the EVE ESI Application will be documented in this file.
 
+## [v2.0.1] - 2026-03-01
+
+### Fixed
+- Fixed token refresh error: "Client credentials should only be provided once"
+  - Removed `client_id` from token refresh request body in `tokenRefresh.js`
+  - Credentials now sent exclusively via Authorization header (Basic Auth)
+- Added `esi-skills.read_skills.v1` scope to required scopes
+  - Needed for fetching character skills to calculate max job slots
+  - **Note: Existing characters must be re-authorized to get the new scope**
+
+### How to Apply Fix
+```bash
+# On your server, pull the latest code
+cd ~/docker/eve_esi_app
+git pull origin main
+
+# Rebuild containers
+docker-compose down
+docker-compose up -d --build
+```
+
+After rebuilding, users need to re-authorize their EVE characters:
+1. Log into the application
+2. Remove existing characters (click character → delete)
+3. Re-link characters using "Add Character" button
+
+---
+
 ## [v2.0.0] - 2026-02-28
 
 ### Added
