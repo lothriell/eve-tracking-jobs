@@ -13,8 +13,8 @@ const REQUIRED_SCOPES = [
   'esi-industry.read_character_jobs.v1',      // Required for viewing personal industry jobs
   'esi-skills.read_skills.v1',                // Required for calculating max job slots
   'esi-industry.read_corporation_jobs.v1',    // Required for corporation industry jobs
-  'esi-corporations.read_corporation_membership.v1', // Required for corp membership/roles
-  'esi-characters.read_corporation_roles.v1'  // Required for character's corporation roles
+  'esi-corporations.read_corporation_membership.v1'  // Required for corp membership/roles
+  // Note: Character roles endpoint doesn't require a special scope
 ];
 
 // PKCE helper functions

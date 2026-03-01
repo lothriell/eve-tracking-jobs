@@ -21,7 +21,8 @@ A web application for tracking EVE Online industry jobs across multiple characte
 #### Required ESI Scopes (NEW)
 - `esi-industry.read_corporation_jobs.v1` - Corporation industry jobs
 - `esi-corporations.read_corporation_membership.v1` - Corporation membership
-- `esi-characters.read_corporation_roles.v1` - Character roles
+
+*Note: Character roles are accessible without a special scope.*
 
 **⚠️ Characters must be re-authorized after updating to v3.0.0**
 
@@ -91,7 +92,6 @@ A web application for tracking EVE Online industry jobs across multiple characte
    - `esi-skills.read_skills.v1` - Character skills for slot calculation
    - `esi-industry.read_corporation_jobs.v1` - Corporation industry jobs
    - `esi-corporations.read_corporation_membership.v1` - Corporation membership
-   - `esi-characters.read_corporation_roles.v1` - Character's corporation roles
 5. Note your Client ID and Secret Key
 
 ### 2. Configure Environment Variables

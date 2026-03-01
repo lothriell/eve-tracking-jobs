@@ -2,6 +2,18 @@
 
 All notable changes to the EVE ESI Application will be documented in this file.
 
+## [v3.0.1] - 2026-03-01
+
+### Fixed
+- **Removed invalid ESI scope**: The scope `esi-characters.read_corporation_roles.v1` does not exist in the EVE ESI API and was causing authorization failures. The character roles endpoint (`GET /characters/{character_id}/roles/`) works with just the access token without requiring a special scope.
+
+### Changed
+- Updated required scopes to only include valid scopes:
+  - `esi-industry.read_character_jobs.v1`
+  - `esi-skills.read_skills.v1`
+  - `esi-industry.read_corporation_jobs.v1`
+  - `esi-corporations.read_corporation_membership.v1`
+
 ## [v3.0.0-alpha] - 2026-03-01 (Phase 3A-1: Corporation Industry Jobs)
 
 ### Added
@@ -25,7 +37,7 @@ All notable changes to the EVE ESI Application will be documented in this file.
 #### New ESI Scopes
 - `esi-industry.read_corporation_jobs.v1` - Required for corp industry jobs
 - `esi-corporations.read_corporation_membership.v1` - Required for corp membership
-- `esi-characters.read_corporation_roles.v1` - Required for role checking
+- *Note: Character roles don't require a special scope (fixed in v3.0.1)*
 
 **⚠️ BREAKING CHANGE**: All characters must be re-authorized to use corporation features. Characters authorized before this update will not have the required scopes.
 
