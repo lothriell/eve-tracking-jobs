@@ -2,6 +2,23 @@
 
 All notable changes to the EVE ESI Application will be documented in this file.
 
+## [v3.0.5] - 2026-03-01
+
+### Fixed
+- **Fixed dashboard activity type calculation to include corporation jobs**
+  - Previously, corporation jobs were not counted in the activity type totals (Manufacturing, Science, Reactions)
+  - Dashboard now correctly shows combined slot usage: "Science jobs: 9/31" instead of "0/31"
+  - Activity breakdown (Manufacturing/Science/Reactions) now includes both personal AND corp jobs
+
+### Technical Details
+- **Two-pass approach**: First fetches all corp jobs, then calculates per-character stats
+- **Correct slot attribution**: Corp jobs are attributed to their installer (the character who started the job)
+- **Shared slot calculation**: Slots are correctly calculated as (personal + corp) jobs against max slots
+- **Activity mapping**: Corp jobs activity IDs (1=Manufacturing, 3/4/5/7/8=Science, 9=Reactions) properly mapped to categories
+- Added `activity_breakdown` field to character stats for per-character activity counts
+
+---
+
 ## [v3.0.4] - 2026-03-01
 
 ### Improved
