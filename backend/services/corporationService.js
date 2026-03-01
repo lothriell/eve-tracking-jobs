@@ -50,6 +50,7 @@ async function getCharacterCorporation(characterId, accessToken) {
 
 /**
  * Get character's corporation roles from ESI
+ * Requires: esi-characters.read_corporation_roles.v1 scope
  */
 async function getCharacterRoles(characterId, accessToken) {
   try {
@@ -61,15 +62,23 @@ async function getCharacterRoles(characterId, accessToken) {
       }
     );
 
-    return {
+    const result = {
       roles: response.data.roles || [],
       roles_at_hq: response.data.roles_at_hq || [],
       roles_at_base: response.data.roles_at_base || [],
       roles_at_other: response.data.roles_at_other || []
     };
+    
+    // Log found roles for debugging
+    if (result.roles.length > 0) {
+      console.log(`Character ${characterId} has roles:`, result.roles);
+    }
+    
+    return result;
   } catch (error) {
-    // 403 means missing scope
+    // 403 means missing scope - character needs re-authorization
     if (error.response?.status === 403) {
+      console.log(`Character ${characterId} needs re-authorization for corporation roles scope`);
       return { roles: [], hasScope: false, needsReauthorization: true };
     }
     console.error(`Failed to get roles for character ${characterId}:`, error.message);
@@ -79,6 +88,7 @@ async function getCharacterRoles(characterId, accessToken) {
 
 /**
  * Check if character has industry-related corporation roles
+ * Checks for: Director or Factory_Manager
  */
 function hasIndustryRole(roles) {
   if (!roles || !roles.roles) return false;

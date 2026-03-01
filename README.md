@@ -18,13 +18,14 @@ A web application for tracking EVE Online industry jobs across multiple characte
 - Clear messaging when characters lack required roles
 - Role badges showing access level per character
 
-#### Required ESI Scopes (NEW)
+#### Required ESI Scopes (v3.0.2)
+- `esi-industry.read_character_jobs.v1` - Personal industry jobs
+- `esi-skills.read_skills.v1` - Job slot calculation
 - `esi-industry.read_corporation_jobs.v1` - Corporation industry jobs
 - `esi-corporations.read_corporation_membership.v1` - Corporation membership
+- `esi-characters.read_corporation_roles.v1` - **Reading corporation roles (Director/Factory_Manager check)**
 
-*Note: Character roles are accessible without a special scope.*
-
-**⚠️ Characters must be re-authorized after updating to v3.0.0**
+**⚠️ Characters must be re-authorized after updating to v3.0.2**
 
 ### Phase 2 Features
 

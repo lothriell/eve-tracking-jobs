@@ -2,17 +2,36 @@
 
 All notable changes to the EVE ESI Application will be documented in this file.
 
-## [v3.0.1] - 2026-03-01
+## [v3.0.2] - 2026-03-01
 
 ### Fixed
-- **Removed invalid ESI scope**: The scope `esi-characters.read_corporation_roles.v1` does not exist in the EVE ESI API and was causing authorization failures. The character roles endpoint (`GET /characters/{character_id}/roles/`) works with just the access token without requiring a special scope.
+- **Fixed corporation role detection**: Re-added `esi-characters.read_corporation_roles.v1` scope which IS required by the ESI API. The previous version incorrectly removed this scope, causing "No Corporation Access" errors even for characters with Director or Factory Manager roles.
 
 ### Changed
-- Updated required scopes to only include valid scopes:
-  - `esi-industry.read_character_jobs.v1`
-  - `esi-skills.read_skills.v1`
-  - `esi-industry.read_corporation_jobs.v1`
-  - `esi-corporations.read_corporation_membership.v1`
+- Updated required scopes to include all necessary scopes:
+  - `esi-industry.read_character_jobs.v1` - Personal industry jobs
+  - `esi-skills.read_skills.v1` - Job slot calculation
+  - `esi-industry.read_corporation_jobs.v1` - Corporation industry jobs
+  - `esi-corporations.read_corporation_membership.v1` - Corporation membership
+  - `esi-characters.read_corporation_roles.v1` - **Reading character corporation roles (Director/Factory_Manager check)**
+
+**⚠️ BREAKING CHANGE**: All characters must be re-authorized to fix corporation access. Characters authorized with v3.0.1 will need re-authorization.
+
+### Re-authorization Required
+After updating:
+1. Log into the application
+2. Click "Re-authorize Characters" button (or remove and re-add characters)
+3. Authorize with EVE SSO (will request new permissions)
+
+---
+
+## [v3.0.1] - 2026-03-01 (SUPERSEDED by v3.0.2)
+
+### Fixed
+- **Incorrectly removed ESI scope**: This version erroneously removed the `esi-characters.read_corporation_roles.v1` scope believing it was invalid. This caused corporation role detection to fail. **See v3.0.2 for the fix.**
+
+### Changed
+- Updated required scopes (incomplete - see v3.0.2)
 
 ## [v3.0.0-alpha] - 2026-03-01 (Phase 3A-1: Corporation Industry Jobs)
 
