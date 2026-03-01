@@ -2,6 +2,26 @@
 
 All notable changes to the EVE ESI Application will be documented in this file.
 
+## [v3.0.6] - 2026-03-01
+
+### Fixed
+- **Fixed maximum slot calculation for reactions**
+  - Added missing Advanced Mass Reactions skill (ID: 45748) to slot calculation
+  - Reactions now correctly use base 1 slot + Mass Reactions + Advanced Mass Reactions
+  - Example: Character with Mass Reactions V + Advanced Mass Reactions IV now shows 0/10 instead of 0/5
+
+### Technical Details
+- **Corrected skill IDs**:
+  - Mass Reactions: 45746 (+1 slot per level, max 5)
+  - Advanced Mass Reactions: 45748 (+1 slot per level, max 5)
+- **Corrected formula**: `reactionSlots = 1 + massReactionsLevel + advMassReactionsLevel`
+- **Verified all slot types**:
+  - Manufacturing: 1 + Mass Production + Advanced Mass Production (max 11)
+  - Science: 1 + Laboratory Operation + Advanced Laboratory Operation (max 11)
+  - Reactions: 1 + Mass Reactions + Advanced Mass Reactions (max 11)
+
+---
+
 ## [v3.0.5] - 2026-03-01
 
 ### Fixed

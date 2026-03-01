@@ -260,18 +260,23 @@ async function getCharacterSkills(characterId, accessToken) {
 // Calculate job slots based on skills
 function calculateJobSlots(skills) {
   // Skill IDs for industry slots
-  const MASS_PRODUCTION = 3387;      // +1 manufacturing slot per level
-  const ADV_MASS_PRODUCTION = 24625; // +1 manufacturing slot per level
-  const LABORATORY_OPERATION = 3406; // +1 science slot per level
-  const ADV_LABORATORY_OP = 24624;   // +1 science slot per level
-  const REACTIONS = 45746;           // +1 reaction slot per level
+  // Manufacturing skills
+  const MASS_PRODUCTION = 3387;        // +1 manufacturing slot per level (max 5)
+  const ADV_MASS_PRODUCTION = 24625;   // +1 manufacturing slot per level (max 5)
+  // Science skills
+  const LABORATORY_OPERATION = 3406;   // +1 science slot per level (max 5)
+  const ADV_LABORATORY_OP = 24624;     // +1 science slot per level (max 5)
+  // Reaction skills
+  const MASS_REACTIONS = 45746;        // +1 reaction slot per level (max 5)
+  const ADV_MASS_REACTIONS = 45748;    // +1 reaction slot per level (max 5)
 
   const skillMap = {};
   skills.forEach(skill => {
     skillMap[skill.skill_id] = skill.trained_skill_level || 0;
   });
 
-  // Base slots: 1 manufacturing, 1 science, 0 reactions
+  // Base slots: 1 manufacturing, 1 science, 1 reaction
+  // Maximum: 11 manufacturing, 11 science, 11 reactions (with all skills at V)
   const manufacturingSlots = 1 + 
     (skillMap[MASS_PRODUCTION] || 0) + 
     (skillMap[ADV_MASS_PRODUCTION] || 0);
@@ -280,7 +285,10 @@ function calculateJobSlots(skills) {
     (skillMap[LABORATORY_OPERATION] || 0) + 
     (skillMap[ADV_LABORATORY_OP] || 0);
 
-  const reactionSlots = skillMap[REACTIONS] || 0;
+  // Reactions: 1 base + Mass Reactions level + Advanced Mass Reactions level
+  const reactionSlots = 1 + 
+    (skillMap[MASS_REACTIONS] || 0) + 
+    (skillMap[ADV_MASS_REACTIONS] || 0);
 
   return {
     manufacturing: { max: manufacturingSlots },
