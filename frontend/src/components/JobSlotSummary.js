@@ -10,12 +10,14 @@ function JobSlotSummary({ slots, loading }) {
     );
   }
 
+  // Color logic based on utilization - high utilization = good (green)
+  // In industry, you want to maximize slot usage to earn more ISK
   const getSlotClass = (current, max) => {
     if (max === 0) return 'slot-empty';
-    const ratio = current / max;
-    if (ratio >= 1) return 'slot-full';
-    if (ratio >= 0.8) return 'slot-warning';
-    return 'slot-available';
+    const utilizationPercent = (current / max) * 100;
+    if (utilizationPercent >= 80) return 'slot-high';     // 80-100% = green (excellent)
+    if (utilizationPercent >= 40) return 'slot-medium';   // 40-79% = yellow (okay)
+    return 'slot-low';                                     // 0-39% = red (poor utilization)
   };
 
   return (

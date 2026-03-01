@@ -298,6 +298,8 @@ exports.getDashboardStats = async (req, res) => {
       return res.json({
         total_characters: 0,
         total_active_jobs: 0,
+        personal_active_jobs: 0,
+        corp_active_jobs: 0,
         jobs_by_activity: {},
         jobs_by_character: [],
         slots: {
@@ -308,7 +310,8 @@ exports.getDashboardStats = async (req, res) => {
       });
     }
 
-    let totalActiveJobs = 0;
+    let totalPersonalJobs = 0;
+    let totalCorpJobs = 0;
     const jobsByActivity = {};
     const jobsByCharacter = [];
     const totals = {
@@ -316,6 +319,9 @@ exports.getDashboardStats = async (req, res) => {
       science: { current: 0, max: 0 },
       reactions: { current: 0, max: 0 }
     };
+    
+    // Track processed corps to avoid counting same corp jobs multiple times
+    const processedCorps = new Set();
 
     for (const character of characters) {
       try {
@@ -324,19 +330,75 @@ exports.getDashboardStats = async (req, res) => {
         const slots = await getJobSlotUsage(character.character_id, accessToken);
         
         const activeJobs = jobs.filter(j => j.status === 'active');
-        totalActiveJobs += activeJobs.length;
+        totalPersonalJobs += activeJobs.length;
 
-        // Count by activity
+        // Count by activity (personal jobs)
         activeJobs.forEach(job => {
           jobsByActivity[job.activity] = (jobsByActivity[job.activity] || 0) + 1;
         });
+
+        // Try to get corporation jobs for this character
+        let corpJobsCount = 0;
+        let corpJobsByActivity = { manufacturing: 0, science: 0, reactions: 0 };
+        try {
+          const corpData = await getCharacterCorporation(character.character_id, accessToken);
+          
+          // Only fetch corp jobs if we haven't processed this corp yet
+          if (!processedCorps.has(corpData.corporation_id)) {
+            const roles = await getCharacterRoles(character.character_id, accessToken);
+            
+            if (hasIndustryRole(roles) && !roles.needsReauthorization) {
+              const rawCorpJobs = await getCorporationJobs(corpData.corporation_id, accessToken);
+              
+              if (!rawCorpJobs.error) {
+                processedCorps.add(corpData.corporation_id);
+                const activeCorpJobs = rawCorpJobs.filter(j => j.status === 'active');
+                corpJobsCount = activeCorpJobs.length;
+                totalCorpJobs += corpJobsCount;
+                
+                // Count corp jobs by activity
+                activeCorpJobs.forEach(job => {
+                  const activityId = job.activity_id;
+                  // Manufacturing: 1, Science: 3,4,5,8, Reactions: 9
+                  if (activityId === 1) {
+                    corpJobsByActivity.manufacturing++;
+                  } else if ([3, 4, 5, 8].includes(activityId)) {
+                    corpJobsByActivity.science++;
+                  } else if (activityId === 9) {
+                    corpJobsByActivity.reactions++;
+                  }
+                });
+              }
+            }
+          }
+        } catch (corpError) {
+          // Silently fail for corp jobs - character might not have access
+        }
+
+        // Calculate combined slot usage (personal + corp jobs for this character)
+        const combinedSlots = {
+          manufacturing: {
+            current: slots.manufacturing.current,
+            max: slots.manufacturing.max
+          },
+          science: {
+            current: slots.science.current,
+            max: slots.science.max
+          },
+          reactions: {
+            current: slots.reactions.current,
+            max: slots.reactions.max
+          }
+        };
 
         jobsByCharacter.push({
           character_id: character.character_id,
           character_name: character.character_name,
           portrait_url: `https://images.evetech.net/characters/${character.character_id}/portrait?size=64`,
           active_jobs: activeJobs.length,
-          slots
+          corp_jobs: corpJobsCount,
+          total_jobs: activeJobs.length + corpJobsCount,
+          slots: combinedSlots
         });
 
         totals.manufacturing.current += slots.manufacturing.current;
@@ -352,6 +414,8 @@ exports.getDashboardStats = async (req, res) => {
           character_name: character.character_name,
           portrait_url: `https://images.evetech.net/characters/${character.character_id}/portrait?size=64`,
           active_jobs: 0,
+          corp_jobs: 0,
+          total_jobs: 0,
           error: 'Failed to fetch data'
         });
       }
@@ -359,7 +423,9 @@ exports.getDashboardStats = async (req, res) => {
 
     res.json({
       total_characters: characters.length,
-      total_active_jobs: totalActiveJobs,
+      total_active_jobs: totalPersonalJobs + totalCorpJobs,
+      personal_active_jobs: totalPersonalJobs,
+      corp_active_jobs: totalCorpJobs,
       jobs_by_activity: jobsByActivity,
       jobs_by_character: jobsByCharacter,
       slots: totals

@@ -2,6 +2,38 @@
 
 All notable changes to the EVE ESI Application will be documented in this file.
 
+## [v3.0.4] - 2026-03-01
+
+### Improved
+
+#### Dashboard - Corporation Jobs Integration
+- Dashboard now includes corporation jobs in character statistics
+- Total active jobs shows combined count (personal + corp jobs)
+- New breakdown display: "X personal + Y corp" under total jobs
+- Character cards show combined job counts with detailed breakdown when corp jobs exist
+
+#### Reversed Color Coding Logic
+- **High utilization is now GREEN** (industry best practice - maximize slot usage to earn more ISK)
+- Color thresholds updated:
+  - 80-100% utilization = **Green** (excellent)
+  - 40-79% utilization = **Yellow** (okay)
+  - 0-39% utilization = **Red** (poor utilization, wasting potential income)
+- Updated both slot summaries and progress bars
+
+#### Corporation Jobs - Character Filter
+- Added new "Character" filter dropdown to Corporation Jobs page
+- Filter options:
+  - "All Characters" (default) - shows all corp jobs
+  - Individual character names - shows only jobs started by that character
+- Filter works alongside existing corporation, activity, and status filters
+
+### Technical Details
+- Backend: `getDashboardStats` now fetches corporation jobs per character
+- Frontend: New slot classes `slot-high`, `slot-medium`, `slot-low` replace old naming
+- CorporationJobs component now loads character list for filter dropdown
+
+---
+
 ## [v3.0.2] - 2026-03-01
 
 ### Fixed

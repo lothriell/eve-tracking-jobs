@@ -44,29 +44,33 @@
   color: #718096;
 }
 
-/* Slot states */
-.slot-item.slot-available .slot-current {
-  color: #48bb78;
+/* Slot states - High utilization = GREEN (good for industry) */
+
+/* 80-100% utilization - Excellent (Green) */
+.slot-item.slot-high .slot-current {
+  color: #10b981;
 }
 
-.slot-item.slot-available .slot-max {
-  color: #68d391;
+.slot-item.slot-high .slot-max {
+  color: #34d399;
 }
 
-.slot-item.slot-warning .slot-current {
-  color: #ed8936;
+/* 40-79% utilization - Okay (Yellow/Orange) */
+.slot-item.slot-medium .slot-current {
+  color: #f59e0b;
 }
 
-.slot-item.slot-warning .slot-max {
-  color: #f6ad55;
+.slot-item.slot-medium .slot-max {
+  color: #fbbf24;
 }
 
-.slot-item.slot-full .slot-current {
-  color: #fc8181;
+/* 0-39% utilization - Poor (Red) */
+.slot-item.slot-low .slot-current {
+  color: #ef4444;
 }
 
-.slot-item.slot-full .slot-max {
-  color: #f56565;
+.slot-item.slot-low .slot-max {
+  color: #f87171;
 }
 
 .slot-item.slot-empty .slot-current,
@@ -102,16 +106,17 @@
   transition: width 0.3s ease;
 }
 
-.slot-progress-fill.available {
-  background: linear-gradient(90deg, #48bb78, #38a169);
+/* Progress bar colors - matching utilization colors */
+.slot-progress-fill.high {
+  background: linear-gradient(90deg, #10b981, #059669);
 }
 
-.slot-progress-fill.warning {
-  background: linear-gradient(90deg, #ed8936, #dd6b20);
+.slot-progress-fill.medium {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
 }
 
-.slot-progress-fill.full {
-  background: linear-gradient(90deg, #fc8181, #f56565);
+.slot-progress-fill.low {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
 }
 
 /* Responsive */

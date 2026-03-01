@@ -141,6 +141,17 @@
   color: #63b3ed;
 }
 
+.character-jobs .job-breakdown {
+  color: #718096;
+  font-size: 10px;
+}
+
+.stat-breakdown {
+  font-size: 11px;
+  color: #718096;
+  margin-top: 2px;
+}
+
 .character-error {
   font-size: 11px;
   color: #fc8181;

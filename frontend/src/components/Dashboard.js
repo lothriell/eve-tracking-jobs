@@ -91,10 +91,13 @@ function Dashboard({ onError }) {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon">🏭</div>
+          <div className="stat-icon">📊</div>
           <div className="stat-content">
             <span className="stat-value">{stats.total_active_jobs}</span>
-            <span className="stat-label">Personal Jobs</span>
+            <span className="stat-label">Total Active Jobs</span>
+            <span className="stat-breakdown">
+              {stats.personal_active_jobs || 0} personal + {stats.corp_active_jobs || 0} corp
+            </span>
           </div>
         </div>
 
@@ -187,7 +190,10 @@ function Dashboard({ onError }) {
                       </span>
                     )}
                     <span className="character-jobs">
-                      {char.active_jobs} active job{char.active_jobs !== 1 ? 's' : ''}
+                      {char.total_jobs || char.active_jobs} active job{(char.total_jobs || char.active_jobs) !== 1 ? 's' : ''}
+                      {char.corp_jobs > 0 && (
+                        <span className="job-breakdown"> ({char.active_jobs} personal + {char.corp_jobs} corp)</span>
+                      )}
                     </span>
                     <div className="character-slots">
                       <span className="slot-mini">

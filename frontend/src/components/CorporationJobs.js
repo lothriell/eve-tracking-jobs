@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getCorporationJobs, getCorporations, initiateEveAuth } from '../services/api';
+import { getCorporationJobs, getCorporations, initiateEveAuth, getAllCharacters } from '../services/api';
 import './CorporationJobs.css';
 
 function CorporationJobs({ selectedCharacter, onError }) {
   const [jobs, setJobs] = useState([]);
   const [corporations, setCorporations] = useState([]);
+  const [characters, setCharacters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCorp, setSelectedCorp] = useState('all');
+  const [characterFilter, setCharacterFilter] = useState('all');
   const [activityFilter, setActivityFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('active');
   const [hasAccess, setHasAccess] = useState(false);
@@ -38,6 +40,14 @@ function CorporationJobs({ selectedCharacter, onError }) {
   const loadData = async () => {
     try {
       setLoading(true);
+      
+      // Load all characters for the filter dropdown
+      try {
+        const charsResponse = await getAllCharacters();
+        setCharacters(charsResponse.data.characters || []);
+      } catch (charError) {
+        console.log('Failed to load characters:', charError.message);
+      }
       
       // Load corporations first
       const corpsResponse = await getCorporations();
@@ -129,6 +139,13 @@ function CorporationJobs({ selectedCharacter, onError }) {
   };
 
   const filteredJobs = jobs.filter(job => {
+    // Character filter - filter by installer_id (who started the job)
+    if (characterFilter !== 'all') {
+      const selectedChar = characters.find(c => c.id === parseInt(characterFilter));
+      if (selectedChar && job.installer_id !== selectedChar.character_id) {
+        return false;
+      }
+    }
     // Corporation filter
     if (selectedCorp !== 'all' && job.corporation_id !== parseInt(selectedCorp)) {
       return false;
@@ -210,6 +227,17 @@ function CorporationJobs({ selectedCharacter, onError }) {
 
       {/* Filters Toolbar */}
       <div className="corp-jobs-toolbar">
+        <div className="filter-group">
+          <label>Character</label>
+          <select value={characterFilter} onChange={e => setCharacterFilter(e.target.value)}>
+            <option value="all">All Characters</option>
+            {characters.map(char => (
+              <option key={char.id} value={char.id}>
+                {char.name}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="filter-group">
           <label>Corporation</label>
           <select value={selectedCorp} onChange={e => setSelectedCorp(e.target.value)}>
