@@ -244,10 +244,16 @@ async function getCharacterSkills(characterId, accessToken) {
   try {
     const url = `${ESI_BASE_URL}/characters/${characterId}/skills/`;
     const data = await makeESIRequest(url, accessToken);
-    return data.skills || [];
+    return { skills: data.skills || [], hasScope: true };
   } catch (error) {
-    console.error('Get character skills error:', error);
-    return [];
+    // Check if it's a 403 forbidden (missing scope)
+    const isForbidden = error.response?.status === 403;
+    if (isForbidden) {
+      console.warn(`Missing skills scope for character ${characterId} - returning defaults`);
+    } else {
+      console.error('Get character skills error:', error);
+    }
+    return { skills: [], hasScope: false };
   }
 }
 
@@ -290,8 +296,8 @@ async function getJobSlotUsage(characterId, accessToken) {
     const jobs = await getCharacterIndustryJobs(characterId, accessToken, false);
     
     // Get character skills
-    const skills = await getCharacterSkills(characterId, accessToken);
-    const slots = calculateJobSlots(skills);
+    const skillsResult = await getCharacterSkills(characterId, accessToken);
+    const slots = calculateJobSlots(skillsResult.skills);
 
     // Count active jobs by category
     let manufacturingActive = 0;
@@ -317,7 +323,9 @@ async function getJobSlotUsage(characterId, accessToken) {
     return {
       manufacturing: { current: manufacturingActive, max: slots.manufacturing.max },
       science: { current: scienceActive, max: slots.science.max },
-      reactions: { current: reactionsActive, max: slots.reactions.max }
+      reactions: { current: reactionsActive, max: slots.reactions.max },
+      hasSkillsScope: skillsResult.hasScope,
+      needsReauthorization: !skillsResult.hasScope
     };
   } catch (error) {
     console.error('Get job slot usage error:', error);
@@ -325,7 +333,9 @@ async function getJobSlotUsage(characterId, accessToken) {
     return {
       manufacturing: { current: 0, max: 1 },
       science: { current: 0, max: 1 },
-      reactions: { current: 0, max: 0 }
+      reactions: { current: 0, max: 0 },
+      hasSkillsScope: false,
+      needsReauthorization: true
     };
   }
 }

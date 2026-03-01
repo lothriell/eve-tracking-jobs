@@ -96,11 +96,22 @@ function Dashboard({ onError }) {
         </div>
       </div>
 
+      {/* Scope Warning Banner */}
+      {stats.jobs_by_character.some(char => char.slots?.needsReauthorization) && (
+        <div className="scope-warning-banner">
+          <span className="warning-icon">⚠️</span>
+          <div className="warning-content">
+            <strong>Missing Skills Scope</strong>
+            <p>Some characters need re-authorization to show accurate job slot counts. Remove and re-add affected characters to grant the skills permission.</p>
+          </div>
+        </div>
+      )}
+
       <div className="characters-section">
         <h3>Characters Overview</h3>
         <div className="characters-grid">
           {stats.jobs_by_character.map((char) => (
-            <div key={char.character_id} className="character-card">
+            <div key={char.character_id} className={`character-card ${char.slots?.needsReauthorization ? 'needs-reauth' : ''}`}>
               <img 
                 src={char.portrait_url} 
                 alt={char.character_name}
@@ -112,15 +123,20 @@ function Dashboard({ onError }) {
                   <span className="character-error">{char.error}</span>
                 ) : (
                   <>
+                    {char.slots?.needsReauthorization && (
+                      <span className="reauth-badge" title="Missing skills scope - please re-authorize">
+                        ⚠️ Re-auth needed
+                      </span>
+                    )}
                     <span className="character-jobs">
                       {char.active_jobs} active job{char.active_jobs !== 1 ? 's' : ''}
                     </span>
                     <div className="character-slots">
                       <span className="slot-mini">
-                        M: {char.slots?.manufacturing?.current || 0}/{char.slots?.manufacturing?.max || 0}
+                        M: {char.slots?.manufacturing?.current || 0}/{char.slots?.manufacturing?.max || 1}
                       </span>
                       <span className="slot-mini">
-                        S: {char.slots?.science?.current || 0}/{char.slots?.science?.max || 0}
+                        S: {char.slots?.science?.current || 0}/{char.slots?.science?.max || 1}
                       </span>
                       <span className="slot-mini">
                         R: {char.slots?.reactions?.current || 0}/{char.slots?.reactions?.max || 0}

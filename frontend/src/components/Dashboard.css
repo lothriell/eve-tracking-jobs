@@ -243,3 +243,56 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+
+/* Scope Warning Banner */
+.scope-warning-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 12px;
+}
+
+.scope-warning-banner .warning-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.scope-warning-banner .warning-content {
+  flex: 1;
+}
+
+.scope-warning-banner .warning-content strong {
+  color: #fbbf24;
+  font-size: 14px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.scope-warning-banner .warning-content p {
+  margin: 0;
+  color: #d4a574;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Character card reauth state */
+.character-card.needs-reauth {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.reauth-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 4px;
+  color: #fbbf24;
+  font-size: 11px;
+  margin-bottom: 4px;
+}

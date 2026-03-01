@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { getAllCharacters, initiateEveAuth } from '../services/api';
+import { getAllCharacters, initiateEveAuth, deleteCharacter } from '../services/api';
 import './Sidebar.css';
 
-function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, currentView, onViewChange }) {
+function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, currentView, onViewChange, onCharactersChange }) {
   const [characters, setCharacters] = useState([]);
   const [collapsed, setCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [linking, setLinking] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   useEffect(() => {
     loadCharacters();
@@ -15,7 +17,11 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
   const loadCharacters = async () => {
     try {
       const response = await getAllCharacters();
-      setCharacters(response.data.characters || []);
+      const chars = response.data.characters || [];
+      setCharacters(chars);
+      if (onCharactersChange) {
+        onCharactersChange(chars);
+      }
     } catch (error) {
       console.error('Failed to load characters:', error);
     } finally {
@@ -42,6 +48,38 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
 
   const handleShowAll = () => {
     onShowAllCharacters();
+  };
+
+  const handleDeleteClick = (e, character) => {
+    e.stopPropagation();
+    setConfirmDelete(character);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDelete) return;
+    
+    try {
+      setDeletingId(confirmDelete.character_id);
+      await deleteCharacter(confirmDelete.character_id);
+      
+      // If the deleted character was selected, switch to "All Characters"
+      if (selectedCharacter?.character_id === confirmDelete.character_id) {
+        onShowAllCharacters();
+      }
+      
+      // Refresh character list
+      await loadCharacters();
+      setConfirmDelete(null);
+    } catch (error) {
+      console.error('Failed to delete character:', error);
+      alert('Failed to delete character. Please try again.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmDelete(null);
   };
 
   return (
@@ -88,6 +126,14 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
                       className="character-portrait"
                     />
                     <span className="character-name">{char.name}</span>
+                    <button
+                      className="delete-character-btn"
+                      onClick={(e) => handleDeleteClick(e, char)}
+                      disabled={deletingId === char.character_id}
+                      title="Remove character"
+                    >
+                      {deletingId === char.character_id ? '...' : '×'}
+                    </button>
                   </div>
                 ))}
 
@@ -127,6 +173,27 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
             </div>
           </div>
         </>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {confirmDelete && (
+        <div className="delete-modal-overlay" onClick={handleCancelDelete}>
+          <div className="delete-modal" onClick={(e) => e.stopPropagation()}>
+            <h4>Remove Character</h4>
+            <p>Are you sure you want to remove <strong>{confirmDelete.name}</strong>?</p>
+            <p className="delete-warning">
+              ⚠️ You can re-add this character later with updated permissions.
+            </p>
+            <div className="delete-modal-buttons">
+              <button className="cancel-btn" onClick={handleCancelDelete}>
+                Cancel
+              </button>
+              <button className="confirm-delete-btn" onClick={handleConfirmDelete}>
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

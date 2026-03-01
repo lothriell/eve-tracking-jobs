@@ -2,6 +2,42 @@
 
 All notable changes to the EVE ESI Application will be documented in this file.
 
+## [v2.0.2] - 2026-03-01
+
+### Added
+- **Delete Character Button**: Visible "×" button appears on hover in sidebar
+  - Confirmation dialog before deletion
+  - Refreshes character list after removal
+  - Warns about re-adding with updated permissions
+- **Scope Warning Banner**: Dashboard shows warning when characters need re-authorization
+  - Highlights characters with missing skills scope
+  - Shows "⚠️ Re-auth needed" badge on affected characters
+  - Clear instructions for users
+
+### Improved
+- Better error handling for missing `esi-skills.read_skills.v1` scope
+  - Returns `needsReauthorization: true` flag in API responses
+  - Shows base slot values (1/1/0) when scope is missing
+  - No longer shows "Failed to fetch" errors
+- Character cards highlight when needing re-authorization
+- CSS styling for delete button, modal, and warning badges
+
+### How to Use Delete Feature
+1. Hover over a character in the sidebar
+2. Click the "×" button that appears
+3. Confirm deletion in the modal
+4. Use "Add Character" to re-link with correct scopes
+
+### Deployment
+```bash
+cd ~/docker/eve_esi_app
+git pull origin main
+docker-compose down
+docker-compose up -d --build
+```
+
+---
+
 ## [v2.0.1] - 2026-03-01
 
 ### Fixed
