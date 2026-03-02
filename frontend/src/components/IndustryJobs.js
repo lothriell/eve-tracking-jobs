@@ -57,10 +57,18 @@ function IndustryJobs({ selectedCharacter, onError }) {
       let corpJobsList = [];
       try {
         const corpJobsResponse = await getCorporationJobs(characterId);
-        // Filter corp jobs to show only those where selected character is the installer (if character is selected)
         corpJobsList = corpJobsResponse.data.jobs || [];
+        
+        // Get all authorized character IDs from the user's linked characters
+        const authorizedCharacterIds = characters.map(char => char.character_id);
+        
+        // Filter corp jobs to show only those where the installer is one of user's authorized characters
         if (selectedCharacter) {
+          // If a specific character is selected, show only their jobs
           corpJobsList = corpJobsList.filter(job => job.installer_id === selectedCharacter.character_id);
+        } else {
+          // If "All Characters" is selected, show jobs from all authorized characters
+          corpJobsList = corpJobsList.filter(job => authorizedCharacterIds.includes(job.installer_id));
         }
         setCorpJobs(corpJobsList);
       } catch (corpError) {
@@ -185,8 +193,9 @@ function IndustryJobs({ selectedCharacter, onError }) {
 
   // Get blueprint image URL - use 'bpc' for copies (runs > 0), 'bp' for originals
   const getBlueprintIcon = (typeId, runs = 1) => {
+    if (!typeId) return 'https://images.evetech.net/types/2/icon?size=32';
     const imageType = runs === -1 ? 'bp' : 'bpc';
-    return `https://i.ytimg.com/vi/T4MU5kqWlqs/sddefault.jpg`;
+    return `https://images.evetech.net/types/${typeId}/${imageType}?size=32`;
   };
 
   // Filter jobs
@@ -258,7 +267,7 @@ function IndustryJobs({ selectedCharacter, onError }) {
                       src={getBlueprintIcon(job.blueprint_type_id, job.licensed_runs || job.runs)} 
                       alt="" 
                       className="blueprint-icon"
-                      onError={(e) => { e.target.src = `https://i.ytimg.com/vi/T4MU5kqWlqs/sddefault.jpg`; }}
+                      onError={(e) => { e.target.src = `https://images.evetech.net/types/${job.blueprint_type_id}/icon?size=32`; }}
                     />
                     <span className="blueprint-name">{job.blueprint_name}</span>
                   </div>

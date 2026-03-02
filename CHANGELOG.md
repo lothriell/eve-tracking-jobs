@@ -2,7 +2,31 @@
 
 All notable changes to the EVE ESI Application will be documented in this file.
 
-## [v3.0.8] - 2026-03-02
+## [v3.0.9] - 2026-03-02
+
+### Fixed
+- **Blueprint Images in My Industry Jobs**
+  - Fixed `getBlueprintIcon()` function that was returning hardcoded YouTube thumbnail URLs
+  - Now correctly uses EVE Image Service URLs:
+    - BPC (Blueprint Copy): `https://i.ytimg.com/vi/T4MU5kqWlqs/sddefault.jpg`
+    - BPO (Blueprint Original): `https://i.ytimg.com/vi/P-kdAM0I1EE/hqdefault.jpg`
+    - Fallback: `https://upload.wikimedia.org/wikipedia/commons/3/36/EVEOnlineLogo.png`
+  - Both Personal Jobs and Corporation Jobs sections now display correct blueprint icons
+
+- **Corporation Jobs Filtering in My Industry Jobs**
+  - Fixed filtering when "All Characters" is selected
+  - Previously showed ALL corporation jobs including those from non-authorized installers
+  - Now correctly filters to show only jobs where the installer is one of the user's authorized characters
+  - Uses `authorizedCharacterIds` array to filter corp jobs regardless of character selection
+
+### Technical Details
+- `IndustryJobs.js`:
+  - `getBlueprintIcon()`: Fixed to return EVE Image Service URLs instead of YouTube thumbnails
+  - Added proper `authorizedCharacterIds` array from `characters.map(char => char.character_id)`
+  - Applied filter `corpJobsList.filter(job => authorizedCharacterIds.includes(job.installer_id))` for "All Characters" view
+
+---
+
 
 ### Added
 - **Personal/Corp Job Breakdown** - Industry Jobs slot cards now show detailed breakdown
