@@ -2,6 +2,45 @@
 
 All notable changes to the EVE ESI Application will be documented in this file.
 
+## [v3.0.8] - 2026-03-02
+
+### Added
+- **Personal/Corp Job Breakdown** - Industry Jobs slot cards now show detailed breakdown
+  - Format changed from "X/Y" to "X/Y (Z personal + W corp)"
+  - Shows exactly how many slots are used by personal vs corporation jobs
+  - Applies to Manufacturing, Science, and Reactions cards
+
+### Changed
+- **Navigation Renamed** - "Industry Jobs" → "My Industry Jobs"
+  - Better reflects that this page shows the user's personal industry activity
+
+- **Corporation Jobs - Filtered to Authorized Characters**
+  - Now only shows corp jobs where one of your linked characters is the installer
+  - Effectively makes this "My Corporation Jobs"
+  - Stats update to reflect filtered job counts
+
+- **Blueprint Images Fixed**
+  - Now uses correct EVE Image Service URLs
+  - Properly distinguishes between BPC (copies) and BPO (originals)
+  - BPC URL: https://i.ytimg.com/vi/T4MU5kqWlqs/sddefault.jpg
+  - BPO URL: https://i.ytimg.com/vi/P-kdAM0I1EE/hqdefault.jpg
+  - Fallback to icon if blueprint image unavailable
+
+- **Corporation Summary Cards - Now Collapsible**
+  - Cards default to collapsed state, showing "X characters - Role ▼"
+  - Click to expand and see individual character names
+  - Smooth animation on expand/collapse
+  - Saves vertical space on the Corporation Jobs page
+
+### Technical Details
+- Added `slotBreakdown` state to track personal vs corp job counts by activity
+- Added `expandedCorps` state for collapsible card management
+- `getBlueprintIcon()` now accepts `runs` parameter to determine BPC vs BPO
+- Corp jobs filtered by `authorizedCharacterIds.includes(job.installer_id)`
+- CSS animations for smooth expand/collapse transitions
+
+---
+
 ## [v3.0.7] - 2026-03-02
 
 ### Added

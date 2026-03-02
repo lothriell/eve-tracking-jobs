@@ -87,6 +87,13 @@
   opacity: 0.8;
 }
 
+.slot-card-breakdown {
+  font-size: 11px;
+  margin-top: 2px;
+  opacity: 0.7;
+  font-weight: normal;
+}
+
 /* Manufacturing Card - Orange/Red */
 .slot-card.manufacturing {
   background: var(--color-manufacturing-bg);

@@ -6,6 +6,11 @@ function IndustryJobs({ selectedCharacter, onError }) {
   const [jobs, setJobs] = useState([]);
   const [corpJobs, setCorpJobs] = useState([]);
   const [slots, setSlots] = useState({ manufacturing: { current: 0, max: 0 }, science: { current: 0, max: 0 }, reactions: { current: 0, max: 0 } });
+  const [slotBreakdown, setSlotBreakdown] = useState({
+    manufacturing: { personal: 0, corp: 0 },
+    science: { personal: 0, corp: 0 },
+    reactions: { personal: 0, corp: 0 }
+  });
   const [loading, setLoading] = useState(true);
   const [slotsLoading, setSlotsLoading] = useState(true);
   const [hasCharacters, setHasCharacters] = useState(false);
@@ -44,14 +49,16 @@ function IndustryJobs({ selectedCharacter, onError }) {
         getJobSlots(characterId, isAll)
       ]);
 
-      setJobs(jobsResponse.data.jobs || []);
+      const personalJobs = jobsResponse.data.jobs || [];
+      setJobs(personalJobs);
       setSlots(slotsResponse.data.slots || { manufacturing: { current: 0, max: 0 }, science: { current: 0, max: 0 }, reactions: { current: 0, max: 0 } });
       
-      // Load corporation jobs
+      // Load corporation jobs and calculate breakdown
+      let corpJobsList = [];
       try {
         const corpJobsResponse = await getCorporationJobs(characterId);
         // Filter corp jobs to show only those where selected character is the installer (if character is selected)
-        let corpJobsList = corpJobsResponse.data.jobs || [];
+        corpJobsList = corpJobsResponse.data.jobs || [];
         if (selectedCharacter) {
           corpJobsList = corpJobsList.filter(job => job.installer_id === selectedCharacter.character_id);
         }
@@ -60,6 +67,27 @@ function IndustryJobs({ selectedCharacter, onError }) {
         console.log('No corporation job access:', corpError.message);
         setCorpJobs([]);
       }
+      
+      // Calculate slot breakdown (personal vs corp) for active jobs only
+      const breakdown = {
+        manufacturing: { personal: 0, corp: 0 },
+        science: { personal: 0, corp: 0 },
+        reactions: { personal: 0, corp: 0 }
+      };
+      
+      // Count active personal jobs by category
+      personalJobs.filter(j => j.status === 'active').forEach(job => {
+        const cat = job.activity_category;
+        if (breakdown[cat]) breakdown[cat].personal++;
+      });
+      
+      // Count active corp jobs by category
+      corpJobsList.filter(j => j.status === 'active').forEach(job => {
+        const cat = job.activity_category;
+        if (breakdown[cat]) breakdown[cat].corp++;
+      });
+      
+      setSlotBreakdown(breakdown);
       
       setScopeError(false);
     } catch (error) {
@@ -155,8 +183,10 @@ function IndustryJobs({ selectedCharacter, onError }) {
     );
   };
 
-  const getBlueprintIcon = (typeId) => {
-    return `https://i.ytimg.com/vi/iPQOqm5BorI/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLCOuCOkGqE7V4YL1A8JunMhaoQdnw`;
+  // Get blueprint image URL - use 'bpc' for copies (runs > 0), 'bp' for originals
+  const getBlueprintIcon = (typeId, runs = 1) => {
+    const imageType = runs === -1 ? 'bp' : 'bpc';
+    return `https://i.ytimg.com/vi/T4MU5kqWlqs/sddefault.jpg`;
   };
 
   // Filter jobs
@@ -225,10 +255,10 @@ function IndustryJobs({ selectedCharacter, onError }) {
                 <td className="col-blueprint">
                   <div className="blueprint-cell">
                     <img 
-                      src={getBlueprintIcon(job.blueprint_type_id)} 
+                      src={getBlueprintIcon(job.blueprint_type_id, job.licensed_runs || job.runs)} 
                       alt="" 
                       className="blueprint-icon"
-                      onError={(e) => e.target.style.display = 'none'}
+                      onError={(e) => { e.target.src = `https://i.ytimg.com/vi/T4MU5kqWlqs/sddefault.jpg`; }}
                     />
                     <span className="blueprint-name">{job.blueprint_name}</span>
                   </div>
@@ -295,6 +325,9 @@ function IndustryJobs({ selectedCharacter, onError }) {
               <span className="slot-card-value">
                 {slots.manufacturing?.current || 0}/{slots.manufacturing?.max || 0}
               </span>
+              <span className="slot-card-breakdown">
+                ({slotBreakdown.manufacturing.personal} personal + {slotBreakdown.manufacturing.corp} corp)
+              </span>
               <span className="slot-card-label">Manufacturing jobs</span>
             </div>
           </div>
@@ -305,6 +338,9 @@ function IndustryJobs({ selectedCharacter, onError }) {
               <span className="slot-card-value">
                 {slots.science?.current || 0}/{slots.science?.max || 0}
               </span>
+              <span className="slot-card-breakdown">
+                ({slotBreakdown.science.personal} personal + {slotBreakdown.science.corp} corp)
+              </span>
               <span className="slot-card-label">Science jobs</span>
             </div>
           </div>
@@ -314,6 +350,9 @@ function IndustryJobs({ selectedCharacter, onError }) {
             <div className="slot-card-content">
               <span className="slot-card-value">
                 {slots.reactions?.current || 0}/{slots.reactions?.max || 0}
+              </span>
+              <span className="slot-card-breakdown">
+                ({slotBreakdown.reactions.personal} personal + {slotBreakdown.reactions.corp} corp)
               </span>
               <span className="slot-card-label">Reactions</span>
             </div>

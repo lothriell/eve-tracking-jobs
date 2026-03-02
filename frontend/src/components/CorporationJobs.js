@@ -14,6 +14,7 @@ function CorporationJobs({ selectedCharacter, onError }) {
   const [hasAccess, setHasAccess] = useState(false);
   const [accessMessage, setAccessMessage] = useState('');
   const [stats, setStats] = useState({ total: 0, active: 0 });
+  const [expandedCorps, setExpandedCorps] = useState({});
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -42,9 +43,11 @@ function CorporationJobs({ selectedCharacter, onError }) {
       setLoading(true);
       
       // Load all characters for the filter dropdown
+      let charsList = [];
       try {
         const charsResponse = await getAllCharacters();
-        setCharacters(charsResponse.data.characters || []);
+        charsList = charsResponse.data.characters || [];
+        setCharacters(charsList);
       } catch (charError) {
         console.log('Failed to load characters:', charError.message);
       }
@@ -65,14 +68,20 @@ function CorporationJobs({ selectedCharacter, onError }) {
         return;
       }
 
+      // Get list of authorized character IDs for filtering
+      const authorizedCharacterIds = charsList.map(c => c.character_id);
+      
       // Load corporation jobs
       if (selectedCharacter) {
         const response = await getCorporationJobs(selectedCharacter.id);
         if (response.data.has_access) {
-          setJobs(response.data.jobs || []);
+          // Filter to only show jobs where installer is an authorized character
+          const allJobs = response.data.jobs || [];
+          const filteredJobs = allJobs.filter(job => authorizedCharacterIds.includes(job.installer_id));
+          setJobs(filteredJobs);
           setStats({
-            total: response.data.total_jobs || 0,
-            active: response.data.active_jobs || 0
+            total: filteredJobs.length,
+            active: filteredJobs.filter(j => j.status === 'active').length
           });
         } else {
           setAccessMessage(response.data.message || 'No access to corporation jobs');
@@ -81,10 +90,13 @@ function CorporationJobs({ selectedCharacter, onError }) {
       } else {
         // All characters - get all corporation jobs
         const response = await getCorporationJobs();
-        setJobs(response.data.jobs || []);
+        // Filter to only show jobs where installer is an authorized character
+        const allJobs = response.data.jobs || [];
+        const filteredJobs = allJobs.filter(job => authorizedCharacterIds.includes(job.installer_id));
+        setJobs(filteredJobs);
         setStats({
-          total: response.data.total_jobs || 0,
-          active: response.data.active_jobs || 0
+          total: filteredJobs.length,
+          active: filteredJobs.filter(j => j.status === 'active').length
         });
       }
     } catch (error) {
@@ -112,6 +124,13 @@ function CorporationJobs({ selectedCharacter, onError }) {
     } catch (error) {
       console.error('Failed to initiate re-authorization:', error);
     }
+  };
+
+  const toggleCorpExpanded = (corpId) => {
+    setExpandedCorps(prev => ({
+      ...prev,
+      [corpId]: !prev[corpId]
+    }));
   };
 
   const formatTimeRemaining = (ms) => {
@@ -201,27 +220,46 @@ function CorporationJobs({ selectedCharacter, onError }) {
         </div>
       </div>
 
-      {/* Corporation Summary Cards */}
+      {/* Corporation Summary Cards - Collapsible */}
       {corporations.filter(c => c.has_industry_access).length > 0 && (
         <div className="corp-summary-cards">
-          {corporations.filter(c => c.has_industry_access).map(corp => (
-            <div key={corp.corporation_id} className="corp-card">
-              <div className="corp-card-header">
-                <span className="corp-ticker">[{corp.ticker}]</span>
-                <span className="corp-name">{corp.name}</span>
-              </div>
-              <div className="corp-card-details">
-                {corp.characters.filter(c => c.has_industry_role).map(char => (
-                  <div key={char.character_id} className="corp-char-role">
-                    <span className="char-name">{char.character_name}</span>
-                    <span className={`role-badge ${char.industry_role_name?.toLowerCase().replace(' ', '-')}`}>
-                      {char.industry_role_name}
-                    </span>
+          {corporations.filter(c => c.has_industry_access).map(corp => {
+            const charsWithRole = corp.characters.filter(c => c.has_industry_role);
+            const isExpanded = expandedCorps[corp.corporation_id];
+            // Get unique roles
+            const roles = [...new Set(charsWithRole.map(c => c.industry_role_name))].join(', ');
+            
+            return (
+              <div key={corp.corporation_id} className={`corp-card ${isExpanded ? 'expanded' : 'collapsed'}`}>
+                <div 
+                  className="corp-card-header clickable"
+                  onClick={() => toggleCorpExpanded(corp.corporation_id)}
+                >
+                  <div className="corp-card-title">
+                    <span className="corp-ticker">[{corp.ticker}]</span>
+                    <span className="corp-name">{corp.name}</span>
                   </div>
-                ))}
+                  <div className="corp-card-summary">
+                    <span className="char-count">{charsWithRole.length} character{charsWithRole.length !== 1 ? 's' : ''}</span>
+                    <span className="role-summary">- {roles}</span>
+                    <span className="expand-icon">{isExpanded ? '▲' : '▼'}</span>
+                  </div>
+                </div>
+                {isExpanded && (
+                  <div className="corp-card-details">
+                    {charsWithRole.map(char => (
+                      <div key={char.character_id} className="corp-char-role">
+                        <span className="char-name">{char.character_name}</span>
+                        <span className={`role-badge ${char.industry_role_name?.toLowerCase().replace(' ', '-')}`}>
+                          {char.industry_role_name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
