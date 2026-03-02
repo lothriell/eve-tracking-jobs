@@ -1,3 +1,18 @@
+/* EVE Color Palette */
+:root {
+  --color-manufacturing: #ff6b35;
+  --color-manufacturing-bg: rgba(255, 107, 53, 0.1);
+  --color-manufacturing-border: rgba(255, 107, 53, 0.4);
+
+  --color-science: #4a9eff;
+  --color-science-bg: rgba(74, 158, 255, 0.1);
+  --color-science-border: rgba(74, 158, 255, 0.4);
+
+  --color-reactions: #10b981;
+  --color-reactions-bg: rgba(16, 185, 129, 0.1);
+  --color-reactions-border: rgba(16, 185, 129, 0.4);
+}
+
 .dashboard-container {
   flex: 1;
   display: flex;
@@ -25,6 +40,94 @@
   color: #fff;
   font-size: 20px;
   font-weight: 600;
+}
+
+/* Job Slot Cards Grid - EVE Colors */
+.slot-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.slot-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid;
+  transition: all 0.2s;
+}
+
+.slot-card:hover {
+  transform: translateY(-2px);
+}
+
+.slot-card-icon {
+  font-size: 28px;
+  opacity: 0.9;
+}
+
+.slot-card-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.slot-card-value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.slot-card-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+  opacity: 0.8;
+}
+
+/* Manufacturing Card - Orange/Red */
+.slot-card.manufacturing {
+  background: var(--color-manufacturing-bg);
+  border-color: var(--color-manufacturing-border);
+}
+
+.slot-card.manufacturing .slot-card-value {
+  color: var(--color-manufacturing);
+}
+
+.slot-card.manufacturing .slot-card-label {
+  color: var(--color-manufacturing);
+}
+
+/* Science Card - Blue */
+.slot-card.science {
+  background: var(--color-science-bg);
+  border-color: var(--color-science-border);
+}
+
+.slot-card.science .slot-card-value {
+  color: var(--color-science);
+}
+
+.slot-card.science .slot-card-label {
+  color: var(--color-science);
+}
+
+/* Reactions Card - Green */
+.slot-card.reactions {
+  background: var(--color-reactions-bg);
+  border-color: var(--color-reactions-border);
+}
+
+.slot-card.reactions .slot-card-value {
+  color: var(--color-reactions);
+}
+
+.slot-card.reactions .slot-card-label {
+  color: var(--color-reactions);
 }
 
 /* Stats Grid */
@@ -73,6 +176,12 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-top: 4px;
+}
+
+.stat-breakdown {
+  font-size: 11px;
+  color: #718096;
+  margin-top: 2px;
 }
 
 /* Characters Section */
@@ -146,12 +255,6 @@
   font-size: 10px;
 }
 
-.stat-breakdown {
-  font-size: 11px;
-  color: #718096;
-  margin-top: 2px;
-}
-
 .character-error {
   font-size: 11px;
   color: #fc8181;
@@ -165,11 +268,28 @@
 
 .slot-mini {
   font-size: 10px;
-  color: #718096;
   font-family: 'Consolas', monospace;
-  background: rgba(0, 0, 0, 0.3);
   padding: 2px 6px;
   border-radius: 4px;
+}
+
+/* EVE Colors for Character Slot Indicators */
+.slot-mini.slot-manufacturing {
+  background: var(--color-manufacturing-bg);
+  color: var(--color-manufacturing);
+  border: 1px solid var(--color-manufacturing-border);
+}
+
+.slot-mini.slot-science {
+  background: var(--color-science-bg);
+  color: var(--color-science);
+  border: 1px solid var(--color-science-border);
+}
+
+.slot-mini.slot-reactions {
+  background: var(--color-reactions-bg);
+  color: var(--color-reactions);
+  border: 1px solid var(--color-reactions-border);
 }
 
 /* Activity Section */
@@ -244,19 +364,6 @@
   color: #e2e8f0;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .characters-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-
-
 /* Scope Warning Banner */
 .scope-warning-banner {
   display: flex;
@@ -308,8 +415,6 @@
   margin-bottom: 4px;
 }
 
-
-
 /* Corporation Stats Section */
 .corp-stats-section {
   margin-top: 20px;
@@ -346,10 +451,11 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 12px;
+  padding: 10px 12px;
   background: rgba(26, 42, 58, 0.5);
   border-radius: 4px;
   border-left: 3px solid #4da6ff;
+  flex-wrap: wrap;
 }
 
 .corp-ticker {
@@ -361,19 +467,56 @@
 .corp-name {
   color: #e0e0e0;
   flex: 1;
+  min-width: 120px;
 }
 
-.corp-access-badge {
+.corp-role-summary {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.corp-role-badge {
   background: rgba(255, 193, 7, 0.2);
   color: #ffc107;
-  padding: 3px 8px;
+  padding: 4px 10px;
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 500;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .slot-cards-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
+  .slot-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .characters-grid {
+    grid-template-columns: 1fr;
+  }
+
   .corp-stats-grid {
     flex-direction: column;
+  }
+
+  .corp-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .corp-role-summary {
+    margin-top: 4px;
   }
 }

@@ -2,6 +2,50 @@
 
 All notable changes to the EVE ESI Application will be documented in this file.
 
+## [v3.0.7] - 2026-03-02
+
+### Added
+- **UI Improvements with EVE-inspired color scheme**
+
+### Changed
+- **Dashboard - Job Slot Summary**
+  - Split single-row slot summary into grid of three separate cards
+  - Manufacturing card with orange/red color (#ff6b35)
+  - Science card with blue color (#4a9eff)
+  - Reactions card with green color (#10b981)
+
+- **Dashboard - Corporation Stats**
+  - Simplified role display - now groups characters by role
+  - Shows "X characters - Role" instead of listing each character
+  - Cleaner, more scannable layout
+
+- **Dashboard - Characters Overview**
+  - Added EVE colors to M:/S:/R: slot indicators
+  - M: (Manufacturing) = orange/red with colored background
+  - S: (Science) = blue with colored background
+  - R: (Reactions) = green with colored background
+
+- **Industry Jobs Page - Job Slot Summary**
+  - Updated to grid format matching dashboard
+  - Three separate cards with EVE colors
+  - Same visual style for consistency
+
+- **Industry Jobs Page - Corporation Jobs Section**
+  - Added new "Corporation Jobs" section below "Personal Jobs"
+  - Shows corp jobs where the character is the installer
+  - Applies same filters (activity, status) to both sections
+  - Visual distinction with corp-themed styling
+
+### Technical Details
+- **EVE Color Palette**:
+  - Manufacturing: #ff6b35 (orange/red)
+  - Science: #4a9eff (blue)
+  - Reactions: #10b981 (green)
+- Activity badges in job tables now use EVE colors
+- CSS variables added for consistent color usage
+
+---
+
 ## [v3.0.6] - 2026-03-01
 
 ### Fixed

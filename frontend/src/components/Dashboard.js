@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { getDashboardStats, getCorporationJobs, getCorporations } from '../services/api';
-import JobSlotSummary from './JobSlotSummary';
 import './Dashboard.css';
 
 function Dashboard({ onError }) {
@@ -48,6 +47,19 @@ function Dashboard({ onError }) {
     loadStats();
   }, [loadStats]);
 
+  // Group corporation characters by role for simplified display
+  const groupCharactersByRole = (characters) => {
+    const roleGroups = {};
+    characters.filter(c => c.has_industry_role).forEach(c => {
+      const role = c.industry_role_name || 'Unknown';
+      if (!roleGroups[role]) {
+        roleGroups[role] = 0;
+      }
+      roleGroups[role]++;
+    });
+    return roleGroups;
+  };
+
   if (loading) {
     return (
       <div className="dashboard-container">
@@ -79,7 +91,38 @@ function Dashboard({ onError }) {
         </button>
       </div>
 
-      <JobSlotSummary slots={stats.slots} loading={false} />
+      {/* Job Slot Summary as Grid Cards with EVE Colors */}
+      <div className="slot-cards-grid">
+        <div className="slot-card manufacturing">
+          <div className="slot-card-icon">⚙️</div>
+          <div className="slot-card-content">
+            <span className="slot-card-value">
+              {stats.slots?.manufacturing?.current || 0}/{stats.slots?.manufacturing?.max || 0}
+            </span>
+            <span className="slot-card-label">Manufacturing jobs</span>
+          </div>
+        </div>
+
+        <div className="slot-card science">
+          <div className="slot-card-icon">🔬</div>
+          <div className="slot-card-content">
+            <span className="slot-card-value">
+              {stats.slots?.science?.current || 0}/{stats.slots?.science?.max || 0}
+            </span>
+            <span className="slot-card-label">Science jobs</span>
+          </div>
+        </div>
+
+        <div className="slot-card reactions">
+          <div className="slot-card-icon">⚗️</div>
+          <div className="slot-card-content">
+            <span className="slot-card-value">
+              {stats.slots?.reactions?.current || 0}/{stats.slots?.reactions?.max || 0}
+            </span>
+            <span className="slot-card-label">Reactions</span>
+          </div>
+        </div>
+      </div>
 
       <div className="stats-grid">
         <div className="stat-card">
@@ -98,27 +141,6 @@ function Dashboard({ onError }) {
             <span className="stat-breakdown">
               {stats.personal_active_jobs || 0} personal + {stats.corp_active_jobs || 0} corp
             </span>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon">⚙️</div>
-          <div className="stat-content">
-            <span className="stat-value">{stats.jobs_by_activity?.Manufacturing || 0}</span>
-            <span className="stat-label">Manufacturing</span>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon">🔬</div>
-          <div className="stat-content">
-            <span className="stat-value">
-              {(stats.jobs_by_activity?.['ME Research'] || 0) + 
-               (stats.jobs_by_activity?.['TE Research'] || 0) + 
-               (stats.jobs_by_activity?.Copying || 0) + 
-               (stats.jobs_by_activity?.Invention || 0)}
-            </span>
-            <span className="stat-label">Science Jobs</span>
           </div>
         </div>
       </div>
@@ -144,15 +166,22 @@ function Dashboard({ onError }) {
             </div>
           </div>
           <div className="corp-list">
-            {corpStats.corporations.filter(c => c.has_industry_access).map(corp => (
-              <div key={corp.corporation_id} className="corp-item">
-                <span className="corp-ticker">[{corp.ticker}]</span>
-                <span className="corp-name">{corp.name}</span>
-                <span className="corp-access-badge">
-                  {corp.characters.filter(c => c.has_industry_role).map(c => c.industry_role_name).join(', ')}
-                </span>
-              </div>
-            ))}
+            {corpStats.corporations.filter(c => c.has_industry_access).map(corp => {
+              const roleGroups = groupCharactersByRole(corp.characters);
+              return (
+                <div key={corp.corporation_id} className="corp-item">
+                  <span className="corp-ticker">[{corp.ticker}]</span>
+                  <span className="corp-name">{corp.name}</span>
+                  <div className="corp-role-summary">
+                    {Object.entries(roleGroups).map(([role, count]) => (
+                      <span key={role} className="corp-role-badge">
+                        {count} {count === 1 ? 'character' : 'characters'} - {role}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -196,13 +225,13 @@ function Dashboard({ onError }) {
                       )}
                     </span>
                     <div className="character-slots">
-                      <span className="slot-mini">
+                      <span className="slot-mini slot-manufacturing">
                         M: {char.slots?.manufacturing?.current || 0}/{char.slots?.manufacturing?.max || 1}
                       </span>
-                      <span className="slot-mini">
+                      <span className="slot-mini slot-science">
                         S: {char.slots?.science?.current || 0}/{char.slots?.science?.max || 1}
                       </span>
-                      <span className="slot-mini">
+                      <span className="slot-mini slot-reactions">
                         R: {char.slots?.reactions?.current || 0}/{char.slots?.reactions?.max || 0}
                       </span>
                     </div>

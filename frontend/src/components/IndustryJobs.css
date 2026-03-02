@@ -1,3 +1,18 @@
+/* EVE Color Palette */
+:root {
+  --color-manufacturing: #ff6b35;
+  --color-manufacturing-bg: rgba(255, 107, 53, 0.1);
+  --color-manufacturing-border: rgba(255, 107, 53, 0.4);
+
+  --color-science: #4a9eff;
+  --color-science-bg: rgba(74, 158, 255, 0.1);
+  --color-science-border: rgba(74, 158, 255, 0.4);
+
+  --color-reactions: #10b981;
+  --color-reactions-bg: rgba(16, 185, 129, 0.1);
+  --color-reactions-border: rgba(16, 185, 129, 0.4);
+}
+
 .industry-jobs-container {
   flex: 1;
   display: flex;
@@ -23,6 +38,139 @@
   background: rgba(245, 101, 101, 0.1);
   border: 1px solid rgba(245, 101, 101, 0.3);
   border-radius: 8px;
+}
+
+/* Job Slot Cards Grid - EVE Colors */
+.slot-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.slot-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid;
+  transition: all 0.2s;
+}
+
+.slot-card:hover {
+  transform: translateY(-2px);
+}
+
+.slot-card-icon {
+  font-size: 28px;
+  opacity: 0.9;
+}
+
+.slot-card-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.slot-card-value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.slot-card-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+  opacity: 0.8;
+}
+
+/* Manufacturing Card - Orange/Red */
+.slot-card.manufacturing {
+  background: var(--color-manufacturing-bg);
+  border-color: var(--color-manufacturing-border);
+}
+
+.slot-card.manufacturing .slot-card-value {
+  color: var(--color-manufacturing);
+}
+
+.slot-card.manufacturing .slot-card-label {
+  color: var(--color-manufacturing);
+}
+
+/* Science Card - Blue */
+.slot-card.science {
+  background: var(--color-science-bg);
+  border-color: var(--color-science-border);
+}
+
+.slot-card.science .slot-card-value {
+  color: var(--color-science);
+}
+
+.slot-card.science .slot-card-label {
+  color: var(--color-science);
+}
+
+/* Reactions Card - Green */
+.slot-card.reactions {
+  background: var(--color-reactions-bg);
+  border-color: var(--color-reactions-border);
+}
+
+.slot-card.reactions .slot-card-value {
+  color: var(--color-reactions);
+}
+
+.slot-card.reactions .slot-card-label {
+  color: var(--color-reactions);
+}
+
+/* Jobs Section */
+.jobs-section {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.jobs-section.corp-jobs-section {
+  background: linear-gradient(135deg, rgba(77, 166, 255, 0.05) 0%, rgba(0, 0, 0, 0.2) 100%);
+  border-color: rgba(77, 166, 255, 0.2);
+}
+
+.jobs-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.jobs-section-header h3 {
+  margin: 0;
+  color: #e2e8f0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.section-count {
+  background: rgba(102, 126, 234, 0.2);
+  color: #a3bffa;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.corp-jobs-section .section-count {
+  background: rgba(77, 166, 255, 0.2);
+  color: #4da6ff;
 }
 
 /* Toolbar */
@@ -220,7 +368,7 @@
   font-weight: 600;
 }
 
-/* Activity badge */
+/* Activity badge with EVE colors */
 .activity-badge {
   display: inline-block;
   padding: 3px 8px;
@@ -231,18 +379,21 @@
 }
 
 .activity-badge.manufacturing {
-  background: rgba(237, 137, 54, 0.2);
-  color: #f6ad55;
+  background: var(--color-manufacturing-bg);
+  color: var(--color-manufacturing);
+  border: 1px solid var(--color-manufacturing-border);
 }
 
 .activity-badge.science {
-  background: rgba(66, 153, 225, 0.2);
-  color: #63b3ed;
+  background: var(--color-science-bg);
+  color: var(--color-science);
+  border: 1px solid var(--color-science-border);
 }
 
 .activity-badge.reactions {
-  background: rgba(159, 122, 234, 0.2);
-  color: #b794f4;
+  background: var(--color-reactions-bg);
+  color: var(--color-reactions);
+  border: 1px solid var(--color-reactions-border);
 }
 
 /* Blueprint cell */
@@ -309,7 +460,17 @@
 }
 
 /* Responsive */
-@media (max-width: 1024px) {
+@media (max-width: 992px) {
+  .slot-cards-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .slot-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
   .jobs-toolbar {
     flex-direction: column;
     align-items: flex-start;
@@ -324,9 +485,7 @@
     width: 100%;
     justify-content: space-between;
   }
-}
 
-@media (max-width: 768px) {
   .jobs-table {
     font-size: 12px;
   }
