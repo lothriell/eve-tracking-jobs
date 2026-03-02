@@ -97,6 +97,22 @@ function IndustryJobs({ selectedCharacter, onError }) {
       
       setSlotBreakdown(breakdown);
       
+      // Update slots to show total (personal + corp) as current value
+      setSlots(prevSlots => ({
+        manufacturing: {
+          ...prevSlots.manufacturing,
+          current: breakdown.manufacturing.personal + breakdown.manufacturing.corp
+        },
+        science: {
+          ...prevSlots.science,
+          current: breakdown.science.personal + breakdown.science.corp
+        },
+        reactions: {
+          ...prevSlots.reactions,
+          current: breakdown.reactions.personal + breakdown.reactions.corp
+        }
+      }));
+      
       setScopeError(false);
     } catch (error) {
       console.error('Failed to load data:', error);

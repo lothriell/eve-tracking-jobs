@@ -2,6 +2,28 @@
 
 All notable changes to the EVE ESI Application will be documented in this file.
 
+## [v3.0.10] - 2026-03-02
+
+### Fixed
+- **Dashboard Slot Count Now Includes Corporation Jobs**
+  - Fixed the My Industry Jobs dashboard to show total job count (personal + corp) in the main slot numbers
+  - Previously displayed only personal jobs: `3/132` when it should show `21/132`
+  - Now correctly calculates: Manufacturing, Science, and Reactions slots all include corp jobs
+  - The breakdown text `(X personal + Y corp)` was already correct; now the main number matches the total
+
+### Technical Details
+- `IndustryJobs.js`:
+  - Added `setSlots()` update after calculating breakdown to set `current` to `personal + corp` for each activity type
+  - Example: Manufacturing `current = breakdown.manufacturing.personal + breakdown.manufacturing.corp`
+
+### Expected Results
+- Manufacturing: 21/132 (3 personal + 18 corp) - main number now shows 21, not 3
+- Science: 35/138 (3 personal + 32 corp) - main number now shows 35, not 3
+- Reactions: 8/119 (0 personal + 8 corp) - main number now shows 8, not 0
+- Color coding now reflects true total utilization percentage
+
+---
+
 ## [v3.0.9] - 2026-03-02
 
 ### Fixed
