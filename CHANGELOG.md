@@ -2,6 +2,38 @@
 
 All notable changes to the EVE ESI Application will be documented in this file.
 
+## [v3.0.11] - 2026-03-07
+
+### Documentation
+- **Comprehensive Installation Guide** - Added step-by-step instructions for new users
+  - Prerequisites and requirements
+  - EVE Developer Application setup with all ESI scopes
+  - Environment configuration
+  - Docker deployment steps
+  - Verification procedures
+
+- **Updated Required ESI Scopes** - Fixed missing scope in Setup section
+  - Added `esi-characters.read_corporation_roles.v1` (was missing from Setup section)
+  - All five required scopes now documented in multiple locations
+
+- **Expanded Troubleshooting Section**
+  - "invalid_scope" error resolution
+  - Container startup issues
+  - Callback URL mismatches
+  - Corporation access problems
+  - Database reset instructions
+
+- **Update/Upgrade Guide** - How to update to latest version
+  - Standard update procedure
+  - When to re-authorize characters
+  - How to check CHANGELOG for breaking changes
+
+- **Contributing Guidelines** - Documentation standards for future updates
+  - When to update README.md
+  - Breaking change documentation requirements
+
+---
+
 ## [v3.0.10] - 2026-03-02
 
 ### Fixed

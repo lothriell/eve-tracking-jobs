@@ -4,186 +4,289 @@ A web application for tracking EVE Online industry jobs across multiple characte
 
 ## Features
 
-### Phase 3A-1 (Current Version) - Corporation Industry Jobs
-
-#### Corporation Jobs View
-- **View corporation industry jobs** across all corporations you have access to
-- Corporation summary cards showing name, ticker, and characters with roles
-- Jobs table with corporation-specific columns (ticker, name, installer)
-- Filter by corporation, activity type, and status
-- Real-time countdown timers
-
-#### Corporation Roles Support
-- Automatic detection of Director and Factory Manager roles
-- Clear messaging when characters lack required roles
-- Role badges showing access level per character
-
-#### Required ESI Scopes (v3.0.2)
-- `esi-industry.read_character_jobs.v1` - Personal industry jobs
-- `esi-skills.read_skills.v1` - Job slot calculation
-- `esi-industry.read_corporation_jobs.v1` - Corporation industry jobs
-- `esi-corporations.read_corporation_membership.v1` - Corporation membership
-- `esi-characters.read_corporation_roles.v1` - **Reading corporation roles (Director/Factory_Manager check)**
-
-**⚠️ Characters must be re-authorized after updating to v3.0.2**
-
-### Phase 2 Features
-
-#### Multiple Character Support
-- Link multiple EVE Online characters to a single account
-- Support for characters across different accounts
-- Character management via sidebar
-
-#### Sidebar Navigation
-- Collapsible sidebar with character list
-- Character portraits with thumbnails
-- Quick character switching
-- Navigation between Dashboard, Industry Jobs, and Corporation Jobs views
-- "Add Character" button for linking additional characters
+### Current Features (v3.0.10)
 
 #### Dashboard
 - Aggregate statistics across all characters
-- Total job slot summary (Manufacturing, Science, Reactions)
+- Total job slot summary (Manufacturing, Science, Reactions) with EVE-inspired colors
 - Per-character job counts and slot usage
-- Jobs breakdown by activity type
-- Visual progress bars
+- Jobs breakdown by activity type with visual progress bars
+- Corporation statistics with role summaries
 
-#### Industry Jobs View
+#### Personal Industry Jobs ("My Industry Jobs")
 - **EVE-like Time Display**: Time remaining shown as "XD HH:MM:SS" format
-- **Real-time Countdown**: Live updating time remaining
-- **Blueprint Icons**: Fetched from EVE image service
-- **Blueprint Names**: Resolved from ESI
+- **Real-time Countdown**: Live updating timers
+- **Blueprint Icons**: Fetched from EVE image service (BPC/BPO distinction)
 - **Activity Categories**: Manufacturing, Science (TE/ME Research, Copying, Invention), Reactions
 - **Status Badges**: Active, Ready, Delivered, Paused, Cancelled
 - **Progress Bars**: Visual job completion indicator
-- **Installer Names**: Shows who installed each job
+- **Slot Usage**: Shows combined personal + corporation job counts
+
+#### Corporation Industry Jobs
+- View corporation industry jobs across all corporations you have access to
+- Corporation summary cards with collapsible details
+- Filter by corporation, activity type, status, and character
+- Only shows jobs installed by your linked characters
+- Role detection for Director and Factory Manager
+
+#### Multi-Character Support
+- Link unlimited EVE Online characters
+- Support for characters across different accounts
+- Character management via collapsible sidebar
+- Character portraits and quick switching
 
 #### Job Slot Tracking
-- Manufacturing jobs: X / Y (current/max slots)
-- Science jobs: X / Y
-- Reactions: X / Y
-- Color coding: Green (available), Yellow (near full), Red (full)
-- Slot counts calculated from character skills
+- Manufacturing, Science, and Reaction slot tracking
+- Slots calculated from character skills
+- Color coding: Green (high utilization), Yellow (medium), Red (low utilization)
+- Combined personal + corporation job counts
 
-#### Filters
-- Filter by activity type (All, Manufacturing, Science, Reactions)
-- Filter by status (All, Active, Ready, Delivered)
-- View all characters or specific character
+---
 
-### Phase 1 Features
-- Simple username/password authentication
-- Single character linking via EVE SSO
-- Basic industry jobs display
-- Character portrait display
+## Installation Guide
 
-## Prerequisites
+### Prerequisites
 
-- Docker and Docker Compose
-- EVE Online Developer Application credentials
+- **Linux server** (tested on Arch Linux, works on Ubuntu, Debian, etc.)
+- **Docker** and **Docker Compose** installed
+- **EVE Online account**
+- **Network access** to your server (port 9000)
 
-## Setup
-
-### 1. Create EVE SSO Application
+### Step 1: Create EVE Developer Application
 
 1. Go to [EVE Developers](https://developers.eveonline.com/)
-2. Create a new application
-3. Set the callback URL to: `http://YOUR_SERVER_IP:9000/auth/callback`
-4. Select the following scopes:
-   - `esi-industry.read_character_jobs.v1` - Personal industry jobs
-   - `esi-skills.read_skills.v1` - Character skills for slot calculation
-   - `esi-industry.read_corporation_jobs.v1` - Corporation industry jobs
-   - `esi-corporations.read_corporation_membership.v1` - Corporation membership
-5. Note your Client ID and Secret Key
+2. Log in with your EVE account
+3. Click **"Create New Application"**
+4. Fill in the application details:
+   - **Name**: Your app name (e.g., "My Industry Tracker")
+   - **Description**: Brief description
+   - **Connection Type**: Authentication & API Access
 
-### 2. Configure Environment Variables
+5. **Set the Callback URL**:
+   ```
+   http://YOUR_SERVER_IP:9000/auth/callback
+   ```
+   Replace `YOUR_SERVER_IP` with your server's IP address (e.g., `http://10.69.10.15:9000/auth/callback`)
+
+6. **⚠️ CRITICAL: Enable all required ESI scopes**:
+   - ✅ `esi-industry.read_character_jobs.v1` - Personal industry jobs
+   - ✅ `esi-skills.read_skills.v1` - Character skills for slot calculation
+   - ✅ `esi-industry.read_corporation_jobs.v1` - Corporation industry jobs
+   - ✅ `esi-corporations.read_corporation_membership.v1` - Corporation membership
+   - ✅ `esi-characters.read_corporation_roles.v1` - Reading corporation roles (Director/Factory_Manager check)
+
+   **Important**: All five scopes must be checked in the EVE Developer Application settings. Missing any scope will cause "invalid_scope" errors during authorization.
+
+7. Click **"Create Application"**
+8. Note your **Client ID** and **Secret Key** (you'll need these next)
+
+### Step 2: Clone the Repository
 
 ```bash
-cp .env.example .env
+# Create directory for Docker projects (optional)
+mkdir -p ~/docker
+cd ~/docker
+
+# Clone the repository
+git clone https://github.com/lothriell/eve-tracking-jobs.git
+cd eve-tracking-jobs
 ```
 
-Edit `.env` with your values:
+### Step 3: Configure Environment Variables
+
+```bash
+# Copy the example environment file
+cp .env.example .env
+
+# Edit with your values
+nano .env
+```
+
+Fill in your `.env` file:
 
 ```env
 # EVE Online SSO Configuration
-EVE_CLIENT_ID=your_client_id
-EVE_CLIENT_SECRET=your_secret_key
+EVE_CLIENT_ID=your_client_id_here
+EVE_CLIENT_SECRET=your_secret_key_here
 EVE_REDIRECT_URI=http://YOUR_SERVER_IP:9000/auth/callback
 
-# Application Credentials
+# Application Credentials (your choice for web app login)
 APP_USERNAME=your_username
 APP_PASSWORD=your_secure_password
 
 # Session Secret (generate with: openssl rand -hex 32)
-SESSION_SECRET=your_session_secret
+SESSION_SECRET=your_random_session_secret
 ```
 
-### 3. Build and Run
+Generate a secure session secret:
+```bash
+openssl rand -hex 32
+```
+
+### Step 4: Deploy with Docker
 
 ```bash
 # Build and start the application
 docker-compose up -d --build
 
-# View logs
-docker-compose logs -f
+# Wait a few seconds for containers to start
+sleep 5
+
+# Verify containers are running
+docker-compose ps
 ```
 
-### 4. Access the Application
+Expected output:
+```
+NAME                    STATUS
+eve-esi-app-backend     Up
+eve-esi-app-frontend    Up
+```
 
-Open `http://YOUR_SERVER_IP:9000` in your browser.
+### Step 5: Verify Deployment
 
-## Usage
+```bash
+# Check backend logs for any errors
+docker-compose logs backend | tail -30
 
-### Linking Characters
+# Test backend health endpoint
+curl http://localhost:3001/health
+```
 
-1. Log in with your application credentials
-2. Click "Add Character" in the sidebar
-3. Authorize the application with your EVE account
-4. Repeat for additional characters
+### Step 6: Access the Application
 
-### Viewing Industry Jobs
+1. Open your browser: `http://YOUR_SERVER_IP:9000`
+2. Log in with your `APP_USERNAME` and `APP_PASSWORD`
+3. Click **"Add Character"** in the sidebar
+4. Authorize with EVE SSO
+5. Your industry jobs will load automatically
 
-1. Select "Industry Jobs" from the navigation
-2. Choose a specific character or view all characters
-3. Use filters to narrow down results
-4. Jobs update in real-time with countdown timers
+---
 
-### Dashboard
+## Updating / Upgrading
 
-1. Select "Dashboard" from the navigation
-2. View aggregate statistics across all characters
-3. See per-character job summaries
-4. Monitor slot usage across all characters
+### Standard Update
 
-## API Endpoints
+```bash
+cd ~/docker/eve-tracking-jobs  # or your installation directory
 
-### Authentication
-- `POST /auth/login` - User login
-- `POST /auth/logout` - User logout
-- `GET /auth/check` - Check authentication status
-- `GET /auth/eve/authorize` - Initiate EVE SSO
-- `GET /auth/callback` - EVE SSO callback
+# Pull latest changes
+git pull origin main
 
-### Characters
-- `GET /api/character` - Get first linked character (legacy)
-- `GET /api/characters` - Get all linked characters
-- `GET /api/characters/:characterId` - Get specific character
-- `DELETE /api/characters/:characterId` - Remove character
-- `GET /api/character/portrait/:characterId` - Get portrait URL
+# Rebuild and restart containers
+docker-compose down
+docker-compose up -d --build
 
-### Industry
-- `GET /api/industry/jobs` - Get personal industry jobs
-  - Query params: `characterId`, `all=true`
-- `GET /api/industry/slots` - Get job slot usage
-  - Query params: `characterId`, `all=true`
+# Verify update
+docker-compose logs backend | tail -20
+```
 
-### Corporation
-- `GET /api/corporations` - Get all corporations from linked characters
-- `GET /api/corporation/jobs` - Get all corporation jobs (across all corps with access)
-- `GET /api/corporation/jobs/:characterId` - Get corp jobs for specific character
-- `GET /api/corporation/roles/:characterId` - Get character's corporation roles
+### When to Re-authorize Characters
 
-### Dashboard
-- `GET /api/dashboard/stats` - Get aggregate statistics
+Check the [CHANGELOG.md](CHANGELOG.md) for version updates that require re-authorization. Generally, characters need re-authorization when:
+
+- New ESI scopes are added
+- Breaking changes are announced in the changelog
+- You see "needs re-authorization" warnings in the app
+
+**How to re-authorize:**
+1. Log into the application
+2. Click the "×" button on a character to remove it
+3. Click "Add Character" to re-link with updated scopes
+4. Authorize with EVE SSO
+
+---
+
+## Troubleshooting
+
+### "invalid_scope" Error During Authorization
+
+**Cause**: One or more ESI scopes are not enabled in your EVE Developer Application.
+
+**Solution**:
+1. Go to [EVE Developers](https://developers.eveonline.com/)
+2. Edit your application
+3. Ensure ALL five scopes are checked:
+   - `esi-industry.read_character_jobs.v1`
+   - `esi-skills.read_skills.v1`
+   - `esi-industry.read_corporation_jobs.v1`
+   - `esi-corporations.read_corporation_membership.v1`
+   - `esi-characters.read_corporation_roles.v1`
+4. Save changes and try authorizing again
+
+### Container Won't Start
+
+```bash
+# Check logs for errors
+docker-compose logs backend
+docker-compose logs frontend
+
+# Common fixes
+docker-compose down
+docker-compose up -d --build
+```
+
+### Can't Access Web App
+
+1. Check firewall allows port 9000
+2. Verify containers are running: `docker-compose ps`
+3. Check the correct IP address is in your browser
+4. Test locally: `curl http://localhost:9000`
+
+### "Cannot GET /auth/callback" Error
+
+**Cause**: Callback URL mismatch between EVE Developer Application and your `.env` file.
+
+**Solution**: Ensure `EVE_REDIRECT_URI` in `.env` matches exactly what you configured in the EVE Developer Application.
+
+### "No Corporation Access" Despite Having Roles
+
+**Cause**: Character was authorized before the `esi-characters.read_corporation_roles.v1` scope was added.
+
+**Solution**: Remove and re-add the character to grant the new scope.
+
+### Blueprint Images Not Showing
+
+1. Clear browser cache (Ctrl+Shift+R)
+2. Check browser developer console for image loading errors
+
+### Slot Counts Incorrect
+
+**Cause**: Missing `esi-skills.read_skills.v1` scope.
+
+**Solution**: Re-authorize the character to grant the skills scope.
+
+### Jobs Not Loading
+
+1. Check character has required ESI scopes
+2. Verify tokens haven't expired
+3. Check backend logs: `docker-compose logs backend`
+
+### Database Reset (Nuclear Option)
+
+If you need to completely reset:
+```bash
+docker-compose down
+docker volume rm eve-tracking-jobs_eve-esi-data
+docker-compose up -d --build
+```
+**Warning**: This deletes all linked characters and you'll need to re-authorize them.
+
+---
+
+## Required ESI Scopes
+
+| Scope | Purpose |
+|-------|---------|
+| `esi-industry.read_character_jobs.v1` | Read personal industry jobs |
+| `esi-skills.read_skills.v1` | Calculate max job slots from skills |
+| `esi-industry.read_corporation_jobs.v1` | Read corporation industry jobs |
+| `esi-corporations.read_corporation_membership.v1` | Verify corporation membership |
+| `esi-characters.read_corporation_roles.v1` | Check for Director/Factory Manager roles |
+
+**All scopes must be enabled in your EVE Developer Application.**
+
+---
 
 ## Technology Stack
 
@@ -203,6 +306,38 @@ Open `http://YOUR_SERVER_IP:9000` in your browser.
 - Docker & Docker Compose
 - Nginx reverse proxy
 
+---
+
+## API Endpoints
+
+### Authentication
+- `POST /auth/login` - User login
+- `POST /auth/logout` - User logout
+- `GET /auth/check` - Check authentication status
+- `GET /auth/eve/authorize` - Initiate EVE SSO
+- `GET /auth/callback` - EVE SSO callback
+
+### Characters
+- `GET /api/characters` - Get all linked characters
+- `GET /api/characters/:characterId` - Get specific character
+- `DELETE /api/characters/:characterId` - Remove character
+- `GET /api/character/portrait/:characterId` - Get portrait URL
+
+### Industry
+- `GET /api/industry/jobs` - Get personal industry jobs
+- `GET /api/industry/slots` - Get job slot usage
+
+### Corporation
+- `GET /api/corporations` - Get all corporations from linked characters
+- `GET /api/corporation/jobs` - Get all corporation jobs
+- `GET /api/corporation/jobs/:characterId` - Get corp jobs for specific character
+- `GET /api/corporation/roles/:characterId` - Get character's corporation roles
+
+### Dashboard
+- `GET /api/dashboard/stats` - Get aggregate statistics
+
+---
+
 ## Development
 
 ### Local Development
@@ -213,7 +348,7 @@ cd backend
 npm install
 npm run dev
 
-# Frontend
+# Frontend (in another terminal)
 cd frontend
 npm install
 npm start
@@ -229,61 +364,43 @@ npm start
 | `APP_USERNAME` | Application login username |
 | `APP_PASSWORD` | Application login password |
 | `SESSION_SECRET` | Express session secret |
-| `DB_PATH` | SQLite database path |
+| `DB_PATH` | SQLite database path (optional) |
 
-## Troubleshooting
+---
 
-### "invalid_scope" Error
-Ensure your EVE SSO application has the required scopes enabled.
-
-### "Cannot GET /auth/callback"
-The redirect URI must match exactly what's configured in your EVE application.
-
-### Jobs Not Loading
-1. Check that the character has the required ESI scopes
-2. Verify the character's tokens haven't expired
-3. Check backend logs for ESI errors
-
-### Slot Counts Incorrect
-Slot counts are calculated from character skills. Ensure `esi-skills.read_skills.v1` scope is authorized.
-
-## Git & Collaboration
-
-This project uses Git for version control. For detailed setup instructions, see [GIT_SETUP.md](GIT_SETUP.md).
-
-### Quick Start for Cloning
-
-```bash
-# Clone the repository
-git clone <repository-url>
-cd eve-esi-app
-
-# Copy environment template
-cp .env.example .env
-
-# Edit .env with your EVE API credentials
-# Then run with Docker
-docker-compose up --build
-```
-
-### Security
+## Security
 
 See [SECURITY.md](SECURITY.md) for:
 - Handling sensitive credentials
 - What files should never be committed
 - What to do if credentials are accidentally exposed
 
-**Important**: The `.env` file contains sensitive credentials and is NOT committed to the repository. Each environment needs its own `.env` file configured from `.env.example`.
+**Important**: The `.env` file contains sensitive credentials and is NOT committed to the repository.
+
+---
+
+## Contributing
+
+When contributing to this project:
+
+1. **New ESI Scopes**: Always update the README.md "Required ESI Scopes" section
+2. **New Features**: Update the Features section in README.md
+3. **Breaking Changes**: Document in CHANGELOG.md with re-authorization requirements
+4. **Deployment Changes**: Update the Installation Guide
+
+---
 
 ## Future Enhancements
 
-- ~~Corporation job support~~ ✅ (v3.0.0-alpha)
+- ~~Corporation job support~~ ✅ (v3.0.0)
 - Planetary Interaction tracking
 - Job completion notifications
 - Blueprint library management
 - Material efficiency tracking
 - Cost calculations
 - Export to CSV/Excel
+
+---
 
 ## License
 
