@@ -2,6 +2,21 @@
 
 All notable changes to the EVE ESI Application will be documented in this file.
 
+## [v3.1.1] - 2026-03-07
+
+### Changed
+- Updated documentation to use generic IP placeholders instead of real IP addresses
+- Added backward compatibility note for v3.1.0 changes
+- Clarified that existing users do not need to update .env file
+
+### Documentation
+- Replaced all instances of hardcoded IP with `YOUR_SERVER_IP` placeholder
+- Added explanation for determining server IP (localhost, LAN IP, public IP)
+- Updated `.env.example` with clearer placeholder and comments
+- Added prominent backward compatibility note at top of README.md
+
+---
+
 ## [v3.1.0] - 2026-03-07
 
 ### Added

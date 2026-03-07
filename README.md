@@ -2,6 +2,24 @@
 
 A web application for tracking EVE Online industry jobs across multiple characters using the EVE Swagger Interface (ESI).
 
+## ⚠️ Backward Compatibility Note (v3.1.0)
+
+**Existing users do NOT need to update their .env file!**
+
+The `PORT`, `SERVER_IP`, and `PROJECT_NAME` variables added in v3.1.0 are **optional** and have default values:
+- `PORT` defaults to `9000` (same as before)
+- `SERVER_IP` defaults to your server's IP
+- `PROJECT_NAME` defaults to `eve-esi-app`
+
+Your existing deployment will continue to work without any changes.
+
+**Only add these variables if you want to:**
+- Change the default port (9000)
+- Run multiple instances on the same server
+- Customize container names
+
+---
+
 ## Features
 
 ### Current Features (v3.1.0)
@@ -72,7 +90,11 @@ A web application for tracking EVE Online industry jobs across multiple characte
    ```
    http://YOUR_SERVER_IP:9000/auth/callback
    ```
-   Replace `YOUR_SERVER_IP` with your server's IP address (e.g., `http://10.69.10.15:9000/auth/callback`)
+   
+   **Note:** Replace `YOUR_SERVER_IP` with your actual server IP address:
+   - If deploying locally: Use `localhost` or `127.0.0.1`
+   - If deploying on LAN: Use your server's LAN IP (e.g., `192.168.1.100`)
+   - If deploying publicly: Use your public IP or domain name
 
 6. **⚠️ CRITICAL: Enable all required ESI scopes**:
    - ✅ `esi-industry.read_character_jobs.v1` - Personal industry jobs
@@ -230,13 +252,13 @@ Configure `.env`:
 ```env
 # Server Configuration
 PORT=9000
-SERVER_IP=10.69.10.15
+SERVER_IP=YOUR_SERVER_IP
 PROJECT_NAME=eve-esi-user1
 
 # EVE Developer Application
 EVE_CLIENT_ID=your_client_id_1
 EVE_CLIENT_SECRET=your_client_secret_1
-EVE_REDIRECT_URI=http://10.69.10.15:9000/auth/callback
+EVE_REDIRECT_URI=http://YOUR_SERVER_IP:9000/auth/callback
 
 # Application Login
 APP_USERNAME=user1
@@ -259,13 +281,13 @@ Configure `.env`:
 ```env
 # Server Configuration
 PORT=9001                        # ← Different port!
-SERVER_IP=10.69.10.15
+SERVER_IP=YOUR_SERVER_IP
 PROJECT_NAME=eve-esi-user2       # ← Different project name!
 
 # EVE Developer Application
 EVE_CLIENT_ID=your_client_id_2
 EVE_CLIENT_SECRET=your_client_secret_2
-EVE_REDIRECT_URI=http://10.69.10.15:9001/auth/callback  # ← Matching port!
+EVE_REDIRECT_URI=http://YOUR_SERVER_IP:9001/auth/callback  # ← Matching port!
 
 # Application Login
 APP_USERNAME=user2
@@ -282,10 +304,10 @@ Repeat for additional users with ports 9002, 9003, etc.
 #### Option 1: Separate Apps (Recommended)
 
 Each user creates their own EVE Developer Application:
-- User 1 callback: `http://10.69.10.15:9000/auth/callback`
-- User 2 callback: `http://10.69.10.15:9001/auth/callback`
-- User 3 callback: `http://10.69.10.15:9002/auth/callback`
-- User 4 callback: `http://10.69.10.15:9003/auth/callback`
+- User 1 callback: `http://YOUR_SERVER_IP:9000/auth/callback`
+- User 2 callback: `http://YOUR_SERVER_IP:9001/auth/callback`
+- User 3 callback: `http://YOUR_SERVER_IP:9002/auth/callback`
+- User 4 callback: `http://YOUR_SERVER_IP:9003/auth/callback`
 
 Each user has their own Client ID and Secret.
 
@@ -314,10 +336,10 @@ docker-compose ps
 
 | User | URL | Port |
 |------|-----|------|
-| User 1 | `http://10.69.10.15:9000` | 9000 |
-| User 2 | `http://10.69.10.15:9001` | 9001 |
-| User 3 | `http://10.69.10.15:9002` | 9002 |
-| User 4 | `http://10.69.10.15:9003` | 9003 |
+| User 1 | `http://YOUR_SERVER_IP:9000` | 9000 |
+| User 2 | `http://YOUR_SERVER_IP:9001` | 9001 |
+| User 3 | `http://YOUR_SERVER_IP:9002` | 9002 |
+| User 4 | `http://YOUR_SERVER_IP:9003` | 9003 |
 
 ### Container Naming
 
@@ -530,7 +552,7 @@ npm start
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `PORT` | External port for the application | `9000` |
-| `SERVER_IP` | Server IP address for callback URLs | `10.69.10.15` |
+| `SERVER_IP` | Server IP address for callback URLs | `YOUR_SERVER_IP` |
 | `PROJECT_NAME` | Docker project name (for multi-instance) | `eve-esi-app` |
 | `EVE_CLIENT_ID` | EVE SSO Client ID | (required) |
 | `EVE_CLIENT_SECRET` | EVE SSO Secret Key | (required) |
