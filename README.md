@@ -93,6 +93,7 @@ A web application for tracking EVE Online industry jobs across multiple characte
    - `esi-skills.read_skills.v1` - Character skills for slot calculation
    - `esi-industry.read_corporation_jobs.v1` - Corporation industry jobs
    - `esi-corporations.read_corporation_membership.v1` - Corporation membership
+   - `esi-characters.read_corporation_roles.v1` - **Reading corporation roles (Director/Factory_Manager check)**
 5. Note your Client ID and Secret Key
 
 ### 2. Configure Environment Variables
