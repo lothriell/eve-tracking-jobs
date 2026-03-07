@@ -2,6 +2,32 @@
 
 All notable changes to the EVE ESI Application will be documented in this file.
 
+## [v3.1.0] - 2026-03-07
+
+### Added
+- **Configurable PORT** via environment variable for multi-instance deployment
+- **SERVER_IP** environment variable for dynamic callback URL configuration
+- **PROJECT_NAME** environment variable for unique Docker container names per instance
+- **Multi-Instance Deployment Guide** in README.md with step-by-step instructions
+  - Setup instructions for each user/instance
+  - EVE Developer Application configuration (separate or shared)
+  - Container naming and management
+  - Firewall configuration examples
+
+### Changed
+- `docker-compose.yml` now uses `${PORT:-9000}` instead of hardcoded port 9000
+- `docker-compose.yml` includes `name:` field for Docker Compose project naming
+- Removed hardcoded container names to allow multiple instances
+- Environment variables table in README now includes default values
+
+### Technical Details
+- Backend callback URL dynamically constructed from `SERVER_IP` and `PORT`
+- Frontend port mapping uses `${PORT:-9000}:80`
+- Each instance gets isolated containers with unique names based on `PROJECT_NAME`
+- Backward compatible: defaults work without any `.env` changes
+
+---
+
 ## [v3.0.11] - 2026-03-07
 
 ### Documentation

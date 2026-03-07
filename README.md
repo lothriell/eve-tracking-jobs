@@ -4,7 +4,7 @@ A web application for tracking EVE Online industry jobs across multiple characte
 
 ## Features
 
-### Current Features (v3.0.10)
+### Current Features (v3.1.0)
 
 #### Dashboard
 - Aggregate statistics across all characters
@@ -34,6 +34,12 @@ A web application for tracking EVE Online industry jobs across multiple characte
 - Support for characters across different accounts
 - Character management via collapsible sidebar
 - Character portraits and quick switching
+
+#### Multi-Instance Deployment
+- Configurable port via `PORT` environment variable
+- Run multiple instances on the same server for different users
+- Unique Docker container names per instance
+- Comprehensive deployment guide included
 
 #### Job Slot Tracking
 - Manufacturing, Science, and Reaction slot tracking
@@ -197,6 +203,171 @@ Check the [CHANGELOG.md](CHANGELOG.md) for version updates that require re-autho
 
 ---
 
+## Multi-Instance Deployment
+
+If you want to run multiple instances of this application on the same server (e.g., for different users), follow these steps.
+
+### Why Multiple Instances?
+
+Each instance has:
+- Its own database (characters and settings)
+- Its own EVE Developer Application (or shared with multiple callbacks)
+- Its own port
+- Isolated Docker containers
+
+### Setup for Each User
+
+**User 1 (Port 9000):**
+```bash
+mkdir -p ~/docker/eve_esi_app_user1
+cd ~/docker/eve_esi_app_user1
+git clone https://github.com/lothriell/eve-tracking-jobs.git .
+cp .env.example .env
+nano .env
+```
+
+Configure `.env`:
+```env
+# Server Configuration
+PORT=9000
+SERVER_IP=10.69.10.15
+PROJECT_NAME=eve-esi-user1
+
+# EVE Developer Application
+EVE_CLIENT_ID=your_client_id_1
+EVE_CLIENT_SECRET=your_client_secret_1
+EVE_REDIRECT_URI=http://10.69.10.15:9000/auth/callback
+
+# Application Login
+APP_USERNAME=user1
+APP_PASSWORD=password1
+
+# Session Secret (generate a random string)
+SESSION_SECRET=random_secret_1
+```
+
+**User 2 (Port 9001):**
+```bash
+mkdir -p ~/docker/eve_esi_app_user2
+cd ~/docker/eve_esi_app_user2
+git clone https://github.com/lothriell/eve-tracking-jobs.git .
+cp .env.example .env
+nano .env
+```
+
+Configure `.env`:
+```env
+# Server Configuration
+PORT=9001                        # ← Different port!
+SERVER_IP=10.69.10.15
+PROJECT_NAME=eve-esi-user2       # ← Different project name!
+
+# EVE Developer Application
+EVE_CLIENT_ID=your_client_id_2
+EVE_CLIENT_SECRET=your_client_secret_2
+EVE_REDIRECT_URI=http://10.69.10.15:9001/auth/callback  # ← Matching port!
+
+# Application Login
+APP_USERNAME=user2
+APP_PASSWORD=password2
+
+# Session Secret
+SESSION_SECRET=random_secret_2
+```
+
+Repeat for additional users with ports 9002, 9003, etc.
+
+### EVE Developer Application Setup
+
+#### Option 1: Separate Apps (Recommended)
+
+Each user creates their own EVE Developer Application:
+- User 1 callback: `http://10.69.10.15:9000/auth/callback`
+- User 2 callback: `http://10.69.10.15:9001/auth/callback`
+- User 3 callback: `http://10.69.10.15:9002/auth/callback`
+- User 4 callback: `http://10.69.10.15:9003/auth/callback`
+
+Each user has their own Client ID and Secret.
+
+#### Option 2: Shared App
+
+One EVE Developer Application with multiple callback URLs:
+1. In EVE Developer portal, add ALL callback URLs (one per line)
+2. All users share the same `EVE_CLIENT_ID` and `EVE_CLIENT_SECRET`
+3. Each user's `.env` has their specific port in `EVE_REDIRECT_URI`
+
+### Deploy Each Instance
+
+Each user deploys their own instance:
+
+```bash
+cd ~/docker/eve_esi_app_userX
+docker-compose up -d --build
+```
+
+Verify containers are running:
+```bash
+docker-compose ps
+```
+
+### Access Each Instance
+
+| User | URL | Port |
+|------|-----|------|
+| User 1 | `http://10.69.10.15:9000` | 9000 |
+| User 2 | `http://10.69.10.15:9001` | 9001 |
+| User 3 | `http://10.69.10.15:9002` | 9002 |
+| User 4 | `http://10.69.10.15:9003` | 9003 |
+
+### Container Naming
+
+Each instance has unique container names using `PROJECT_NAME`:
+```
+eve-esi-user1-frontend-1
+eve-esi-user1-backend-1
+eve-esi-user2-frontend-1
+eve-esi-user2-backend-1
+```
+
+View all instances:
+```bash
+docker ps --filter "name=eve-esi"
+```
+
+### Firewall Configuration
+
+Make sure all required ports are open:
+
+```bash
+# UFW (Ubuntu/Debian)
+sudo ufw allow 9000/tcp
+sudo ufw allow 9001/tcp
+sudo ufw allow 9002/tcp
+sudo ufw allow 9003/tcp
+
+# iptables
+sudo iptables -A INPUT -p tcp --dport 9000:9003 -j ACCEPT
+```
+
+### Managing Multiple Instances
+
+```bash
+# Start all instances (run from each directory)
+cd ~/docker/eve_esi_app_user1 && docker-compose up -d
+cd ~/docker/eve_esi_app_user2 && docker-compose up -d
+
+# Stop specific instance
+cd ~/docker/eve_esi_app_user1 && docker-compose down
+
+# View logs for specific instance
+cd ~/docker/eve_esi_app_user1 && docker-compose logs -f
+
+# Update specific instance
+cd ~/docker/eve_esi_app_user1 && git pull && docker-compose up -d --build
+```
+
+---
+
 ## Troubleshooting
 
 ### "invalid_scope" Error During Authorization
@@ -356,15 +527,18 @@ npm start
 
 ### Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `EVE_CLIENT_ID` | EVE SSO Client ID |
-| `EVE_CLIENT_SECRET` | EVE SSO Secret Key |
-| `EVE_REDIRECT_URI` | OAuth callback URL |
-| `APP_USERNAME` | Application login username |
-| `APP_PASSWORD` | Application login password |
-| `SESSION_SECRET` | Express session secret |
-| `DB_PATH` | SQLite database path (optional) |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PORT` | External port for the application | `9000` |
+| `SERVER_IP` | Server IP address for callback URLs | `10.69.10.15` |
+| `PROJECT_NAME` | Docker project name (for multi-instance) | `eve-esi-app` |
+| `EVE_CLIENT_ID` | EVE SSO Client ID | (required) |
+| `EVE_CLIENT_SECRET` | EVE SSO Secret Key | (required) |
+| `EVE_REDIRECT_URI` | OAuth callback URL | auto-generated |
+| `APP_USERNAME` | Application login username | (required) |
+| `APP_PASSWORD` | Application login password | (required) |
+| `SESSION_SECRET` | Express session secret | (required) |
+| `DB_PATH` | SQLite database path | `/app/database/data/eve_esi.db` |
 
 ---
 

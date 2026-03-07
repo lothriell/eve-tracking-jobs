@@ -1,11 +1,10 @@
-version: '3.8'
+name: ${PROJECT_NAME:-eve-esi-app}
 
 services:
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: eve-esi-backend
     restart: unless-stopped
     ports:
       - "3001:3001"
@@ -15,11 +14,11 @@ services:
       - DB_PATH=/app/database/data/eve_esi.db
       - EVE_CLIENT_ID=${EVE_CLIENT_ID}
       - EVE_CLIENT_SECRET=${EVE_CLIENT_SECRET}
-      - EVE_REDIRECT_URI=${EVE_REDIRECT_URI:-http://10.69.10.15:9000/auth/callback}
+      - EVE_REDIRECT_URI=${EVE_REDIRECT_URI:-http://${SERVER_IP:-10.69.10.15}:${PORT:-9000}/auth/callback}
       - APP_USERNAME=${APP_USERNAME}
       - APP_PASSWORD=${APP_PASSWORD}
       - SESSION_SECRET=${SESSION_SECRET}
-      - FRONTEND_URL=${FRONTEND_URL:-http://10.69.10.15:9000}
+      - FRONTEND_URL=${FRONTEND_URL:-http://${SERVER_IP:-10.69.10.15}:${PORT:-9000}}
     volumes:
       - eve-esi-data:/app/database/data
     networks:
@@ -30,11 +29,10 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - REACT_APP_API_URL=http://10.69.10.15:3001
-    container_name: eve-esi-frontend
+        - REACT_APP_API_URL=http://${SERVER_IP:-10.69.10.15}:3001
     restart: unless-stopped
     ports:
-      - "9000:80"
+      - "${PORT:-9000}:80"
     depends_on:
       - backend
     networks:
