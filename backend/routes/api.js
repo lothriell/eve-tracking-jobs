@@ -2,6 +2,15 @@ const express = require('express');
 const router = express.Router();
 const characterController = require('../controllers/characterController');
 
+// Version endpoint (for deployment verification)
+router.get('/version', (req, res) => {
+  res.json({ 
+    version: '3.2.1',
+    name: 'EVE Industry Tracker',
+    buildDate: '2026-03-08'
+  });
+});
+
 // Middleware to check authentication
 const requireAuth = (req, res, next) => {
   if (!req.session.userId) {
