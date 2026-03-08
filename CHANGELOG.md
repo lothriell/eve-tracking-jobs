@@ -2,6 +2,45 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.3.3] - 2026-03-08
+
+### Fixed
+- **Collapsed Sidebar Scrollbar**: Hidden scrollbar completely while maintaining scroll functionality
+  - Scrollbar no longer obscures character portraits
+  - "+ Add Character" button fully visible at bottom
+  - Uses `scrollbar-width: none` (Firefox) and `-webkit-scrollbar: display: none` (Chrome/Safari)
+
+- **Sidebar Background Height**: Fixed sidebar background cutting off at viewport bottom
+  - Sidebar now uses `position: fixed` with `height: 100vh`
+  - Background extends properly when scrolling
+  - Main content uses `margin-left` to accommodate fixed sidebar
+
+- **Expanded Sidebar Logo Not Displaying**: Fixed broken logo showing "?"
+  - Corrected invalid `xmlns` namespace in `logo.svg`
+  - Was: `https://uxwing.com/wp-content/themes/uxwing/download/web-app-development/sidebar-panel-expand-icon.svg` (invalid URL)
+  - Fixed to: `http://www.w3.org/2000/svg` (proper SVG namespace)
+
+- **Browser Tab Favicon**: Fixed favicon not displaying in any browser
+  - Created proper `.ico` file with multiple sizes (16x16, 32x32, 48x48)
+  - Created PNG fallbacks: `favicon-16x16.png`, `favicon-32x32.png`, `apple-touch-icon.png`
+  - Updated `index.html` with proper favicon link order for cross-browser support
+  - Chrome, Firefox, Safari, Opera, and Edge all display favicon correctly
+
+### Added
+- **Cross-Browser Favicon Support**: Multiple favicon formats for full compatibility
+  - `favicon.ico` - Multi-size ICO for IE/Edge/Chrome
+  - `favicon-16x16.png` - Small PNG for modern browsers
+  - `favicon-32x32.png` - Standard PNG favicon
+  - `apple-touch-icon.png` - 180x180 for iOS devices
+  - `favicon.svg` - Scalable SVG (browsers that support it)
+
+### Technical
+- Sidebar state (collapsed/expanded) now managed in `Main.js` for proper margin coordination
+- Main content area uses `margin-left` transition for smooth sidebar toggle
+- Cache-busting updated to `?v=3.3.3` for all favicon links
+
+---
+
 ## [v3.3.2] - 2026-03-08
 
 ### Fixed

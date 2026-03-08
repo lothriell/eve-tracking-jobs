@@ -2,18 +2,23 @@
 
 A comprehensive web application for tracking EVE Online industry jobs across multiple characters and corporations.
 
-**Current Version:** v3.3.1
+**Current Version:** v3.3.3
 
 EVE Industry Tracker provides real-time tracking of your industry jobs, slot utilization, and corporation activities. With support for unlimited characters, auto-refresh functionality, hover-to-highlight features, and an EVE-inspired interface, it's the perfect tool for managing your industrial empire.
 
 ## Recent Updates
 
-### v3.3.1 - Bug Fixes & UI Improvements (2026-03-08)
-- **Fixed**: Dashboard job number calculations now correctly show personal vs corp breakdown
-- **Added**: Browser tab favicon with EVE-themed industry gear icon
-- **Fixed**: Sidebar alignment with main content header
-- **Fixed**: Collapsed sidebar scrollbar no longer blocks character portraits
-- **Fixed**: Collapsed sidebar shows neutral EVE icon instead of activity-specific icon
+### v3.3.3 - Critical Bug Fixes (2026-03-08)
+- **Scrollbar Fix**: Hidden scrollbar in collapsed sidebar - portraits fully visible
+- **Sidebar Background**: Fixed background extending to full page height
+- **Logo Fix**: Fixed expanded sidebar logo not displaying (was showing "?")
+- **Favicon Fix**: Full cross-browser favicon support (Chrome, Firefox, Safari, Opera, Edge)
+  - Added `.ico`, `.png` (16x16, 32x32), and `apple-touch-icon.png` formats
+
+### v3.3.2 - UI Improvements (2026-03-08)
+- **Favicon**: Fixed SVG namespace for favicon display
+- **Header Alignment**: Proper 54px height matching
+- **Collapsed Sidebar**: Increased to 80px width
 
 ### v3.3.0 - Hover-to-Highlight Feature (2026-03-08)
 - **Hover-to-Highlight**: Hover over Manufacturing, Science, or Reactions cards to identify characters with free slots
@@ -41,7 +46,7 @@ Your existing deployment will continue to work without any changes.
 
 ---
 
-## Features (v3.3.1)
+## Features (v3.3.3)
 
 ### Dashboard
 - **Hover-to-Highlight**: Hover over job type cards to instantly see which characters have free slots

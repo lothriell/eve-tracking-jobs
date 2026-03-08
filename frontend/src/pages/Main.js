@@ -12,6 +12,7 @@ function Main({ onLogout }) {
   const [error, setError] = useState('');
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -75,9 +76,11 @@ function Main({ onLogout }) {
         onShowAllCharacters={handleShowAllCharacters}
         currentView={currentView}
         onViewChange={handleViewChange}
+        collapsed={sidebarCollapsed}
+        onCollapsedChange={setSidebarCollapsed}
       />
       
-      <div className="main-content">
+      <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <div className="main-header">
           <div className="header-title">
             <h1>EVE Industry Tracker</h1>

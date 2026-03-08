@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { getAllCharacters, initiateEveAuth, deleteCharacter } from '../services/api';
 import './Sidebar.css';
 
-function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, currentView, onViewChange, onCharactersChange }) {
+function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, currentView, onViewChange, onCharactersChange, collapsed, onCollapsedChange }) {
   const [characters, setCharacters] = useState([]);
-  const [collapsed, setCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [linking, setLinking] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
@@ -86,7 +85,7 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
     <div className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
       <button 
         className="sidebar-toggle"
-        onClick={() => setCollapsed(!collapsed)}
+        onClick={() => onCollapsedChange && onCollapsedChange(!collapsed)}
         title={collapsed ? 'Expand' : 'Collapse'}
       >
         {collapsed ? '→' : '←'}
