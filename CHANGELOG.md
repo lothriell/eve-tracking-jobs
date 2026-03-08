@@ -2,6 +2,19 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.2.1] - 2026-03-08
+
+### Fixed
+- **Reaction Slot Calculation Bug**: Fixed incorrect skill IDs for reaction slot calculation
+  - **Previous (incorrect)**: Used skill IDs 45746 (Reactions) and 45748 (Mass Reactions)
+  - **Fixed (correct)**: Now uses 45748 (Mass Reactions) and 45749 (Advanced Mass Reactions)
+  - 45746 is the base "Reactions" skill (reduces time, doesn't add slots)
+  - 45748 is "Mass Reactions" (+1 slot per level)
+  - 45749 is "Advanced Mass Reactions" (+1 slot per level)
+  - Characters like Akira Tendo now show correct reaction slots (e.g., R: 1/2 instead of R: 1/6)
+
+---
+
 ## [v3.2.0] - 2026-03-08
 
 ### Changed

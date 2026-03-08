@@ -266,9 +266,12 @@ function calculateJobSlots(skills) {
   // Science skills
   const LABORATORY_OPERATION = 3406;   // +1 science slot per level (max 5)
   const ADV_LABORATORY_OP = 24624;     // +1 science slot per level (max 5)
-  // Reaction skills
-  const MASS_REACTIONS = 45746;        // +1 reaction slot per level (max 5)
-  const ADV_MASS_REACTIONS = 45748;    // +1 reaction slot per level (max 5)
+  // Reaction skills (FIXED in v3.2.1: correct skill IDs)
+  // 45746 = Reactions (base skill, reduces time, NOT for slots)
+  // 45748 = Mass Reactions (adds +1 slot per level)
+  // 45749 = Advanced Mass Reactions (adds +1 slot per level)
+  const MASS_REACTIONS = 45748;        // +1 reaction slot per level (max 5)
+  const ADV_MASS_REACTIONS = 45749;    // +1 reaction slot per level (max 5)
 
   const skillMap = {};
   skills.forEach(skill => {
