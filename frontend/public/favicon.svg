@@ -1,0 +1,27 @@
+<svg xmlns="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Blue_gradient.svg/250px-Blue_gradient.svg.png" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1f2e"/>
+      <stop offset="100%" style="stop-color:#0d1117"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="32" height="32" rx="6" fill="url(#bg)"/>
+  <!-- Gear/Industry icon -->
+  <circle cx="16" cy="16" r="5" fill="none" stroke="url(#accent)" stroke-width="2"/>
+  <circle cx="16" cy="16" r="2" fill="url(#accent)"/>
+  <!-- Gear teeth -->
+  <rect x="15" y="7" width="2" height="4" fill="url(#accent)"/>
+  <rect x="15" y="21" width="2" height="4" fill="url(#accent)"/>
+  <rect x="7" y="15" width="4" height="2" fill="url(#accent)"/>
+  <rect x="21" y="15" width="4" height="2" fill="url(#accent)"/>
+  <!-- Diagonal teeth -->
+  <rect x="9.5" y="9.5" width="2" height="4" fill="url(#accent)" transform="rotate(45 10.5 11.5)"/>
+  <rect x="20.5" y="18.5" width="2" height="4" fill="url(#accent)" transform="rotate(45 21.5 20.5)"/>
+  <rect x="18.5" y="9.5" width="2" height="4" fill="url(#accent)" transform="rotate(-45 19.5 11.5)"/>
+  <rect x="9.5" y="18.5" width="2" height="4" fill="url(#accent)" transform="rotate(-45 10.5 20.5)"/>
+</svg>

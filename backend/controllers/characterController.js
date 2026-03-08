@@ -314,6 +314,9 @@ exports.getDashboardStats = async (req, res) => {
     let totalCorpJobs = 0;
     // Use activity categories: manufacturing, science, reactions
     const jobsByActivity = { manufacturing: 0, science: 0, reactions: 0 };
+    // Track personal vs corp breakdown separately
+    const personalJobsByActivity = { manufacturing: 0, science: 0, reactions: 0 };
+    const corpJobsByActivity = { manufacturing: 0, science: 0, reactions: 0 };
     const jobsByCharacter = [];
     const totals = {
       manufacturing: { current: 0, max: 0 },
@@ -367,6 +370,7 @@ exports.getDashboardStats = async (req, res) => {
           if (category in personalByCategory) {
             personalByCategory[category]++;
             jobsByActivity[category]++;
+            personalJobsByActivity[category]++;
           }
         });
 
@@ -388,12 +392,15 @@ exports.getDashboardStats = async (req, res) => {
                 if (activityId === 1) {
                   corpByCategory.manufacturing++;
                   jobsByActivity.manufacturing++;
+                  corpJobsByActivity.manufacturing++;
                 } else if ([3, 4, 5, 7, 8].includes(activityId)) {
                   corpByCategory.science++;
                   jobsByActivity.science++;
+                  corpJobsByActivity.science++;
                 } else if (activityId === 9) {
                   corpByCategory.reactions++;
                   jobsByActivity.reactions++;
+                  corpJobsByActivity.reactions++;
                 }
               }
             });
@@ -463,6 +470,8 @@ exports.getDashboardStats = async (req, res) => {
       personal_active_jobs: totalPersonalJobs,
       corp_active_jobs: totalCorpJobs,
       jobs_by_activity: jobsByActivity,
+      personal_jobs_by_activity: personalJobsByActivity,
+      corp_jobs_by_activity: corpJobsByActivity,
       jobs_by_character: jobsByCharacter,
       slots: totals
     });

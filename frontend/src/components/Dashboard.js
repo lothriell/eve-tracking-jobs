@@ -204,9 +204,7 @@ function Dashboard({ onError }) {
               {stats.slots?.manufacturing?.current || 0}/{stats.slots?.manufacturing?.max || 0}
             </span>
             <span className="slot-card-breakdown">
-              ({stats.personal_active_jobs > 0 || stats.corp_active_jobs > 0 ? 
-                `${stats.jobs_by_character?.reduce((acc, c) => acc + (c.activity_breakdown?.manufacturing || 0) - (c.corp_jobs > 0 ? Math.min(c.activity_breakdown?.manufacturing || 0, c.corp_jobs) : 0), 0) || 0} personal + ${stats.corp_active_jobs > 0 ? stats.jobs_by_activity?.manufacturing || 0 : 0}` : 
-                '0 personal + 0'} corp)
+              ({stats.personal_jobs_by_activity?.manufacturing || 0} personal + {stats.corp_jobs_by_activity?.manufacturing || 0} corp)
             </span>
             <span className="slot-card-label">Manufacturing jobs</span>
           </div>
@@ -227,7 +225,7 @@ function Dashboard({ onError }) {
               {stats.slots?.science?.current || 0}/{stats.slots?.science?.max || 0}
             </span>
             <span className="slot-card-breakdown">
-              ({stats.jobs_by_activity?.science || 0} personal + 0 corp)
+              ({stats.personal_jobs_by_activity?.science || 0} personal + {stats.corp_jobs_by_activity?.science || 0} corp)
             </span>
             <span className="slot-card-label">Science jobs</span>
           </div>
@@ -248,7 +246,7 @@ function Dashboard({ onError }) {
               {stats.slots?.reactions?.current || 0}/{stats.slots?.reactions?.max || 0}
             </span>
             <span className="slot-card-breakdown">
-              ({stats.jobs_by_activity?.reactions || 0} personal + 0 corp)
+              ({stats.personal_jobs_by_activity?.reactions || 0} personal + {stats.corp_jobs_by_activity?.reactions || 0} corp)
             </span>
             <span className="slot-card-label">Reactions</span>
           </div>

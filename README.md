@@ -2,9 +2,26 @@
 
 A comprehensive web application for tracking EVE Online industry jobs across multiple characters and corporations.
 
-**Current Version:** v3.2.0
+**Current Version:** v3.3.1
 
-EVE Industry Tracker provides real-time tracking of your industry jobs, slot utilization, and corporation activities. With support for unlimited characters, auto-refresh functionality, and an EVE-inspired interface, it's the perfect tool for managing your industrial empire.
+EVE Industry Tracker provides real-time tracking of your industry jobs, slot utilization, and corporation activities. With support for unlimited characters, auto-refresh functionality, hover-to-highlight features, and an EVE-inspired interface, it's the perfect tool for managing your industrial empire.
+
+## Recent Updates
+
+### v3.3.1 - Bug Fixes & UI Improvements (2026-03-08)
+- **Fixed**: Dashboard job number calculations now correctly show personal vs corp breakdown
+- **Added**: Browser tab favicon with EVE-themed industry gear icon
+- **Fixed**: Sidebar alignment with main content header
+- **Fixed**: Collapsed sidebar scrollbar no longer blocks character portraits
+- **Fixed**: Collapsed sidebar shows neutral EVE icon instead of activity-specific icon
+
+### v3.3.0 - Hover-to-Highlight Feature (2026-03-08)
+- **Hover-to-Highlight**: Hover over Manufacturing, Science, or Reactions cards to identify characters with free slots
+- Characters with full slots are dimmed (40% opacity)
+- Characters with free slots remain highlighted
+- Smooth 0.3s transition animation
+- Mobile/touch support with tap-to-toggle
+- ARIA accessibility support
 
 ## ⚠️ Backward Compatibility Note (v3.1.0+)
 
@@ -24,9 +41,10 @@ Your existing deployment will continue to work without any changes.
 
 ---
 
-## Features (v3.2.0)
+## Features (v3.3.1)
 
 ### Dashboard
+- **Hover-to-Highlight**: Hover over job type cards to instantly see which characters have free slots
 - **Job Slot Tracking** with breakdown: "X/Y (Z personal + W corp)"
 - **Auto-Refresh** functionality with configurable intervals (5m, 10m, 15m)
 - **Character Overview** with accurate slot calculations

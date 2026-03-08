@@ -96,7 +96,9 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
       {collapsed && (
         <div className="sidebar-collapsed">
           <div className="collapsed-header">
-            <span className="collapsed-logo" title="EVE Industry Tracker">🏭</span>
+            <div className="collapsed-logo" title="EVE Industry Tracker">
+              <img src="/favicon.svg" alt="EVE Industry Tracker" />
+            </div>
           </div>
           
           <div className="collapsed-nav">

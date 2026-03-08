@@ -2,6 +2,35 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.3.1] - 2026-03-08
+
+### Fixed
+- **Dashboard Job Numbers**: Fixed incorrect calculation of personal vs corp job breakdown
+  - Backend now correctly tracks `personal_jobs_by_activity` and `corp_jobs_by_activity` separately
+  - Frontend displays accurate "(X personal + Y corp)" breakdown for each job type
+  - Manufacturing, Science, and Reactions cards all show correct numbers
+  
+- **Sidebar Alignment**: Fixed alignment between sidebar header and main content header
+  - Both headers now have matching height (54px) for visual consistency
+  - Added matching background styling
+
+- **Collapsed Sidebar Scrollbar**: Fixed scrollbar blocking character portraits when sidebar is collapsed
+  - Implemented thin (4px) custom scrollbar that doesn't overlap portraits
+  - Uses overlay-style scrollbar with transparent track
+  - Works on both Firefox (scrollbar-width: thin) and Chrome/Safari (webkit-scrollbar)
+
+- **Collapsed Sidebar Icon**: Changed collapsed sidebar top icon from activity-specific emoji to neutral EVE icon
+  - Now uses the application favicon (gear icon) for brand consistency
+  - No longer shows the "My Industry Jobs" factory emoji when collapsed
+
+### Added
+- **Browser Tab Favicon**: Added EVE-themed favicon with industry gear icon
+  - SVG format for crisp display at all sizes
+  - Gradient styling matching application theme (#667eea to #764ba2)
+  - Updated theme-color meta tag to match app background
+
+---
+
 ## [v3.3.0] - 2026-03-08
 
 ### Features

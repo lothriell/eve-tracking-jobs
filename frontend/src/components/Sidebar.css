@@ -43,19 +43,33 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 12px 8px;
+  padding: 0 8px;
 }
 
 .collapsed-header {
   display: flex;
   justify-content: center;
-  padding: 8px 0 16px;
+  align-items: center;
+  /* Match main header height: 16px padding top + 16px padding bottom + ~22px h1 = ~54px */
+  min-height: 54px;
+  padding: 16px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .collapsed-logo {
-  font-size: 24px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: default;
+}
+
+.collapsed-logo img {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
 }
 
 .collapsed-nav {
@@ -99,7 +113,28 @@
   gap: 6px;
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 8px 0;
+  /* Custom thin scrollbar that doesn't block content */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.collapsed-characters::-webkit-scrollbar {
+  width: 4px;
+}
+
+.collapsed-characters::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.collapsed-characters::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+.collapsed-characters::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .collapsed-char-item {
@@ -159,11 +194,14 @@
 
 /* ========== EXPANDED STATE STYLES ========== */
 .sidebar-header {
-  padding: 20px 16px 12px;
+  /* Match main header height for alignment */
+  min-height: 54px;
+  padding: 16px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .sidebar-header h3 {
