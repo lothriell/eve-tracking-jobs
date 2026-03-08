@@ -164,7 +164,9 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
       {!collapsed && (
         <>
           <div className="sidebar-header">
-            <h3>Characters</h3>
+            <div className="sidebar-logo">
+              <img src="/logo.svg" alt="EVE Industry Tracker" />
+            </div>
             <span className="character-count">{characters.length}</span>
           </div>
 

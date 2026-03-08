@@ -2,6 +2,38 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.3.2] - 2026-03-08
+
+### Fixed
+- **Favicon Not Displaying**: Fixed incorrect xmlns attribute in favicon.svg that prevented browser display
+  - Corrected `xmlns` from invalid URL to proper `http://www.w3.org/2000/svg`
+  - Added cache-busting query parameter to favicon link
+
+- **Header Alignment (Final Fix)**: Properly aligned sidebar header with main content header
+  - Both headers now have explicit `height: 54px` with `box-sizing: border-box`
+  - Matching background color `rgba(0, 0, 0, 0.3)` for visual consistency
+  - Fixed both expanded and collapsed states
+
+- **Scrollbar Blocking Portraits**: Increased collapsed sidebar width to prevent scrollbar overlap
+  - Collapsed sidebar width increased from 60px to 80px
+  - Character portrait items increased to 56x56px with centered 42x42px portraits
+  - Better visual balance and more breathing room
+
+- **Navigation Bar Height**: Fixed navigation not extending to full page height
+  - Added `flex-shrink: 0` and `margin-top: auto` to `.sidebar-nav`
+  - Navigation now stays at bottom of sidebar regardless of character count
+  - Sidebar characters section properly scrolls while navigation remains fixed
+
+### Added
+- **Application Logo**: Replaced "CHARACTERS" text with EVE Industry logo
+  - Created new `logo.svg` with gear icon and "EVE Industry" text
+  - Logo matches application theme with gradient styling
+  - Shown in expanded sidebar header
+
+### Changed
+- Collapsed sidebar icons/portraits enlarged for better visibility (36px → 42px)
+- Sidebar padding adjusted for wider collapsed state
+
 ## [v3.3.1] - 2026-03-08
 
 ### Fixed
