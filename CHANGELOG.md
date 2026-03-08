@@ -2,6 +2,34 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.3.4] - 2026-03-08
+
+### Fixed
+- **Safari Favicon Support**: Added Safari-specific favicon meta tags
+  - Added `apple-touch-icon` with proper link order (Safari prefers these first)
+  - Added `mask-icon` for Safari pinned tabs
+  - Added `apple-mobile-web-app-title`, `apple-mobile-web-app-capable`, and `apple-mobile-web-app-status-bar-style` meta tags
+  - Cache-busting updated to `?v=3.3.4`
+
+- **Expanded Sidebar Logo Still Not Displaying**: Fixed persistent logo issue
+  - `logo.svg` had corrupted/invalid `xmlns` attribute pointing to random URLs
+  - Completely rewrote `logo.svg` with proper `xmlns="http://www.w3.org/2000/svg"` namespace
+  - Logo now displays correctly in expanded sidebar
+
+- **Collapse/Expand Arrow Only Showing Half**: Fixed toggle button being clipped
+  - Changed sidebar `overflow` from `auto` to `visible` to prevent button clipping
+  - Increased toggle button size from 24px to 28px
+  - Added proper blue border (`#4a9eff`) for better visibility
+  - Increased `z-index` to 1000 for reliable layering
+  - Added `box-shadow` for depth
+  - Added hover scale effect for better UX
+
+### Technical
+- Sidebar content areas (`.sidebar-collapsed`, `.collapsed-characters`) now handle their own scrolling
+- Toggle button styling improved for mobile responsiveness
+
+---
+
 ## [v3.3.3] - 2026-03-08
 
 ### Fixed
