@@ -140,10 +140,32 @@
   border-radius: 12px;
   border: 1px solid;
   transition: all 0.2s;
+  cursor: pointer;
 }
 
 .slot-card:hover {
   transform: translateY(-2px);
+}
+
+/* Hovered state for slot cards */
+.slot-card.hovered {
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+  border-width: 2px;
+}
+
+.slot-card.manufacturing.hovered {
+  box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
+  border-color: var(--color-manufacturing);
+}
+
+.slot-card.science.hovered {
+  box-shadow: 0 0 20px rgba(74, 158, 255, 0.4);
+  border-color: var(--color-science);
+}
+
+.slot-card.reactions.hovered {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+  border-color: var(--color-reactions);
 }
 
 .slot-card-icon {
@@ -291,11 +313,17 @@
   background: rgba(0, 0, 0, 0.3);
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  opacity: 1;
 }
 
 .character-card:hover {
   border-color: rgba(102, 126, 234, 0.3);
+}
+
+/* Dimmed state for characters with full slots */
+.character-card.dimmed {
+  opacity: 0.4;
 }
 
 .character-avatar {

@@ -8,6 +8,7 @@ function Dashboard({ onError }) {
   const [loading, setLoading] = useState(true);
   const [autoRefreshInterval, setAutoRefreshInterval] = useState(null);
   const [autoRefreshDropdown, setAutoRefreshDropdown] = useState(false);
+  const [hoveredJobType, setHoveredJobType] = useState(null);
 
   const loadStats = useCallback(async () => {
     try {
@@ -76,6 +77,31 @@ function Dashboard({ onError }) {
       localStorage.removeItem('autoRefreshInterval');
     }
     setAutoRefreshDropdown(false);
+  };
+
+  // Check if character has full slots for a given job type
+  const isCharacterSlotFull = (character, jobType) => {
+    if (!character || !jobType) return false;
+    const slots = character.slots || {};
+    switch(jobType) {
+      case 'manufacturing':
+        return slots.manufacturing?.current === slots.manufacturing?.max;
+      case 'science':
+        return slots.science?.current === slots.science?.max;
+      case 'reactions':
+        return slots.reactions?.current === slots.reactions?.max;
+      default:
+        return false;
+    }
+  };
+
+  // Toggle job type highlight (for mobile tap support)
+  const handleJobTypeClick = (jobType) => {
+    if (hoveredJobType === jobType) {
+      setHoveredJobType(null);
+    } else {
+      setHoveredJobType(jobType);
+    }
   };
 
   // Group corporation characters by role for simplified display
@@ -163,7 +189,15 @@ function Dashboard({ onError }) {
 
       {/* Job Slot Summary as Grid Cards with EVE Colors */}
       <div className="slot-cards-grid">
-        <div className="slot-card manufacturing">
+        <div 
+          className={`slot-card manufacturing ${hoveredJobType === 'manufacturing' ? 'hovered' : ''}`}
+          onMouseEnter={() => setHoveredJobType('manufacturing')}
+          onMouseLeave={() => setHoveredJobType(null)}
+          onClick={() => handleJobTypeClick('manufacturing')}
+          role="button"
+          tabIndex={0}
+          aria-label="Highlight characters with available manufacturing slots"
+        >
           <div className="slot-card-icon">⚙️</div>
           <div className="slot-card-content">
             <span className="slot-card-value">
@@ -178,7 +212,15 @@ function Dashboard({ onError }) {
           </div>
         </div>
 
-        <div className="slot-card science">
+        <div 
+          className={`slot-card science ${hoveredJobType === 'science' ? 'hovered' : ''}`}
+          onMouseEnter={() => setHoveredJobType('science')}
+          onMouseLeave={() => setHoveredJobType(null)}
+          onClick={() => handleJobTypeClick('science')}
+          role="button"
+          tabIndex={0}
+          aria-label="Highlight characters with available science slots"
+        >
           <div className="slot-card-icon">🔬</div>
           <div className="slot-card-content">
             <span className="slot-card-value">
@@ -191,7 +233,15 @@ function Dashboard({ onError }) {
           </div>
         </div>
 
-        <div className="slot-card reactions">
+        <div 
+          className={`slot-card reactions ${hoveredJobType === 'reactions' ? 'hovered' : ''}`}
+          onMouseEnter={() => setHoveredJobType('reactions')}
+          onMouseLeave={() => setHoveredJobType(null)}
+          onClick={() => handleJobTypeClick('reactions')}
+          role="button"
+          tabIndex={0}
+          aria-label="Highlight characters with available reaction slots"
+        >
           <div className="slot-card-icon">⚗️</div>
           <div className="slot-card-content">
             <span className="slot-card-value">
@@ -236,7 +286,10 @@ function Dashboard({ onError }) {
         </div>
         <div className="characters-grid">
           {stats.jobs_by_character.map((char) => (
-            <div key={char.character_id} className={`character-card ${char.slots?.needsReauthorization ? 'needs-reauth' : ''}`}>
+            <div 
+              key={char.character_id} 
+              className={`character-card ${char.slots?.needsReauthorization ? 'needs-reauth' : ''} ${hoveredJobType && isCharacterSlotFull(char, hoveredJobType) ? 'dimmed' : ''}`}
+            >
               <img 
                 src={char.portrait_url} 
                 alt={char.character_name}

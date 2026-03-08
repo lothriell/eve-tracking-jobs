@@ -2,6 +2,25 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.3.0] - 2026-03-08
+
+### Features
+- **Hover-to-Highlight Character Availability**: New interactive feature for dashboard
+  - Hover over Manufacturing, Science, or Reactions job type cards to highlight character availability
+  - Characters with free slots remain at normal brightness (100% opacity)
+  - Characters with full slots for that job type are dimmed (40% opacity)
+  - Smooth 0.3s transition animation
+  - Visual feedback: hovered job type card gets a glowing border
+  - Mobile/touch support: tap to toggle the highlight effect
+  - Accessibility: ARIA labels and keyboard focusable cards
+
+### UX Improvements
+- Easier to quickly identify which characters can take more jobs of a specific type
+- Interactive slot cards with cursor pointer and hover effects
+- Smooth transitions for better visual experience
+
+---
+
 ## [v3.2.1] - 2026-03-08
 
 ### Fixed
