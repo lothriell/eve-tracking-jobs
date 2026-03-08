@@ -6,6 +6,8 @@ function Dashboard({ onError }) {
   const [stats, setStats] = useState(null);
   const [corpStats, setCorpStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [autoRefreshInterval, setAutoRefreshInterval] = useState(null);
+  const [autoRefreshDropdown, setAutoRefreshDropdown] = useState(false);
 
   const loadStats = useCallback(async () => {
     try {
@@ -47,6 +49,35 @@ function Dashboard({ onError }) {
     loadStats();
   }, [loadStats]);
 
+  // Load auto-refresh setting from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('autoRefreshInterval');
+    if (saved && saved !== 'null') {
+      setAutoRefreshInterval(parseInt(saved));
+    }
+  }, []);
+
+  // Auto-refresh timer
+  useEffect(() => {
+    if (!autoRefreshInterval) return;
+    
+    const interval = setInterval(() => {
+      loadStats();
+    }, autoRefreshInterval * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [autoRefreshInterval, loadStats]);
+
+  const handleAutoRefreshChange = (minutes) => {
+    setAutoRefreshInterval(minutes);
+    if (minutes) {
+      localStorage.setItem('autoRefreshInterval', minutes.toString());
+    } else {
+      localStorage.removeItem('autoRefreshInterval');
+    }
+    setAutoRefreshDropdown(false);
+  };
+
   // Group corporation characters by role for simplified display
   const groupCharactersByRole = (characters) => {
     const roleGroups = {};
@@ -75,7 +106,7 @@ function Dashboard({ onError }) {
     return (
       <div className="dashboard-container">
         <div className="empty-state">
-          <h3>Welcome to EVE ESI Dashboard</h3>
+          <h3>Welcome to EVE Industry Tracker</h3>
           <p>Link your EVE characters to view industry statistics</p>
         </div>
       </div>
@@ -86,9 +117,48 @@ function Dashboard({ onError }) {
     <div className="dashboard-container">
       <div className="dashboard-header">
         <h2>Dashboard Overview</h2>
-        <button className="refresh-btn" onClick={loadStats}>
-          ↻ Refresh
-        </button>
+        <div className="header-actions">
+          <div className="auto-refresh-container">
+            <button 
+              className={`auto-refresh-btn ${autoRefreshInterval ? 'active' : ''}`}
+              onClick={() => setAutoRefreshDropdown(!autoRefreshDropdown)}
+            >
+              <span className={`refresh-icon ${autoRefreshInterval ? 'spinning' : ''}`}>⟳</span>
+              Auto: {autoRefreshInterval ? `${autoRefreshInterval}m` : 'Off'}
+            </button>
+            {autoRefreshDropdown && (
+              <div className="auto-refresh-dropdown">
+                <div 
+                  className={`dropdown-item ${!autoRefreshInterval ? 'active' : ''}`}
+                  onClick={() => handleAutoRefreshChange(null)}
+                >
+                  Off
+                </div>
+                <div 
+                  className={`dropdown-item ${autoRefreshInterval === 5 ? 'active' : ''}`}
+                  onClick={() => handleAutoRefreshChange(5)}
+                >
+                  5 minutes
+                </div>
+                <div 
+                  className={`dropdown-item ${autoRefreshInterval === 10 ? 'active' : ''}`}
+                  onClick={() => handleAutoRefreshChange(10)}
+                >
+                  10 minutes
+                </div>
+                <div 
+                  className={`dropdown-item ${autoRefreshInterval === 15 ? 'active' : ''}`}
+                  onClick={() => handleAutoRefreshChange(15)}
+                >
+                  15 minutes
+                </div>
+              </div>
+            )}
+          </div>
+          <button className="refresh-btn" onClick={loadStats}>
+            ↻ Refresh
+          </button>
+        </div>
       </div>
 
       {/* Job Slot Summary as Grid Cards with EVE Colors */}
@@ -98,6 +168,11 @@ function Dashboard({ onError }) {
           <div className="slot-card-content">
             <span className="slot-card-value">
               {stats.slots?.manufacturing?.current || 0}/{stats.slots?.manufacturing?.max || 0}
+            </span>
+            <span className="slot-card-breakdown">
+              ({stats.personal_active_jobs > 0 || stats.corp_active_jobs > 0 ? 
+                `${stats.jobs_by_character?.reduce((acc, c) => acc + (c.activity_breakdown?.manufacturing || 0) - (c.corp_jobs > 0 ? Math.min(c.activity_breakdown?.manufacturing || 0, c.corp_jobs) : 0), 0) || 0} personal + ${stats.corp_active_jobs > 0 ? stats.jobs_by_activity?.manufacturing || 0 : 0}` : 
+                '0 personal + 0'} corp)
             </span>
             <span className="slot-card-label">Manufacturing jobs</span>
           </div>
@@ -109,6 +184,9 @@ function Dashboard({ onError }) {
             <span className="slot-card-value">
               {stats.slots?.science?.current || 0}/{stats.slots?.science?.max || 0}
             </span>
+            <span className="slot-card-breakdown">
+              ({stats.jobs_by_activity?.science || 0} personal + 0 corp)
+            </span>
             <span className="slot-card-label">Science jobs</span>
           </div>
         </div>
@@ -119,72 +197,13 @@ function Dashboard({ onError }) {
             <span className="slot-card-value">
               {stats.slots?.reactions?.current || 0}/{stats.slots?.reactions?.max || 0}
             </span>
+            <span className="slot-card-breakdown">
+              ({stats.jobs_by_activity?.reactions || 0} personal + 0 corp)
+            </span>
             <span className="slot-card-label">Reactions</span>
           </div>
         </div>
       </div>
-
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon">👤</div>
-          <div className="stat-content">
-            <span className="stat-value">{stats.total_characters}</span>
-            <span className="stat-label">Linked Characters</span>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon">📊</div>
-          <div className="stat-content">
-            <span className="stat-value">{stats.total_active_jobs}</span>
-            <span className="stat-label">Total Active Jobs</span>
-            <span className="stat-breakdown">
-              {stats.personal_active_jobs || 0} personal + {stats.corp_active_jobs || 0} corp
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Corporation Jobs Summary */}
-      {corpStats && (
-        <div className="corp-stats-section">
-          <h3>🏢 Corporation Industry</h3>
-          <div className="corp-stats-grid">
-            <div className="stat-card corp-card">
-              <div className="stat-icon">🏢</div>
-              <div className="stat-content">
-                <span className="stat-value">{corpStats.corps_with_access}</span>
-                <span className="stat-label">Corps with Access</span>
-              </div>
-            </div>
-            <div className="stat-card corp-card">
-              <div className="stat-icon">📋</div>
-              <div className="stat-content">
-                <span className="stat-value">{corpStats.active_jobs}</span>
-                <span className="stat-label">Corp Active Jobs</span>
-              </div>
-            </div>
-          </div>
-          <div className="corp-list">
-            {corpStats.corporations.filter(c => c.has_industry_access).map(corp => {
-              const roleGroups = groupCharactersByRole(corp.characters);
-              return (
-                <div key={corp.corporation_id} className="corp-item">
-                  <span className="corp-ticker">[{corp.ticker}]</span>
-                  <span className="corp-name">{corp.name}</span>
-                  <div className="corp-role-summary">
-                    {Object.entries(roleGroups).map(([role, count]) => (
-                      <span key={role} className="corp-role-badge">
-                        {count} {count === 1 ? 'character' : 'characters'} - {role}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Scope Warning Banner */}
       {stats.jobs_by_character.some(char => char.slots?.needsReauthorization) && (
@@ -197,8 +216,24 @@ function Dashboard({ onError }) {
         </div>
       )}
 
+      {/* Characters Overview Section */}
       <div className="characters-section">
         <h3>Characters Overview</h3>
+        <div className="overview-stats-row">
+          <div className="overview-stat-item">
+            <span className="overview-stat-icon">👤</span>
+            <span className="overview-stat-value">{stats.total_characters}</span>
+            <span className="overview-stat-label">Linked Characters</span>
+          </div>
+          <div className="overview-stat-item">
+            <span className="overview-stat-icon">📊</span>
+            <span className="overview-stat-value">{stats.total_active_jobs}</span>
+            <span className="overview-stat-label">Total Active Jobs</span>
+            <span className="overview-stat-breakdown">
+              ({stats.personal_active_jobs || 0} personal + {stats.corp_active_jobs || 0} corp)
+            </span>
+          </div>
+        </div>
         <div className="characters-grid">
           {stats.jobs_by_character.map((char) => (
             <div key={char.character_id} className={`character-card ${char.slots?.needsReauthorization ? 'needs-reauth' : ''}`}>
@@ -242,6 +277,43 @@ function Dashboard({ onError }) {
           ))}
         </div>
       </div>
+
+      {/* Corporation Jobs Summary - Now positioned AFTER Characters Overview */}
+      {corpStats && (
+        <div className="corp-stats-section compact">
+          <h3>🏢 Corporation Industry</h3>
+          <div className="overview-stats-row">
+            <div className="overview-stat-item">
+              <span className="overview-stat-icon">🏢</span>
+              <span className="overview-stat-value">{corpStats.corps_with_access}</span>
+              <span className="overview-stat-label">Corps with Access</span>
+            </div>
+            <div className="overview-stat-item">
+              <span className="overview-stat-icon">📋</span>
+              <span className="overview-stat-value">{corpStats.active_jobs}</span>
+              <span className="overview-stat-label">Corp Active Jobs</span>
+            </div>
+          </div>
+          <div className="corp-list">
+            {corpStats.corporations.filter(c => c.has_industry_access).map(corp => {
+              const roleGroups = groupCharactersByRole(corp.characters);
+              return (
+                <div key={corp.corporation_id} className="corp-item">
+                  <span className="corp-ticker">[{corp.ticker}]</span>
+                  <span className="corp-name">{corp.name}</span>
+                  <div className="corp-role-summary">
+                    {Object.entries(roleGroups).map(([role, count]) => (
+                      <span key={role} className="corp-role-badge">
+                        {count} {count === 1 ? 'character' : 'characters'} - {role}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {Object.keys(stats.jobs_by_activity).length > 0 && (
         <div className="activity-section">

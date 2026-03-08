@@ -92,6 +92,73 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
         {collapsed ? '→' : '←'}
       </button>
 
+      {/* Collapsed State - Show icons only */}
+      {collapsed && (
+        <div className="sidebar-collapsed">
+          <div className="collapsed-header">
+            <span className="collapsed-logo" title="EVE Industry Tracker">🏭</span>
+          </div>
+          
+          <div className="collapsed-nav">
+            <div 
+              className={`collapsed-nav-item ${currentView === 'dashboard' ? 'active' : ''}`}
+              onClick={() => onViewChange('dashboard')}
+              title="Dashboard"
+            >
+              📊
+            </div>
+            <div 
+              className={`collapsed-nav-item ${currentView === 'jobs' ? 'active' : ''}`}
+              onClick={() => onViewChange('jobs')}
+              title="My Industry Jobs"
+            >
+              🏭
+            </div>
+            <div 
+              className={`collapsed-nav-item ${currentView === 'corp-jobs' ? 'active' : ''}`}
+              onClick={() => onViewChange('corp-jobs')}
+              title="Corporation Jobs"
+            >
+              🏢
+            </div>
+          </div>
+
+          <div className="collapsed-divider"></div>
+
+          <div className="collapsed-characters">
+            <div 
+              className={`collapsed-char-item ${!selectedCharacter ? 'active' : ''}`}
+              onClick={handleShowAll}
+              title="All Characters"
+            >
+              <div className="collapsed-all-icon">∀</div>
+            </div>
+            {characters.map((char) => (
+              <div 
+                key={char.character_id}
+                className={`collapsed-char-item ${selectedCharacter?.character_id === char.character_id ? 'active' : ''}`}
+                onClick={() => handleSelectCharacter(char)}
+                title={char.name}
+              >
+                <img 
+                  src={char.portrait_url}
+                  alt={char.name}
+                  className="collapsed-portrait"
+                />
+              </div>
+            ))}
+            <div 
+              className="collapsed-char-item add-btn"
+              onClick={handleAddCharacter}
+              title="Add Character"
+            >
+              +
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Expanded State */}
       {!collapsed && (
         <>
           <div className="sidebar-header">

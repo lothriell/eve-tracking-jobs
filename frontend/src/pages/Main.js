@@ -80,7 +80,7 @@ function Main({ onLogout }) {
       <div className="main-content">
         <div className="main-header">
           <div className="header-title">
-            <h1>EVE ESI Dashboard</h1>
+            <h1>EVE Industry Tracker</h1>
             {selectedCharacter && (
               <span className="selected-character">
                 Viewing: {selectedCharacter.name}

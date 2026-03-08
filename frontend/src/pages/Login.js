@@ -27,7 +27,7 @@ function Login({ onLogin }) {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <h1>EVE ESI Application</h1>
+          <h1>EVE Industry Tracker</h1>
           <p>Industry Management Portal</p>
         </div>
         

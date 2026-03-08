@@ -42,6 +42,89 @@
   font-weight: 600;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Auto Refresh Button Styles */
+.auto-refresh-container {
+  position: relative;
+}
+
+.auto-refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #a0aec0;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auto-refresh-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(102, 126, 234, 0.4);
+  color: #e2e8f0;
+}
+
+.auto-refresh-btn.active {
+  background: rgba(102, 126, 234, 0.15);
+  border-color: rgba(102, 126, 234, 0.5);
+  color: #a3bffa;
+}
+
+.refresh-icon {
+  font-size: 16px;
+  display: inline-block;
+}
+
+.refresh-icon.spinning {
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.auto-refresh-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: #1a1f2e;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 100;
+  min-width: 120px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.dropdown-item {
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #a0aec0;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+}
+
+.dropdown-item.active {
+  background: rgba(102, 126, 234, 0.15);
+  color: #a3bffa;
+}
+
 /* Job Slot Cards Grid - EVE Colors */
 .slot-cards-grid {
   display: grid;
@@ -80,6 +163,12 @@
   font-family: 'Consolas', 'Monaco', monospace;
 }
 
+.slot-card-breakdown {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
 .slot-card-label {
   font-size: 12px;
   text-transform: uppercase;
@@ -98,7 +187,8 @@
   color: var(--color-manufacturing);
 }
 
-.slot-card.manufacturing .slot-card-label {
+.slot-card.manufacturing .slot-card-label,
+.slot-card.manufacturing .slot-card-breakdown {
   color: var(--color-manufacturing);
 }
 
@@ -112,7 +202,8 @@
   color: var(--color-science);
 }
 
-.slot-card.science .slot-card-label {
+.slot-card.science .slot-card-label,
+.slot-card.science .slot-card-breakdown {
   color: var(--color-science);
 }
 
@@ -126,62 +217,48 @@
   color: var(--color-reactions);
 }
 
-.slot-card.reactions .slot-card-label {
+.slot-card.reactions .slot-card-label,
+.slot-card.reactions .slot-card-breakdown {
   color: var(--color-reactions);
 }
 
-/* Stats Grid */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
+/* Overview Stats Row - For Characters and Corporation sections */
+.overview-stats-row {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.stat-card {
+.overview-stat-item {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 20px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.2s;
+  gap: 10px;
 }
 
-.stat-card:hover {
-  border-color: rgba(102, 126, 234, 0.3);
-  transform: translateY(-2px);
-}
-
-.stat-icon {
-  font-size: 28px;
+.overview-stat-icon {
+  font-size: 20px;
   opacity: 0.8;
 }
 
-.stat-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-value {
-  font-size: 28px;
+.overview-stat-value {
+  font-size: 20px;
   font-weight: 700;
   color: #fff;
-  line-height: 1;
 }
 
-.stat-label {
+.overview-stat-label {
   font-size: 12px;
   color: #718096;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-top: 4px;
+  letter-spacing: 0.3px;
 }
 
-.stat-breakdown {
+.overview-stat-breakdown {
   font-size: 11px;
   color: #718096;
-  margin-top: 2px;
+  margin-left: 4px;
 }
 
 /* Characters Section */
@@ -193,7 +270,7 @@
 }
 
 .characters-section h3 {
-  margin: 0 0 16px;
+  margin: 0 0 12px;
   color: #a0aec0;
   font-size: 14px;
   text-transform: uppercase;
@@ -415,30 +492,29 @@
   margin-bottom: 4px;
 }
 
-/* Corporation Stats Section */
+/* Corporation Stats Section - Compact version */
 .corp-stats-section {
-  margin-top: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
   padding: 20px;
-  background: linear-gradient(135deg, #1a2a3a 0%, #0d1a26 100%);
-  border: 1px solid #3a4a5a;
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.corp-stats-section.compact {
+  padding: 16px 20px;
 }
 
 .corp-stats-section h3 {
-  color: #4da6ff;
-  margin: 0 0 15px 0;
-  font-size: 1.1rem;
+  margin: 0 0 12px;
+  color: #a0aec0;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.corp-stats-grid {
-  display: flex;
-  gap: 15px;
-  margin-bottom: 15px;
-}
-
-.stat-card.corp-card {
-  background: rgba(77, 166, 255, 0.1);
-  border-color: #4da6ff;
+.corp-stats-section.compact h3 {
+  font-size: 13px;
+  margin-bottom: 8px;
 }
 
 .corp-list {
@@ -462,12 +538,14 @@
   color: #4da6ff;
   font-weight: bold;
   font-family: 'Consolas', monospace;
+  font-size: 13px;
 }
 
 .corp-name {
   color: #e0e0e0;
   flex: 1;
   min-width: 120px;
+  font-size: 13px;
 }
 
 .corp-role-summary {
@@ -479,9 +557,9 @@
 .corp-role-badge {
   background: rgba(255, 193, 7, 0.2);
   color: #ffc107;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 4px;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 500;
   border: 1px solid rgba(255, 193, 7, 0.3);
 }
@@ -498,16 +576,13 @@
     grid-template-columns: 1fr;
   }
 
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .overview-stats-row {
+    flex-direction: column;
+    gap: 12px;
   }
 
   .characters-grid {
     grid-template-columns: 1fr;
-  }
-
-  .corp-stats-grid {
-    flex-direction: column;
   }
 
   .corp-item {
@@ -518,5 +593,10 @@
 
   .corp-role-summary {
     margin-top: 4px;
+  }
+
+  .header-actions {
+    flex-direction: column;
+    gap: 8px;
   }
 }

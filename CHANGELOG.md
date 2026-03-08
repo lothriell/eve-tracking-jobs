@@ -1,6 +1,57 @@
 # Changelog
 
-All notable changes to the EVE ESI Application will be documented in this file.
+All notable changes to the EVE Industry Tracker will be documented in this file.
+
+## [v3.2.0] - 2026-03-08
+
+### Changed
+- **Application Renamed**: "EVE ESI Dashboard" → "EVE Industry Tracker"
+  - Updated all references: page titles, login page, header, documentation
+  - More descriptive name reflecting the application's purpose
+
+### Added
+- **Auto-Refresh Feature**: New auto-refresh button in dashboard header
+  - Dropdown with options: Off, 5 minutes, 10 minutes, 15 minutes
+  - Visual indicator (spinning icon) when auto-refresh is active
+  - Setting persisted in localStorage
+  - Located next to the manual refresh button
+
+- **Collapsed Sidebar Icons**: Sidebar now shows content when collapsed
+  - Navigation icons remain visible (Dashboard, My Industry Jobs, Corporation Jobs)
+  - Character portraits displayed as small thumbnails
+  - Add Character button accessible
+  - Tooltips on hover showing full names
+  - Smooth transitions between states
+
+- **Dashboard Job Breakdown Format**: Main dashboard now shows job breakdown
+  - Slot cards display "(X personal + Y corp)" format
+  - Matches the format used in My Industry Jobs page
+  - Clear visibility of personal vs corporation job distribution
+
+### Fixed
+- **Character Overview Slot Numbers**: Verified and confirmed slot calculations
+  - Manufacturing: 1 + Mass Production + Advanced Mass Production
+  - Science: 1 + Laboratory Operation + Advanced Laboratory Operation
+  - Reactions: 1 + Mass Reactions + Advanced Mass Reactions
+  - Active job counting includes both personal and corp jobs (where character is installer)
+
+- **Corporation Industry Section Repositioned**: Now appears BELOW Characters Overview
+  - Reduced font size for a more compact appearance
+  - Aligned styling with Characters Overview section
+  - "Corps with Access" and "Corp Active Jobs" use consistent layout
+
+- **Dashboard Alignment**: Fixed alignment issues throughout dashboard
+  - Characters Overview and Corporation Industry sections now aligned
+  - Consistent padding and margins across all sections
+
+### Technical Details
+- `Dashboard.js`: Added `autoRefreshInterval` state with localStorage persistence
+- `Dashboard.css`: Added auto-refresh button styles, dropdown styles, overview row styles
+- `Sidebar.js`: Added collapsed state rendering with icons and mini portraits
+- `Sidebar.css`: Added `.sidebar-collapsed`, `.collapsed-*` styles for collapsed state
+- Multiple files updated for rename: `index.html`, `Main.js`, `Login.js`, `Dashboard.js`
+
+---
 
 ## [v3.1.1] - 2026-03-07
 

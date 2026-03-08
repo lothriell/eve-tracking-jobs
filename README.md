@@ -1,4 +1,4 @@
-# EVE Online ESI Web Application
+# EVE Industry Tracker
 
 A web application for tracking EVE Online industry jobs across multiple characters using the EVE Swagger Interface (ESI).
 
