@@ -166,7 +166,6 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
             <div className="sidebar-logo">
               <img src="/logo.svg" alt="EVE Industry Tracker" />
             </div>
-            <span className="character-count">{characters.length}</span>
           </div>
 
           <div className="sidebar-characters">
@@ -182,6 +181,7 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
                 >
                   <div className="character-icon all-icon">∀</div>
                   <span className="character-name">All Characters</span>
+                  <span className="character-count">{characters.length}</span>
                 </div>
 
                 {characters.map((char) => (

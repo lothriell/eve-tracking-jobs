@@ -2,6 +2,17 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.3.5] - 2026-03-08
+
+### UI Improvements
+- **Font Size Consistency**: Sidebar logo "EVE Industry" now matches main header font size (22px)
+- **Subtle Collapse Button**: Toned down brightness - changed from bright blue border to subtle white border
+  - Now uses `rgba(255, 255, 255, 0.2)` instead of `#4a9eff`
+  - More consistent with overall dark theme
+- **Character Count Repositioned**: Moved count badge to right side of "All Characters" row
+  - Clearer visual association with character list
+  - Updated styling to match theme colors
+
 ## [v3.3.4] - 2026-03-08
 
 ### Fixed
