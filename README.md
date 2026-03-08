@@ -1,8 +1,12 @@
 # EVE Industry Tracker
 
-A web application for tracking EVE Online industry jobs across multiple characters using the EVE Swagger Interface (ESI).
+A comprehensive web application for tracking EVE Online industry jobs across multiple characters and corporations.
 
-## ⚠️ Backward Compatibility Note (v3.1.0)
+**Current Version:** v3.2.0
+
+EVE Industry Tracker provides real-time tracking of your industry jobs, slot utilization, and corporation activities. With support for unlimited characters, auto-refresh functionality, and an EVE-inspired interface, it's the perfect tool for managing your industrial empire.
+
+## ⚠️ Backward Compatibility Note (v3.1.0+)
 
 **Existing users do NOT need to update their .env file!**
 
@@ -20,50 +24,68 @@ Your existing deployment will continue to work without any changes.
 
 ---
 
-## Features
+## Features (v3.2.0)
 
-### Current Features (v3.1.0)
+### Dashboard
+- **Job Slot Tracking** with breakdown: "X/Y (Z personal + W corp)"
+- **Auto-Refresh** functionality with configurable intervals (5m, 10m, 15m)
+- **Character Overview** with accurate slot calculations
+- **Corporation Industry** tracking with role-based access
+- Real-time countdown timers for active jobs
+- EVE-like interface with color-coded slot utilization
 
-#### Dashboard
-- Aggregate statistics across all characters
-- Total job slot summary (Manufacturing, Science, Reactions) with EVE-inspired colors
-- Per-character job counts and slot usage
-- Jobs breakdown by activity type with visual progress bars
-- Corporation statistics with role summaries
-
-#### Personal Industry Jobs ("My Industry Jobs")
+### My Industry Jobs
+- **Personal Jobs** tracking with detailed information
+- **Corporation Jobs** filtering (only your characters)
+- Job slot summary with breakdown format
+- Activity filtering (Manufacturing, Science, Reactions)
+- Status filtering (Active, Completed, etc.)
+- Blueprint icons with BPC/BPO distinction
 - **EVE-like Time Display**: Time remaining shown as "XD HH:MM:SS" format
 - **Real-time Countdown**: Live updating timers
-- **Blueprint Icons**: Fetched from EVE image service (BPC/BPO distinction)
-- **Activity Categories**: Manufacturing, Science (TE/ME Research, Copying, Invention), Reactions
-- **Status Badges**: Active, Ready, Delivered, Paused, Cancelled
-- **Progress Bars**: Visual job completion indicator
-- **Slot Usage**: Shows combined personal + corporation job counts
 
-#### Corporation Industry Jobs
-- View corporation industry jobs across all corporations you have access to
-- Corporation summary cards with collapsible details
-- Filter by corporation, activity type, status, and character
-- Only shows jobs installed by your linked characters
-- Role detection for Director and Factory Manager
+### Corporation Jobs
+- **Multi-Corporation** support
+- **Role-Based Access** (Director, Factory Manager)
+- **Collapsible Corporation Cards** for space efficiency
+- Filter by authorized characters only
+- Detailed job information and tracking
 
-#### Multi-Character Support
-- Link unlimited EVE Online characters
-- Support for characters across different accounts
-- Character management via collapsible sidebar
-- Character portraits and quick switching
+### User Interface
+- **Collapsed Sidebar** with icons and character portraits
+- **Responsive Design** for different screen sizes
+- **EVE-Inspired Colors** (Manufacturing: orange, Science: blue, Reactions: green)
+- **Smooth Transitions** and animations
+- **Tooltips** for better UX
 
-#### Multi-Instance Deployment
-- Configurable port via `PORT` environment variable
-- Run multiple instances on the same server for different users
-- Unique Docker container names per instance
-- Comprehensive deployment guide included
+### Multi-Character Support
+- Unlimited character support (tested with 16+ characters)
+- Easy character switching
+- Aggregate statistics across all characters
+- Individual character job tracking
 
-#### Job Slot Tracking
-- Manufacturing, Science, and Reaction slot tracking
-- Slots calculated from character skills
-- Color coding: Green (high utilization), Yellow (medium), Red (low utilization)
-- Combined personal + corporation job counts
+### Multi-Instance Deployment
+- Configurable port via environment variable
+- Support for multiple users on same server
+- Unique container naming per instance
+- Separate databases per instance
+
+### Auto-Refresh
+
+The dashboard includes an auto-refresh feature that automatically updates your data at regular intervals:
+
+- **Off**: Manual refresh only
+- **5 minutes**: Refresh every 5 minutes
+- **10 minutes**: Refresh every 10 minutes
+- **15 minutes**: Refresh every 15 minutes
+
+The setting is saved in your browser and persists across sessions. A spinning icon indicates when auto-refresh is active.
+
+---
+
+## Screenshots
+
+*Screenshots showing v3.2.0 features including auto-refresh, collapsed sidebar, and job breakdown format.*
 
 ---
 
@@ -483,21 +505,11 @@ docker-compose up -d --build
 
 ## Technology Stack
 
-### Backend
-- Node.js with Express
-- SQLite database
-- EVE ESI API integration
-- Session-based authentication
-
-### Frontend
-- React 18
-- React Router for navigation
-- Axios for API calls
-- CSS with EVE-inspired dark theme
-
-### Infrastructure
-- Docker & Docker Compose
-- Nginx reverse proxy
+- **Frontend**: React 18, React Router, Axios, CSS3
+- **Backend**: Node.js, Express, SQLite
+- **Infrastructure**: Docker Compose, Nginx
+- **Authentication**: EVE SSO OAuth2 + Simple Login
+- **Real-time Updates**: Auto-refresh with configurable intervals
 
 ---
 
@@ -589,6 +601,7 @@ When contributing to this project:
 ## Future Enhancements
 
 - ~~Corporation job support~~ ✅ (v3.0.0)
+- ~~Auto-refresh functionality~~ ✅ (v3.2.0)
 - Planetary Interaction tracking
 - Job completion notifications
 - Blueprint library management
