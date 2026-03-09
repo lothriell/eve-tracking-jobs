@@ -2,7 +2,7 @@
 
 A comprehensive web application for tracking EVE Online industry jobs across multiple characters and corporations.
 
-**Current Version:** v3.3.6
+**Current Version:** v3.3.7
 
 EVE Industry Tracker provides real-time tracking of your industry jobs, slot utilization, and corporation activities. With support for unlimited characters, auto-refresh functionality, hover-to-highlight features, and an EVE-inspired interface, it's the perfect tool for managing your industrial empire.
 
@@ -18,6 +18,11 @@ EVE Industry Tracker is fully compatible with:
 All browsers now display the favicon correctly with proper fallbacks.
 
 ## Recent Updates
+
+### v3.3.7 - Ready Counter Fix (2026-03-09)
+- **Fixed "0 Ready" Bug**: Corporation Jobs "Ready" counter now correctly counts completed jobs
+- **Root Cause**: ESI API returns `status: 'active'` even when job timer has finished
+- **Solution**: Backend now computes effective status based on `end_date`
 
 ### v3.3.6 - Corporation Jobs Fix (2026-03-09)
 - **All Corp Jobs**: Corporation Jobs page now shows ALL corporation jobs (all members, not just user's characters)
