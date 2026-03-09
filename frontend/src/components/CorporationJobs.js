@@ -13,7 +13,7 @@ function CorporationJobs({ selectedCharacter, onError }) {
   const [statusFilter, setStatusFilter] = useState('active');
   const [hasAccess, setHasAccess] = useState(false);
   const [accessMessage, setAccessMessage] = useState('');
-  const [stats, setStats] = useState({ total: 0, active: 0 });
+  const [stats, setStats] = useState({ total: 0, active: 0, ready: 0 });
   const [expandedCorps, setExpandedCorps] = useState({});
   const timerRef = useRef(null);
 
@@ -68,20 +68,16 @@ function CorporationJobs({ selectedCharacter, onError }) {
         return;
       }
 
-      // Get list of authorized character IDs for filtering
-      const authorizedCharacterIds = charsList.map(c => c.character_id);
-      
-      // Load corporation jobs
+      // Load corporation jobs - show ALL corporation jobs, not just user's characters
       if (selectedCharacter) {
         const response = await getCorporationJobs(selectedCharacter.id);
         if (response.data.has_access) {
-          // Filter to only show jobs where installer is an authorized character
           const allJobs = response.data.jobs || [];
-          const filteredJobs = allJobs.filter(job => authorizedCharacterIds.includes(job.installer_id));
-          setJobs(filteredJobs);
+          setJobs(allJobs);
           setStats({
-            total: filteredJobs.length,
-            active: filteredJobs.filter(j => j.status === 'active').length
+            total: allJobs.length,
+            active: allJobs.filter(j => j.status === 'active').length,
+            ready: allJobs.filter(j => j.status === 'ready').length
           });
         } else {
           setAccessMessage(response.data.message || 'No access to corporation jobs');
@@ -90,13 +86,12 @@ function CorporationJobs({ selectedCharacter, onError }) {
       } else {
         // All characters - get all corporation jobs
         const response = await getCorporationJobs();
-        // Filter to only show jobs where installer is an authorized character
         const allJobs = response.data.jobs || [];
-        const filteredJobs = allJobs.filter(job => authorizedCharacterIds.includes(job.installer_id));
-        setJobs(filteredJobs);
+        setJobs(allJobs);
         setStats({
-          total: filteredJobs.length,
-          active: filteredJobs.filter(j => j.status === 'active').length
+          total: allJobs.length,
+          active: allJobs.filter(j => j.status === 'active').length,
+          ready: allJobs.filter(j => j.status === 'ready').length
         });
       }
     } catch (error) {
@@ -173,10 +168,10 @@ function CorporationJobs({ selectedCharacter, onError }) {
     if (activityFilter !== 'all' && job.activity_category !== activityFilter) {
       return false;
     }
-    // Status filter
+    // Status filter - each status is distinct (no overlap)
     if (statusFilter !== 'all') {
       if (statusFilter === 'active' && job.status !== 'active') return false;
-      if (statusFilter === 'ready' && (job.status !== 'active' || job.time_remaining_ms > 0)) return false;
+      if (statusFilter === 'ready' && job.status !== 'ready') return false;
       if (statusFilter === 'delivered' && job.status !== 'delivered') return false;
     }
     return true;
@@ -217,6 +212,7 @@ function CorporationJobs({ selectedCharacter, onError }) {
         <div className="corp-stats">
           <span className="stat-badge total">{stats.total} Total</span>
           <span className="stat-badge active">{stats.active} Active</span>
+          <span className="stat-badge ready">{stats.ready} Ready</span>
         </div>
       </div>
 

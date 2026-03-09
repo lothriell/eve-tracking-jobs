@@ -2,6 +2,22 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.3.6] - 2026-03-09
+
+### Bug Fixes
+- **Corporation Jobs Scope**: Fixed to show ALL corporation jobs, not just jobs from user's characters
+  - Previously filtered by `installer_id` to only show user's characters' jobs
+  - Now displays all corporation member jobs as intended
+- **Counter Logic Fixed**: Active and Ready jobs are now counted separately (no double counting)
+  - Active: Jobs currently in progress (`status === 'active'`)
+  - Ready: Jobs completed and waiting for delivery (`status === 'ready'`)
+  - Fixed status filter that incorrectly treated "Ready" as "Active with time <= 0"
+- **Added Ready Counter**: Stats bar now shows Total, Active, and Ready counts
+
+### Improvements
+- Accurate job status filtering following EVE ESI status values
+- Clear visual separation of job states in stats display
+
 ## [v3.3.5] - 2026-03-08
 
 ### UI Improvements
