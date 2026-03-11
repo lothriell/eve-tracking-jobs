@@ -2,6 +2,28 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.3.8] - 2026-03-11
+
+### Documentation
+- **Comprehensive .env.example Template**: Completely rewritten environment configuration template
+  - Added support for multiple deployment scenarios:
+    - Local IP Address (e.g., 192.168.1.100, 10.0.0.50)
+    - Hostname (e.g., eve-tracker.local, eve.mydomain.com)
+    - Tailscale IP (e.g., 100.82.8.96)
+    - Tailscale MagicDNS (e.g., server-name.tailnet-xxxx.ts.net)
+  - Clear placeholder values (no real credentials)
+  - Comprehensive comments explaining each variable
+  - Deployment examples for each option
+  - Step-by-step quick start guide
+
+- **README.md Updates**: 
+  - Added "Deployment Options" section with deployment type table
+  - Link to .env.example for detailed configuration
+
+### Improvements
+- Beginner-friendly configuration with clear instructions
+- Easy-to-follow template for first-time setup
+
 ## [v3.3.6] - 2026-03-09
 
 ### Bug Fixes

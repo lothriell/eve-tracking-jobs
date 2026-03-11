@@ -2,9 +2,22 @@
 
 A comprehensive web application for tracking EVE Online industry jobs across multiple characters and corporations.
 
-**Current Version:** v3.3.6
+**Current Version:** v3.3.8
 
 EVE Industry Tracker provides real-time tracking of your industry jobs, slot utilization, and corporation activities. With support for unlimited characters, auto-refresh functionality, hover-to-highlight features, and an EVE-inspired interface, it's the perfect tool for managing your industrial empire.
+
+## Deployment Options
+
+EVE Industry Tracker supports multiple deployment scenarios:
+
+| Option | Example | Use Case |
+|--------|---------|----------|
+| **Local IP** | `192.168.1.100`, `10.0.0.50` | Local network access |
+| **Hostname** | `eve-tracker.local`, `eve.mydomain.com` | Local DNS or domain |
+| **Tailscale IP** | `100.82.8.96` | Remote access via Tailscale |
+| **Tailscale MagicDNS** | `server.tailnet-xxxx.ts.net` | Named remote access |
+
+See the [.env.example](.env.example) file for detailed configuration instructions and examples for each deployment type.
 
 ## Browser Compatibility
 
@@ -18,6 +31,12 @@ EVE Industry Tracker is fully compatible with:
 All browsers now display the favicon correctly with proper fallbacks.
 
 ## Recent Updates
+
+### v3.3.8 - Deployment Documentation (2026-03-11)
+- **Comprehensive .env.example**: Complete template with multi-deployment support
+- **Deployment Options**: Local IP, Hostname, Tailscale IP, and MagicDNS examples
+- **Clear Documentation**: Step-by-step quick start guide and placeholder values
+- **Beginner-Friendly**: Detailed comments explaining each configuration option
 
 ### v3.3.6 - Corporation Jobs Fix (2026-03-09)
 - **All Corp Jobs**: Corporation Jobs page now shows ALL corporation jobs (all members, not just user's characters)
@@ -73,7 +92,7 @@ Your existing deployment will continue to work without any changes.
 
 ---
 
-## Features (v3.3.6)
+## Features (v3.3.8)
 
 ### Dashboard
 - **Hover-to-Highlight**: Hover over job type cards to instantly see which characters have free slots
