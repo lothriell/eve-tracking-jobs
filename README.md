@@ -1,59 +1,78 @@
 # EVE Industry Tracker
 
+**Current Version:** v3.3.10 | **Build Date:** 2026-03-11
+
 A comprehensive web application for tracking EVE Online industry jobs across multiple characters and corporations.
 
-**Current Version:** v3.3.6
-
 EVE Industry Tracker provides real-time tracking of your industry jobs, slot utilization, and corporation activities. With support for unlimited characters, auto-refresh functionality, hover-to-highlight features, and an EVE-inspired interface, it's the perfect tool for managing your industrial empire.
+
+---
+
+## 📋 Recent Updates
+
+### v3.3.10 (2026-03-11) - Configuration Architecture
+- ✅ Removed all hardcoded IP addresses
+- ✅ 100% .env-driven configuration
+- ✅ IP-agnostic deployment (works with any IP/hostname)
+- ✅ Created comprehensive configuration documentation
+
+### v3.3.9 (2026-03-11) - Loading Page Fix
+- ✅ Fixed loading page issue after IP change
+- ✅ Frontend now uses relative URLs
+- ✅ Nginx proxies API requests to backend
+- ✅ Better architecture with reverse proxy
+
+### v3.3.8 (2026-03-11) - Multi-Deployment Support
+- ✅ Updated .env.example with comprehensive templates
+- ✅ Support for Local IP, Hostname, Tailscale IP, and MagicDNS
+- ✅ Added Quick Start Guide
+- ✅ Deployment examples for each option
+
+### v3.3.7 (2026-03-08) - Job Status Calculation
+- ✅ Fixed job status with `effectiveStatus` implementation
+- ✅ Active/Ready jobs correctly identified
+
+### v3.3.6 (2026-03-09) - Corporation Jobs Fix
+- ✅ Shows ALL corporation jobs (all members)
+- ✅ Fixed counters (no double counting)
+- ✅ Added separate Ready counter
+
+[See full changelog →](CHANGELOG.md)
+
+---
+
+## 📊 Version History
+
+| Version | Date | Key Changes |
+|---------|------|-------------|
+| v3.3.10 | 2026-03-11 | Removed all hardcoded IPs, 100% .env-driven configuration |
+| v3.3.9 | 2026-03-11 | Fixed loading page issue, relative URLs, Nginx proxy |
+| v3.3.8 | 2026-03-11 | Multi-deployment support, updated .env.example |
+| v3.3.7 | 2026-03-08 | Fixed job status calculation with effectiveStatus |
+| v3.3.6 | 2026-03-09 | Fixed corporation jobs display and counters |
+| v3.3.5 | 2026-03-08 | UI improvements: logo, collapse button, character count |
+| v3.3.4 | 2026-03-08 | Fixed favicon, logo, collapse button |
+| v3.3.3 | 2026-03-08 | Fixed sidebar scrollbar, logo, favicon |
+| v3.3.2 | 2026-03-08 | Fixed favicon, header alignment, scrollbar |
+| v3.3.1 | 2026-03-08 | Fixed skill IDs for Mass Reactions |
+| v3.3.0 | 2026-03-08 | Hover-to-highlight, renamed to EVE Industry Tracker |
+| v3.2.1 | 2026-03-08 | Fixed skill IDs |
+| v3.2.0 | 2026-03-08 | 7 features including slot calculation, dashboard |
+| v3.1.1 | 2026-03-08 | Documentation updates |
+| v3.1.0 | 2026-03-08 | Multi-instance deployment support |
+
+[See full changelog →](CHANGELOG.md)
+
+---
 
 ## Browser Compatibility
 
 EVE Industry Tracker is fully compatible with:
-- ✅ Google Chrome (latest) - Favicon ✓
-- ✅ Mozilla Firefox (latest) - Favicon ✓
-- ✅ Safari (latest) - Favicon ✓ (Fixed in v3.3.4)
-- ✅ Microsoft Edge (latest) - Favicon ✓
-- ✅ Opera (latest) - Favicon ✓
-
-All browsers now display the favicon correctly with proper fallbacks.
-
-## Recent Updates
-
-### v3.3.6 - Corporation Jobs Fix (2026-03-09)
-- **All Corp Jobs**: Corporation Jobs page now shows ALL corporation jobs (all members, not just user's characters)
-- **Fixed Counters**: Active and Ready jobs counted separately (no double counting)
-- **Ready Counter**: Added separate Ready counter to stats display
-
-### v3.3.5 - UI Polish (2026-03-08)
-- **Font Consistency**: Sidebar logo matches main header font size
-- **Subtle Collapse Button**: Toned down border brightness for better theme integration
-- **Character Count**: Repositioned to right side of All Characters row
-
-### v3.3.4 - Safari & UI Fixes (2026-03-08)
-- **Safari Favicon**: Added Safari-specific meta tags (`apple-touch-icon`, `mask-icon`)
-- **Logo Fix**: Completely rewrote `logo.svg` with proper SVG namespace
-- **Collapse Arrow**: Fixed toggle button being clipped - now fully visible
-- **Improved Toggle**: Larger button with blue border and shadow for better UX
-
-### v3.3.3 - Critical Bug Fixes (2026-03-08)
-- **Scrollbar Fix**: Hidden scrollbar in collapsed sidebar - portraits fully visible
-- **Sidebar Background**: Fixed background extending to full page height
-- **Logo Fix**: Fixed expanded sidebar logo not displaying (was showing "?")
-- **Favicon Fix**: Full cross-browser favicon support (Chrome, Firefox, Safari, Opera, Edge)
-  - Added `.ico`, `.png` (16x16, 32x32), and `apple-touch-icon.png` formats
-
-### v3.3.2 - UI Improvements (2026-03-08)
-- **Favicon**: Fixed SVG namespace for favicon display
-- **Header Alignment**: Proper 54px height matching
-- **Collapsed Sidebar**: Increased to 80px width
-
-### v3.3.0 - Hover-to-Highlight Feature (2026-03-08)
-- **Hover-to-Highlight**: Hover over Manufacturing, Science, or Reactions cards to identify characters with free slots
-- Characters with full slots are dimmed (40% opacity)
-- Characters with free slots remain highlighted
-- Smooth 0.3s transition animation
-- Mobile/touch support with tap-to-toggle
-- ARIA accessibility support
+- ✅ Google Chrome (latest)
+- ✅ Mozilla Firefox (latest)
+- ✅ Safari (latest) - Fixed in v3.3.4
+- ✅ Microsoft Edge (latest)
+- ✅ Opera (latest)
 
 ## ⚠️ Backward Compatibility Note (v3.1.0+)
 
@@ -73,7 +92,23 @@ Your existing deployment will continue to work without any changes.
 
 ---
 
-## Features (v3.3.6)
+## ✨ Features
+
+### Core Features
+- 🎯 **Multi-character support** (unlimited characters)
+- 🏭 **Personal industry jobs** tracking
+- 🏢 **Corporation industry jobs** tracking (role-based access)
+- ⏱️ **Real-time countdown timers**
+- 📊 **Job slot utilization** with EVE color coding
+- 🔄 **Auto-refresh** (5m/10m/15m intervals)
+- 🎨 **EVE-themed UI** with professional design
+
+### Configuration & Deployment (v3.3.10)
+- 🌐 **IP-agnostic deployment** - Works with any IP or hostname
+- 🔧 **100% .env-driven** - No hardcoded values
+- 🌍 **Multi-deployment support** - Local IP, Tailscale, Hostname, MagicDNS
+- 🔒 **Secure architecture** - Nginx reverse proxy
+- 📱 **Responsive design** - Works on all devices
 
 ### Dashboard
 - **Hover-to-Highlight**: Hover over job type cards to instantly see which characters have free slots

@@ -2,6 +2,58 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.3.10] - 2026-03-11
+
+### Configuration Architecture
+- **100% .env-Driven Configuration**: Removed all hardcoded IP addresses from codebase
+- **IP-Agnostic Deployment**: Application now works with any IP address or hostname
+- **No Frontend/Backend Hardcoding**: All URLs use environment variables or relative paths
+- **Comprehensive Documentation**: Created `docs/CONFIGURATION.md` with deployment scenarios
+
+### Technical
+- Frontend uses relative URLs, relying on Nginx proxy configuration
+- Backend reads all configuration from environment variables
+- No code changes required when changing server IP or hostname
+
+---
+
+## [v3.3.9] - 2026-03-11
+
+### Fixed
+- **Loading Page After IP Change**: Fixed frontend getting stuck on loading screen
+- **Relative URLs**: Frontend now uses relative URLs instead of hardcoded IPs
+- **Nginx Proxy Configuration**: API requests properly proxied to backend
+
+### Architecture
+- Better separation between frontend and backend
+- Nginx reverse proxy handles all routing
+- More robust deployment architecture
+
+---
+
+## [v3.3.8] - 2026-03-11
+
+### Improved
+- **Multi-Deployment Support**: Updated `.env.example` with comprehensive templates
+- **Deployment Options**: Support for Local IP, Hostname, Tailscale IP, and MagicDNS
+- **Quick Start Guide**: Added clear deployment instructions
+
+### Documentation
+- Added deployment examples for each option
+- Clearer environment variable documentation
+- Simplified setup process
+
+---
+
+## [v3.3.7] - 2026-03-08
+
+### Fixed
+- **Job Status Calculation**: Fixed with `effectiveStatus` implementation
+- **Active Jobs**: Now correctly identified when `status === 'active'`
+- **Ready Jobs**: Properly detected when `end_date` has passed
+
+---
+
 ## [v3.3.6] - 2026-03-09
 
 ### Bug Fixes
