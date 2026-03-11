@@ -106,7 +106,7 @@ exports.initiateEveAuth = (req, res) => {
     // Build authorization URL
     const params = new URLSearchParams({
       response_type: 'code',
-      redirect_uri: process.env.EVE_REDIRECT_URI || 'http://10.69.10.15:9000/auth/callback',
+      redirect_uri: process.env.EVE_REDIRECT_URI,
       client_id: process.env.EVE_CLIENT_ID,
       scope: REQUIRED_SCOPES.join(' '),
       code_challenge: codeChallenge,

@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://10.69.10.15:9000',
+  origin: process.env.FRONTEND_URL,
   credentials: true
 }));
 app.use(express.json());
