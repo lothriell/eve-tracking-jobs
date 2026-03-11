@@ -2,18 +2,6 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
-## [v3.3.7] - 2026-03-09
-
-### Bug Fixes
-- **Fixed "0 Ready" Counter Bug**: Corporation Jobs page now correctly counts Ready jobs
-  - ESI API returns `status: 'active'` even when job timer has completed
-  - Backend now computes effective status: jobs with `end_date` in the past are marked as "ready"
-  - Counters now match the visible Ready jobs in the list
-
-### Technical
-- Added computed `effectiveStatus` field in `transformCorporationJobs()`
-- Jobs with `status === 'active'` and `end_date <= now` are now correctly classified as "ready"
-
 ## [v3.3.6] - 2026-03-09
 
 ### Bug Fixes

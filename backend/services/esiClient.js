@@ -418,19 +418,12 @@ async function transformCorporationJobs(jobs, corporationInfo) {
     const progress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
     const timeRemaining = Math.max(0, endDate - now);
 
-    // Compute effective status: ESI returns 'active' even when job timer is done
-    // A job is "ready" when: ESI status is 'active' AND end_date has passed
-    let effectiveStatus = job.status;
-    if (job.status === 'active' && endDate <= now) {
-      effectiveStatus = 'ready';
-    }
-
     return {
       job_id: job.job_id,
       activity_id: job.activity_id,
       activity: activityInfo.name,
       activity_category: activityInfo.category,
-      status: effectiveStatus,
+      status: job.status,
       runs: job.runs,
       licensed_runs: job.licensed_runs,
       start_date: job.start_date,
