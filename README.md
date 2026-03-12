@@ -195,13 +195,14 @@ The setting is saved in your browser and persists across sessions. A spinning ic
 
 5. **Set the Callback URL**:
    ```
-   http://YOUR_SERVER_IP:9000/auth/callback
+   http://YOUR_SERVER_ADDRESS:9000/auth/callback
    ```
    
-   **Note:** Replace `YOUR_SERVER_IP` with your actual server IP address:
-   - If deploying locally: Use `localhost` or `127.0.0.1`
-   - If deploying on LAN: Use your server's LAN IP (e.g., `192.168.1.100`)
-   - If deploying publicly: Use your public IP or domain name
+   **Note:** Replace `YOUR_SERVER_ADDRESS` with your actual server address:
+   - **Local IP**: Use your server's LAN IP (e.g., `192.168.1.100`)
+   - **Tailscale**: Use your Tailscale IP (e.g., `100.82.8.96`)
+   - **Hostname**: Use your hostname (e.g., `eve-tracker.local`)
+   - **MagicDNS**: Use your Tailscale MagicDNS name (e.g., `server.tailnet-abc.ts.net`)
 
 6. **⚠️ CRITICAL: Enable all required ESI scopes**:
    - ✅ `esi-industry.read_character_jobs.v1` - Personal industry jobs
@@ -229,33 +230,113 @@ cd eve-tracking-jobs
 
 ### Step 3: Configure Environment Variables
 
+**Copy the environment template:**
 ```bash
-# Copy the example environment file
 cp .env.example .env
+```
 
-# Edit with your values
+**Edit the .env file:**
+```bash
 nano .env
 ```
 
-Fill in your `.env` file:
+**Choose your deployment type and set YOUR_SERVER_ADDRESS:**
 
+**Option 1: Local IP Address**
 ```env
-# EVE Online SSO Configuration
-EVE_CLIENT_ID=your_client_id_here
-EVE_CLIENT_SECRET=your_secret_key_here
-EVE_REDIRECT_URI=http://YOUR_SERVER_IP:9000/auth/callback
-
-# Application Credentials (your choice for web app login)
-APP_USERNAME=your_username
-APP_PASSWORD=your_secure_password
-
-# Session Secret (generate with: openssl rand -hex 32)
-SESSION_SECRET=your_random_session_secret
+YOUR_SERVER_ADDRESS=192.168.1.100
 ```
 
-Generate a secure session secret:
+**Option 2: Tailscale IP**
+```env
+YOUR_SERVER_ADDRESS=100.82.8.96
+```
+
+**Option 3: Hostname**
+```env
+YOUR_SERVER_ADDRESS=eve-tracker.local
+```
+
+**Option 4: Tailscale MagicDNS**
+```env
+YOUR_SERVER_ADDRESS=server.tailnet-abc.ts.net
+```
+
+**Fill in your .env file:**
+
+```env
+# ============================================================================
+# Deployment Configuration
+# ============================================================================
+# Set your server IP or hostname
+YOUR_SERVER_ADDRESS=YOUR_IP_OR_HOSTNAME
+PORT=9000
+
+# ============================================================================
+# EVE Online SSO Configuration
+# ============================================================================
+# Get these from: https://developers.eveonline.com/applications
+EVE_CLIENT_ID=YOUR_EVE_CLIENT_ID
+EVE_CLIENT_SECRET=YOUR_EVE_CLIENT_SECRET
+EVE_REDIRECT_URI=http://YOUR_SERVER_ADDRESS:9000/auth/callback
+
+# ============================================================================
+# Application Credentials
+# ============================================================================
+# Your login credentials for the web application
+APP_USERNAME=YOUR_USERNAME
+APP_PASSWORD=YOUR_PASSWORD
+
+# ============================================================================
+# Session Security
+# ============================================================================
+# Generate with: openssl rand -base64 32
+SESSION_SECRET=YOUR_RANDOM_SESSION_SECRET
+
+# ============================================================================
+# Server Configuration
+# ============================================================================
+FRONTEND_URL=http://YOUR_SERVER_ADDRESS:9000
+SERVER_IP=YOUR_SERVER_ADDRESS
+
+# ============================================================================
+# Application Settings
+# ============================================================================
+PROJECT_NAME=eve_esi_app
+NODE_ENV=production
+
+# ============================================================================
+# CORS Configuration
+# ============================================================================
+ALLOWED_ORIGINS=http://YOUR_SERVER_ADDRESS:9000
+```
+
+**Important:** Replace `YOUR_SERVER_ADDRESS` with your actual IP or hostname in all the variables above.
+
+**Generate a secure session secret:**
 ```bash
-openssl rand -hex 32
+openssl rand -base64 32
+```
+Copy the output and paste it as your `SESSION_SECRET` value.
+
+**Example configurations:**
+
+**For Local IP (192.168.1.100):**
+```env
+YOUR_SERVER_ADDRESS=192.168.1.100
+EVE_REDIRECT_URI=http://192.168.1.100:9000/auth/callback
+FRONTEND_URL=http://192.168.1.100:9000
+SERVER_IP=192.168.1.100
+ALLOWED_ORIGINS=http://192.168.1.100:9000
+```
+
+**For Tailscale (100.82.8.96):**
+```env
+YOUR_SERVER_ADDRESS=100.82.8.96
+EVE_REDIRECT_URI=http://100.82.8.96:9000/auth/callback
+FRONTEND_URL=http://100.82.8.96:9000
+SERVER_IP=100.82.8.96
+ALLOWED_ORIGINS=http://100.82.8.96:9000
 ```
 
 ### Step 4: Deploy with Docker
@@ -290,7 +371,7 @@ curl http://localhost:3001/health
 
 ### Step 6: Access the Application
 
-1. Open your browser: `http://YOUR_SERVER_IP:9000`
+1. Open your browser: `http://YOUR_SERVER_ADDRESS:9000`
 2. Log in with your `APP_USERNAME` and `APP_PASSWORD`
 3. Click **"Add Character"** in the sidebar
 4. Authorize with EVE SSO
@@ -359,19 +440,19 @@ Configure `.env`:
 ```env
 # Server Configuration
 PORT=9000
-SERVER_IP=YOUR_SERVER_IP
+SERVER_IP=YOUR_SERVER_ADDRESS
 PROJECT_NAME=eve-esi-user1
 
 # EVE Developer Application
 EVE_CLIENT_ID=your_client_id_1
 EVE_CLIENT_SECRET=your_client_secret_1
-EVE_REDIRECT_URI=http://YOUR_SERVER_IP:9000/auth/callback
+EVE_REDIRECT_URI=http://YOUR_SERVER_ADDRESS:9000/auth/callback
 
 # Application Login
 APP_USERNAME=user1
 APP_PASSWORD=password1
 
-# Session Secret (generate a random string)
+# Session Secret (generate with: openssl rand -base64 32)
 SESSION_SECRET=random_secret_1
 ```
 
@@ -388,19 +469,19 @@ Configure `.env`:
 ```env
 # Server Configuration
 PORT=9001                        # ← Different port!
-SERVER_IP=YOUR_SERVER_IP
+SERVER_IP=YOUR_SERVER_ADDRESS
 PROJECT_NAME=eve-esi-user2       # ← Different project name!
 
 # EVE Developer Application
 EVE_CLIENT_ID=your_client_id_2
 EVE_CLIENT_SECRET=your_client_secret_2
-EVE_REDIRECT_URI=http://YOUR_SERVER_IP:9001/auth/callback  # ← Matching port!
+EVE_REDIRECT_URI=http://YOUR_SERVER_ADDRESS:9001/auth/callback  # ← Matching port!
 
 # Application Login
 APP_USERNAME=user2
 APP_PASSWORD=password2
 
-# Session Secret
+# Session Secret (generate with: openssl rand -base64 32)
 SESSION_SECRET=random_secret_2
 ```
 
@@ -411,10 +492,10 @@ Repeat for additional users with ports 9002, 9003, etc.
 #### Option 1: Separate Apps (Recommended)
 
 Each user creates their own EVE Developer Application:
-- User 1 callback: `http://YOUR_SERVER_IP:9000/auth/callback`
-- User 2 callback: `http://YOUR_SERVER_IP:9001/auth/callback`
-- User 3 callback: `http://YOUR_SERVER_IP:9002/auth/callback`
-- User 4 callback: `http://YOUR_SERVER_IP:9003/auth/callback`
+- User 1 callback: `http://YOUR_SERVER_ADDRESS:9000/auth/callback`
+- User 2 callback: `http://YOUR_SERVER_ADDRESS:9001/auth/callback`
+- User 3 callback: `http://YOUR_SERVER_ADDRESS:9002/auth/callback`
+- User 4 callback: `http://YOUR_SERVER_ADDRESS:9003/auth/callback`
 
 Each user has their own Client ID and Secret.
 
@@ -443,10 +524,10 @@ docker-compose ps
 
 | User | URL | Port |
 |------|-----|------|
-| User 1 | `http://YOUR_SERVER_IP:9000` | 9000 |
-| User 2 | `http://YOUR_SERVER_IP:9001` | 9001 |
-| User 3 | `http://YOUR_SERVER_IP:9002` | 9002 |
-| User 4 | `http://YOUR_SERVER_IP:9003` | 9003 |
+| User 1 | `http://YOUR_SERVER_ADDRESS:9000` | 9000 |
+| User 2 | `http://YOUR_SERVER_ADDRESS:9001` | 9001 |
+| User 3 | `http://YOUR_SERVER_ADDRESS:9002` | 9002 |
+| User 4 | `http://YOUR_SERVER_ADDRESS:9003` | 9003 |
 
 ### Container Naming
 
@@ -648,15 +729,19 @@ npm start
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `YOUR_SERVER_ADDRESS` | Server IP or hostname | (required) |
 | `PORT` | External port for the application | `9000` |
-| `SERVER_IP` | Server IP address for callback URLs | `YOUR_SERVER_IP` |
-| `PROJECT_NAME` | Docker project name (for multi-instance) | `eve-esi-app` |
+| `SERVER_IP` | Server IP address (alias for YOUR_SERVER_ADDRESS) | (required) |
+| `PROJECT_NAME` | Docker project name (for multi-instance) | `eve_esi_app` |
 | `EVE_CLIENT_ID` | EVE SSO Client ID | (required) |
 | `EVE_CLIENT_SECRET` | EVE SSO Secret Key | (required) |
-| `EVE_REDIRECT_URI` | OAuth callback URL | auto-generated |
+| `EVE_REDIRECT_URI` | OAuth callback URL | (required) |
 | `APP_USERNAME` | Application login username | (required) |
 | `APP_PASSWORD` | Application login password | (required) |
 | `SESSION_SECRET` | Express session secret | (required) |
+| `FRONTEND_URL` | Frontend URL for CORS | (required) |
+| `ALLOWED_ORIGINS` | CORS allowed origins | (required) |
+| `NODE_ENV` | Node environment | `production` |
 | `DB_PATH` | SQLite database path | `/app/database/data/eve_esi.db` |
 
 ---
