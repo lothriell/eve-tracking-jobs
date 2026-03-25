@@ -2,6 +2,19 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.6.4] - 2026-03-25
+
+### Fixed
+- **Full asset location chain resolution**: Items inside containers now resolve to their actual station/structure by following the parent chain (`location_type: "item"` → parent `item_id` → root station). Previously showed "In Container" with no station context.
+
+### Added
+- **Container column** in Assets table: Shows the container name (ship, hangar container, etc.) for items stored inside other items. Direct hangar items show "—".
+- **Container chain following**: Backend builds an `item_id` lookup map and follows container chains up to the root station/structure, resolving names at each level.
+- **Search by container name**: Filter now also matches container names (e.g., search "Orca" to find items in an Orca's fleet hangar).
+- Applied to both personal and corporation asset endpoints.
+
+---
+
 ## [v3.6.3] - 2026-03-25
 
 ### Fixed

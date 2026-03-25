@@ -822,12 +822,44 @@ exports.getCharacterAssets = async (req, res) => {
         const typeIds = [...new Set(assets.map(a => a.type_id).filter(Boolean))];
         const typeNames = typeIds.length > 0 ? await getTypeNames(typeIds) : {};
 
-        // Resolve location names — only for station/solar_system types, skip items (containers)
-        const stationLocIds = [...new Set(
-          assets
-            .filter(a => a.location_id && a.location_type !== 'item' && a.location_type !== 'other')
-            .map(a => a.location_id)
-        )];
+        // Build item_id → asset lookup for container chain resolution
+        const itemMap = {};
+        assets.forEach(a => { if (a.item_id) itemMap[a.item_id] = a; });
+
+        // Follow container chain to find the root station/structure location
+        function resolveRootLocation(asset) {
+          const chain = [];
+          let current = asset;
+          const visited = new Set();
+          while (current && current.location_type === 'item' && !visited.has(current.location_id)) {
+            visited.add(current.location_id);
+            const parent = itemMap[current.location_id];
+            if (parent) {
+              chain.push(parent);
+              current = parent;
+            } else {
+              break;
+            }
+          }
+          // current now points to the asset at the station/structure level
+          const rootLocationId = current ? current.location_id : asset.location_id;
+          const rootLocationType = current ? current.location_type : asset.location_type;
+          return { rootLocationId, rootLocationType, chain };
+        }
+
+        // Collect all station/structure location IDs (from direct + resolved chains)
+        const stationLocIds = new Set();
+        assets.forEach(a => {
+          if (a.location_type !== 'item' && a.location_type !== 'other' && a.location_id) {
+            stationLocIds.add(a.location_id);
+          } else if (a.location_type === 'item') {
+            const { rootLocationId, rootLocationType } = resolveRootLocation(a);
+            if (rootLocationType !== 'item' && rootLocationType !== 'other') {
+              stationLocIds.add(rootLocationId);
+            }
+          }
+        });
+
         const locationNames = {};
         for (const locId of stationLocIds) {
           try {
@@ -837,9 +869,23 @@ exports.getCharacterAssets = async (req, res) => {
           }
         }
 
+        // Enrich each asset with resolved names
         assets.forEach(a => {
           a.type_name = typeNames[a.type_id] || `Type ${a.type_id}`;
-          a.location_name = locationNames[a.location_id] || (a.location_type === 'item' ? 'In Container' : `Location ${a.location_id}`);
+
+          if (a.location_type === 'item') {
+            const { rootLocationId, chain } = resolveRootLocation(a);
+            a.location_name = locationNames[rootLocationId] || `Location ${rootLocationId}`;
+            // The direct parent is the container
+            const directParent = itemMap[a.location_id];
+            if (directParent) {
+              a.container_name = typeNames[directParent.type_id] || `Type ${directParent.type_id}`;
+              a.container_id = directParent.item_id;
+            }
+          } else {
+            a.location_name = locationNames[a.location_id] || `Location ${a.location_id}`;
+          }
+
           a.character_id = character.character_id;
           a.character_name = character.character_name;
           allAssets.push(a);
@@ -912,24 +958,50 @@ exports.getCorporationAssets = async (req, res) => {
       const typeIds = [...new Set(assets.map(a => a.type_id).filter(Boolean))];
       const typeNames = typeIds.length > 0 ? await getTypeNames(typeIds) : {};
 
-      // Resolve location names — only for station/solar_system types, skip items (containers)
-      const stationLocIds = [...new Set(
-        assets
-          .filter(a => a.location_id && a.location_type !== 'item' && a.location_type !== 'other')
-          .map(a => a.location_id)
-      )];
+      // Build item_id → asset lookup for container chain resolution
+      const itemMap = {};
+      assets.forEach(a => { if (a.item_id) itemMap[a.item_id] = a; });
+
+      function resolveRootLocation(asset) {
+        let current = asset;
+        const visited = new Set();
+        while (current && current.location_type === 'item' && !visited.has(current.location_id)) {
+          visited.add(current.location_id);
+          const parent = itemMap[current.location_id];
+          if (parent) { current = parent; } else { break; }
+        }
+        return { rootLocationId: current ? current.location_id : asset.location_id, rootLocationType: current ? current.location_type : asset.location_type };
+      }
+
+      const stationLocIds = new Set();
+      assets.forEach(a => {
+        if (a.location_type !== 'item' && a.location_type !== 'other' && a.location_id) {
+          stationLocIds.add(a.location_id);
+        } else if (a.location_type === 'item') {
+          const { rootLocationId, rootLocationType } = resolveRootLocation(a);
+          if (rootLocationType !== 'item' && rootLocationType !== 'other') stationLocIds.add(rootLocationId);
+        }
+      });
+
       const locationNames = {};
       for (const locId of stationLocIds) {
-        try {
-          locationNames[locId] = await getLocationName(locId, accessToken);
-        } catch (e) {
-          locationNames[locId] = `Location ${locId}`;
-        }
+        try { locationNames[locId] = await getLocationName(locId, accessToken); }
+        catch (e) { locationNames[locId] = `Location ${locId}`; }
       }
 
       assets.forEach(a => {
         a.type_name = typeNames[a.type_id] || `Type ${a.type_id}`;
-        a.location_name = locationNames[a.location_id] || (a.location_type === 'item' ? 'In Container' : `Location ${a.location_id}`);
+        if (a.location_type === 'item') {
+          const { rootLocationId } = resolveRootLocation(a);
+          a.location_name = locationNames[rootLocationId] || `Location ${rootLocationId}`;
+          const directParent = itemMap[a.location_id];
+          if (directParent) {
+            a.container_name = typeNames[directParent.type_id] || `Type ${directParent.type_id}`;
+            a.container_id = directParent.item_id;
+          }
+        } else {
+          a.location_name = locationNames[a.location_id] || `Location ${a.location_id}`;
+        }
       });
 
       res.json({ assets, total: assets.length, has_access: true });

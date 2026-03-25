@@ -110,6 +110,7 @@ function Assets({ selectedCharacter, onError }) {
       filtered = filtered.filter(a =>
         (a.type_name || '').toLowerCase().includes(f) ||
         (a.location_name || '').toLowerCase().includes(f) ||
+        (a.container_name || '').toLowerCase().includes(f) ||
         (a.character_name || '').toLowerCase().includes(f) ||
         String(a.type_id).includes(f)
       );
@@ -215,7 +216,7 @@ function Assets({ selectedCharacter, onError }) {
             <input
               type="text"
               className="assets-filter-input"
-              placeholder="Filter by item name, station, system, character..."
+              placeholder="Filter by item, station, container, character..."
               value={filter}
               onChange={e => setFilter(e.target.value)}
             />
@@ -276,6 +277,7 @@ function Assets({ selectedCharacter, onError }) {
                           <tr>
                             <th>Item</th>
                             <th className="text-right">Qty</th>
+                            <th>Container</th>
                             <th>Flag</th>
                             <th>State</th>
                             {showCharCol && <th>Character</th>}
@@ -287,6 +289,9 @@ function Assets({ selectedCharacter, onError }) {
                               <td className="item-name">{asset.type_name || `Type ${asset.type_id}`}</td>
                               <td className="text-right qty-value">
                                 {(asset.quantity || 1).toLocaleString()}
+                              </td>
+                              <td style={{ color: '#a0aec0', fontSize: 12 }}>
+                                {asset.container_name || '—'}
                               </td>
                               <td>
                                 <span className="badge badge-blue">
