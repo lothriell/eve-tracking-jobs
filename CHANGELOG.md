@@ -2,6 +2,22 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.7.5] - 2026-03-25
+
+### Improved
+- **3-tier structure name resolution**: Player structures now attempt resolution through multiple methods before giving up:
+  1. `GET /universe/structures/{id}/` with each character's token (existing method)
+  2. `POST /characters/{id}/assets/names/` with the structure ID — works when the character has assets in the structure even without docking access (discovered workaround from ESI community)
+  3. Final fallback: `Player Structure #XXXXXX` with unique ID suffix
+- **Failed structure lookups no longer cached**: Returns an `unresolved` marker instead, allowing retry with different methods and tokens without waiting for cache expiry
+
+### Research Notes
+- CCP's official position (ESI issue #916): "Game Design does not want us to have access to the names of structures that the character is not on the ACL for"
+- ESI issue #643 confirmed: corporation assets include office folders that can be named via `POST /corporations/{id}/assets/names/`
+- The `esi-universe.read_structures.v1` scope was removed from EVE SSO entirely — the structures endpoint works with any valid token for structures where the character has access
+
+---
+
 ## [v3.7.4] - 2026-03-25
 
 ### Fixed

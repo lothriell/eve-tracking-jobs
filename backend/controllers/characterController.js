@@ -868,27 +868,41 @@ exports.getCharacterAssets = async (req, res) => {
         }
       });
 
-      // Resolve locations — try this character's token, then try other characters' tokens for structures
+      // Resolve locations — try multiple methods for structures
       for (const locId of locIdsToResolve) {
-        if (resolvedLocations[locId]) continue; // already resolved by another character
+        if (resolvedLocations[locId] && !resolvedLocations[locId].unresolved) continue;
 
         try {
           let info = await getLocationInfo(locId, accessToken);
 
-          // If structure failed (name is "Player Structure"), try other characters' tokens
-          if (info.name === 'Player Structure' && charTokens.length > 1) {
+          // If structure unresolved, try other characters' tokens
+          if (info.unresolved && charTokens.length > 1) {
             for (const { accessToken: otherToken } of charTokens) {
               if (otherToken === accessToken) continue;
               try {
                 const retry = await getLocationInfo(locId, otherToken);
-                if (retry.name !== 'Player Structure') {
-                  info = retry;
+                if (!retry.unresolved) { info = retry; break; }
+              } catch (e) { /* next token */ }
+            }
+          }
+
+          // If STILL unresolved, try POST /characters/{id}/assets/names/ with the structure ID
+          // This works when the character has assets in the structure
+          if (info.unresolved) {
+            for (const { character: ch, accessToken: tok } of charTokens) {
+              try {
+                const nameResult = await getAssetNames(ch.character_id, [locId], tok);
+                if (nameResult[locId] && nameResult[locId] !== 'None' && nameResult[locId] !== '') {
+                  info = { name: nameResult[locId], system_id: null, location_class: 'structure' };
                   break;
                 }
-              } catch (retryErr) {
-                // Continue to next token
-              }
+              } catch (e) { /* next character */ }
             }
+          }
+
+          // Final fallback
+          if (info.unresolved || !info.name) {
+            info = { name: `Player Structure #${String(locId).slice(-6)}`, system_id: null, location_class: 'structure' };
           }
 
           resolvedLocations[locId] = info;
@@ -928,10 +942,8 @@ exports.getCharacterAssets = async (req, res) => {
           rootLocId = a.location_id;
         }
 
-        const locInfo = resolvedLocations[rootLocId] || { name: `Unknown Structure`, system_id: null };
-        a.location_name = locInfo.name === 'Player Structure'
-          ? `Player Structure #${String(rootLocId).slice(-6)}`
-          : locInfo.name;
+        const locInfo = resolvedLocations[rootLocId] || { name: `Unknown Location`, system_id: null };
+        a.location_name = locInfo.name;
         a.system_id = locInfo.system_id;
         a.system_name = locInfo.system_id ? (systemNames[locInfo.system_id] || null) : null;
 

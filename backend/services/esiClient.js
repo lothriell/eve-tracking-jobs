@@ -203,9 +203,9 @@ async function getLocationInfo(locationId, accessToken) {
             location_class: locType
           };
         } catch (structError) {
-          // 403 = no docking access — DON'T cache failures (another character's token might work)
-          console.warn(`Cannot resolve structure ${locationId} (${structError.response?.status || 'error'})`);
-          return { name: 'Player Structure', system_id: null, location_class: locType };
+          // 403 = no docking access — DON'T cache, another token might work
+          // Return special marker so controller can try alternative methods
+          return { name: null, system_id: null, location_class: locType, unresolved: true };
         }
         break;
       }
