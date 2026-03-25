@@ -815,22 +815,30 @@ exports.getCharacterAssets = async (req, res) => {
 
     console.log(`[ASSETS] === Starting asset resolution for ${characters.length} characters ===`);
 
-    // ===== PASS 1: Collect all assets and tokens =====
+    // ===== PASS 1: Collect ALL character tokens + assets =====
     const allAssets = [];
-    const charTokens = []; // { character, accessToken }
-    const perCharAssets = []; // { character, assets, accessToken }
+    const charTokens = []; // ALL characters with valid tokens (for structure resolution)
+    const perCharAssets = []; // Only characters with loaded assets
 
+    // First: get valid tokens for ALL characters (even if they can't load assets)
     for (const character of characters) {
       try {
         const accessToken = await getValidAccessToken(character);
-        const assets = await getCharacterAssets(character.character_id, accessToken);
         charTokens.push({ character, accessToken });
+      } catch (e) {
+        console.log(`[ASSETS] ${character.character_name}: token refresh failed, skipping`);
+      }
+    }
+    console.log(`[ASSETS] ${charTokens.length} of ${characters.length} characters have valid tokens`);
+
+    // Then: load assets for characters that have the scope
+    for (const { character, accessToken } of charTokens) {
+      try {
+        const assets = await getCharacterAssets(character.character_id, accessToken);
         perCharAssets.push({ character, assets, accessToken });
       } catch (error) {
-        if (error.response?.status === 403) {
-          return res.json({ assets: [], total: 0, error: 'missing_scope', message: 'Character needs to be re-authorized with asset read scopes' });
-        }
-        console.error(`Failed to get assets for character ${character.character_id}:`, error.message);
+        // 403 = missing asset scope — skip this character, don't abort everything
+        console.log(`[ASSETS] ${character.character_name}: cannot load assets (${error.response?.status || error.message})`);
         continue;
       }
     }
