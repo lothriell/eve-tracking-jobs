@@ -2,6 +2,19 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.7.3] - 2026-03-25
+
+### Fixed
+- **Multi-character structure resolution**: When one character gets 403 on a structure, the system now tries all other characters' tokens before giving up. Previously each character resolved locations independently, missing structures accessible by other characters.
+- **Structure failures not cached**: Failed structure resolutions (403) are no longer cached for 1 hour. This allows retry with another character's token immediately.
+- **Unique labels for unresolvable structures**: Each unresolvable player structure now shows a unique identifier (`Player Structure #XXXXXX` using last 6 digits of ID) instead of all grouping under one generic "Player Structure" label.
+
+### Improved
+- **Two-pass asset processing**: Pass 1 collects all assets and tokens from all characters. Pass 2 resolves locations using shared cache, trying multiple character tokens for structures.
+- **Shared location cache**: Location resolutions are shared across all characters in a single request, avoiding duplicate ESI calls for the same structure.
+
+---
+
 ## [v3.7.2] - 2026-03-25
 
 ### Fixed

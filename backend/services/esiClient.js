@@ -203,9 +203,9 @@ async function getLocationInfo(locationId, accessToken) {
             location_class: locType
           };
         } catch (structError) {
-          // 403 = no docking access, no ESI fallback exists for structure names
+          // 403 = no docking access — DON'T cache failures (another character's token might work)
           console.warn(`Cannot resolve structure ${locationId} (${structError.response?.status || 'error'})`);
-          info = { name: 'Player Structure', system_id: null, location_class: locType };
+          return { name: 'Player Structure', system_id: null, location_class: locType };
         }
         break;
       }

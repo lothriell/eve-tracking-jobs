@@ -813,107 +813,123 @@ exports.getCharacterAssets = async (req, res) => {
       return res.status(404).json({ error: 'No character found' });
     }
 
+    // ===== PASS 1: Collect all assets and tokens =====
     const allAssets = [];
+    const charTokens = []; // { character, accessToken }
+    const perCharAssets = []; // { character, assets, accessToken }
 
     for (const character of characters) {
       try {
         const accessToken = await getValidAccessToken(character);
         const assets = await getCharacterAssets(character.character_id, accessToken);
+        charTokens.push({ character, accessToken });
+        perCharAssets.push({ character, assets, accessToken });
+      } catch (error) {
+        if (error.response?.status === 403) {
+          return res.json({ assets: [], total: 0, error: 'missing_scope', message: 'Character needs to be re-authorized with asset read scopes' });
+        }
+        console.error(`Failed to get assets for character ${character.character_id}:`, error.message);
+        continue;
+      }
+    }
 
-        // Resolve type names in batches
-        const typeIds = [...new Set(assets.map(a => a.type_id).filter(Boolean))];
-        const typeNames = typeIds.length > 0 ? await getTypeNames(typeIds) : {};
+    // ===== PASS 2: Process each character's assets =====
+    // Shared location cache across all characters
+    const resolvedLocations = {};
 
-        // Build item_id → asset lookup for container chain resolution
-        const itemMap = {};
-        assets.forEach(a => { if (a.item_id) itemMap[a.item_id] = a; });
+    for (const { character, assets, accessToken } of perCharAssets) {
+      // Resolve type names
+      const typeIds = [...new Set(assets.map(a => a.type_id).filter(Boolean))];
+      const typeNames = typeIds.length > 0 ? await getTypeNames(typeIds) : {};
 
-        // Follow container chain to find the root station/structure location
-        function resolveRootLocation(asset) {
-          const chain = [];
-          let current = asset;
-          const visited = new Set();
-          while (current && current.location_type === 'item' && !visited.has(current.location_id)) {
-            visited.add(current.location_id);
-            const parent = itemMap[current.location_id];
-            if (parent) {
-              chain.push(parent);
-              current = parent;
-            } else {
+      // Build item_id → asset lookup for container chain
+      const itemMap = {};
+      assets.forEach(a => { if (a.item_id) itemMap[a.item_id] = a; });
+
+      function resolveRootLocation(asset) {
+        let current = asset;
+        const visited = new Set();
+        while (current && current.location_type === 'item' && !visited.has(current.location_id)) {
+          visited.add(current.location_id);
+          const parent = itemMap[current.location_id];
+          if (parent) { current = parent; } else { break; }
+        }
+        return { rootLocationId: current ? current.location_id : asset.location_id, rootLocationType: current ? current.location_type : asset.location_type };
+      }
+
+      // Collect location IDs needing resolution
+      const locIdsToResolve = new Set();
+      assets.forEach(a => {
+        if (a.location_type !== 'item' && a.location_type !== 'other' && a.location_id) {
+          locIdsToResolve.add(a.location_id);
+        } else if (a.location_type === 'item') {
+          const { rootLocationId, rootLocationType } = resolveRootLocation(a);
+          if (rootLocationType !== 'item' && rootLocationType !== 'other') locIdsToResolve.add(rootLocationId);
+        }
+      });
+
+      // Resolve locations — try this character's token, then try other characters' tokens for structures
+      for (const locId of locIdsToResolve) {
+        if (resolvedLocations[locId]) continue; // already resolved by another character
+
+        let info = await getLocationInfo(locId, accessToken);
+
+        // If structure failed (name is "Player Structure"), try other characters' tokens
+        if (info.name === 'Player Structure' && charTokens.length > 1) {
+          for (const { accessToken: otherToken } of charTokens) {
+            if (otherToken === accessToken) continue;
+            const retry = await getLocationInfo(locId, otherToken);
+            if (retry.name !== 'Player Structure') {
+              info = retry;
               break;
             }
           }
-          // current now points to the asset at the station/structure level
-          const rootLocationId = current ? current.location_id : asset.location_id;
-          const rootLocationType = current ? current.location_type : asset.location_type;
-          return { rootLocationId, rootLocationType, chain };
         }
 
-        // Collect all station/structure location IDs (from direct + resolved chains)
-        const stationLocIds = new Set();
-        assets.forEach(a => {
-          if (a.location_type !== 'item' && a.location_type !== 'other' && a.location_id) {
-            stationLocIds.add(a.location_id);
-          } else if (a.location_type === 'item') {
-            const { rootLocationId, rootLocationType } = resolveRootLocation(a);
-            if (rootLocationType !== 'item' && rootLocationType !== 'other') {
-              stationLocIds.add(rootLocationId);
-            }
-          }
-        });
+        resolvedLocations[locId] = info;
+      }
 
-        // Resolve location info (name + system_id) and system names
-        const locationInfo = {};
-        for (const locId of stationLocIds) {
-          try {
-            locationInfo[locId] = await getLocationInfo(locId, accessToken);
-          } catch (e) {
-            locationInfo[locId] = { name: `Location ${locId}`, system_id: null };
+      // Resolve system names for newly resolved locations
+      const systemIds = [...new Set(Object.values(resolvedLocations).map(i => i.system_id).filter(Boolean))];
+      const systemNames = systemIds.length > 0 ? await getSystemNames(systemIds) : {};
+
+      // Get custom names for containers (named ships, etc.)
+      const allItemIds = assets.map(a => a.item_id).filter(Boolean);
+      let customNames = {};
+      try {
+        customNames = await getAssetNames(character.character_id, allItemIds, accessToken);
+      } catch (e) { /* not critical */ }
+
+      // Enrich assets
+      assets.forEach(a => {
+        a.type_name = typeNames[a.type_id] || `Type ${a.type_id}`;
+
+        let rootLocId;
+        if (a.location_type === 'item') {
+          const { rootLocationId } = resolveRootLocation(a);
+          rootLocId = rootLocationId;
+          const directParent = itemMap[a.location_id];
+          if (directParent) {
+            const customName = customNames[directParent.item_id];
+            const typeName = typeNames[directParent.type_id] || `Type ${directParent.type_id}`;
+            a.container_name = customName ? `${typeName} (${customName})` : typeName;
+            a.container_id = directParent.item_id;
           }
+        } else {
+          rootLocId = a.location_id;
         }
 
-        // Resolve system names
-        const systemIds = [...new Set(Object.values(locationInfo).map(i => i.system_id).filter(Boolean))];
-        const systemNames = systemIds.length > 0 ? await getSystemNames(systemIds) : {};
+        const locInfo = resolvedLocations[rootLocId] || { name: `Unknown Structure`, system_id: null };
+        a.location_name = locInfo.name === 'Player Structure'
+          ? `Player Structure #${String(rootLocId).slice(-6)}`
+          : locInfo.name;
+        a.system_id = locInfo.system_id;
+        a.system_name = locInfo.system_id ? (systemNames[locInfo.system_id] || null) : null;
 
-        // Get custom names for items (named ships, containers, etc.)
-        const allItemIds = assets.map(a => a.item_id).filter(Boolean);
-        let customNames = {};
-        try {
-          customNames = await getAssetNames(character.character_id, allItemIds, accessToken);
-        } catch (e) {
-          // Not critical
-        }
-
-        // Enrich each asset with resolved names
-        assets.forEach(a => {
-          a.type_name = typeNames[a.type_id] || `Type ${a.type_id}`;
-
-          let rootLocId;
-          if (a.location_type === 'item') {
-            const { rootLocationId } = resolveRootLocation(a);
-            rootLocId = rootLocationId;
-            const directParent = itemMap[a.location_id];
-            if (directParent) {
-              // Use custom name if available, otherwise type name
-              const customName = customNames[directParent.item_id];
-              const typeName = typeNames[directParent.type_id] || `Type ${directParent.type_id}`;
-              a.container_name = customName ? `${typeName} (${customName})` : typeName;
-              a.container_id = directParent.item_id;
-            }
-          } else {
-            rootLocId = a.location_id;
-          }
-
-          const locInfo = locationInfo[rootLocId] || { name: `Structure ${rootLocId}`, system_id: null };
-          a.location_name = locInfo.name;
-          a.system_id = locInfo.system_id;
-          a.system_name = locInfo.system_id ? (systemNames[locInfo.system_id] || null) : null;
-
-          a.character_id = character.character_id;
-          a.character_name = character.character_name;
-          allAssets.push(a);
-        });
+        a.character_id = character.character_id;
+        a.character_name = character.character_name;
+        allAssets.push(a);
+      });
       } catch (error) {
         if (error.response?.status === 403) {
           return res.json({
