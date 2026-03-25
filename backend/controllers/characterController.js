@@ -873,26 +873,40 @@ exports.getCharacterAssets = async (req, res) => {
         if (resolvedLocations[locId] && !resolvedLocations[locId].unresolved) continue;
 
         try {
-          let info = await getLocationInfo(locId, accessToken);
+          // Refresh token before structure resolution (tokens may have expired during type name resolution)
+          const freshToken = await getValidAccessToken(character);
 
-          // If structure unresolved, try other characters' tokens
-          if (info.unresolved && charTokens.length > 1) {
-            for (const { accessToken: otherToken } of charTokens) {
-              if (otherToken === accessToken) continue;
+          let info = await getLocationInfo(locId, freshToken);
+
+          // If structure unresolved, try ALL other characters with fresh tokens
+          if (info.unresolved) {
+            console.log(`[ASSETS] Structure ${locId} unresolved with ${character.character_name}, trying other characters...`);
+            for (const { character: otherChar } of charTokens) {
+              if (otherChar.character_id === character.character_id) continue;
               try {
-                const retry = await getLocationInfo(locId, otherToken);
-                if (!retry.unresolved) { info = retry; break; }
-              } catch (e) { /* next token */ }
+                const otherFreshToken = await getValidAccessToken(otherChar);
+                console.log(`[ASSETS] Trying ${otherChar.character_name} for structure ${locId}`);
+                const retry = await getLocationInfo(locId, otherFreshToken);
+                if (!retry.unresolved) {
+                  console.log(`[ASSETS] SUCCESS: ${otherChar.character_name} resolved structure ${locId} = "${retry.name}"`);
+                  info = retry;
+                  break;
+                }
+              } catch (e) {
+                console.log(`[ASSETS] ${otherChar.character_name} failed for ${locId}: ${e.message}`);
+              }
             }
           }
 
           // If STILL unresolved, try POST /characters/{id}/assets/names/ with the structure ID
-          // This works when the character has assets in the structure
           if (info.unresolved) {
-            for (const { character: ch, accessToken: tok } of charTokens) {
+            console.log(`[ASSETS] Trying assets/names fallback for structure ${locId}`);
+            for (const { character: ch } of charTokens) {
               try {
+                const tok = await getValidAccessToken(ch);
                 const nameResult = await getAssetNames(ch.character_id, [locId], tok);
                 if (nameResult[locId] && nameResult[locId] !== 'None' && nameResult[locId] !== '') {
+                  console.log(`[ASSETS] assets/names resolved ${locId} = "${nameResult[locId]}" via ${ch.character_name}`);
                   info = { name: nameResult[locId], system_id: null, location_class: 'structure' };
                   break;
                 }
@@ -902,12 +916,13 @@ exports.getCharacterAssets = async (req, res) => {
 
           // Final fallback
           if (info.unresolved || !info.name) {
+            console.log(`[ASSETS] Could not resolve structure ${locId} with any method`);
             info = { name: `Player Structure #${String(locId).slice(-6)}`, system_id: null, location_class: 'structure' };
           }
 
           resolvedLocations[locId] = info;
         } catch (locErr) {
-          console.error(`Failed to resolve location ${locId}:`, locErr.message);
+          console.error(`[ASSETS] Error resolving location ${locId}:`, locErr.message);
           resolvedLocations[locId] = { name: `Location ${locId}`, system_id: null, location_class: 'unknown' };
         }
       }
