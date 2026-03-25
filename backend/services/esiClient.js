@@ -194,24 +194,9 @@ async function getLocationInfo(locationId, accessToken) {
       }
 
       case 'structure': {
-        try {
-          const url = `${ESI_BASE_URL}/universe/structures/${locationId}/`;
-          console.log(`[STRUCTURE] Resolving ${locationId} with token: ${accessToken ? accessToken.substring(0, 8) + '...' : 'NONE'}`);
-          const data = await makeESIRequest(url, accessToken);
-          console.log(`[STRUCTURE] Resolved ${locationId} = "${data.name}", system=${data.solar_system_id}`);
-          info = {
-            name: data.name || `Structure ${locationId}`,
-            system_id: data.solar_system_id || null,
-            location_class: locType
-          };
-        } catch (structError) {
-          const status = structError.response?.status;
-          const errMsg = structError.response?.data?.error || structError.message;
-          console.warn(`[STRUCTURE] FAILED ${locationId}: HTTP ${status} - ${errMsg}`);
-          // DON'T cache — return unresolved so controller can try other methods
-          return { name: null, system_id: null, location_class: locType, unresolved: true };
-        }
-        break;
+        // CCP removed esi-universe.read_structures.v1 from SSO but the endpoint
+        // still requires it — skip the API call entirely, it always returns 401
+        return { name: null, system_id: null, location_class: locType, unresolved: true };
       }
 
       default:

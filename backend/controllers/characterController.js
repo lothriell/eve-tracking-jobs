@@ -813,8 +813,6 @@ exports.getCharacterAssets = async (req, res) => {
       return res.status(404).json({ error: 'No character found' });
     }
 
-    console.log(`[ASSETS] === Starting asset resolution for ${characters.length} characters ===`);
-
     // ===== PASS 1: Collect ALL character tokens + assets =====
     const allAssets = [];
     const charTokens = []; // ALL characters with valid tokens (for structure resolution)
@@ -826,10 +824,9 @@ exports.getCharacterAssets = async (req, res) => {
         const accessToken = await getValidAccessToken(character);
         charTokens.push({ character, accessToken });
       } catch (e) {
-        console.log(`[ASSETS] ${character.character_name}: token refresh failed, skipping`);
+        // Token refresh failed — skip this character
       }
     }
-    console.log(`[ASSETS] ${charTokens.length} of ${characters.length} characters have valid tokens`);
 
     // Then: load assets for characters that have the scope
     for (const { character, accessToken } of charTokens) {
@@ -837,9 +834,7 @@ exports.getCharacterAssets = async (req, res) => {
         const assets = await getCharacterAssets(character.character_id, accessToken);
         perCharAssets.push({ character, assets, accessToken });
       } catch (error) {
-        // 403 = missing asset scope — skip this character, don't abort everything
-        console.log(`[ASSETS] ${character.character_name}: cannot load assets (${error.response?.status || error.message})`);
-        continue;
+        continue; // Missing asset scope or other error — skip character
       }
     }
 
@@ -890,65 +885,22 @@ exports.getCharacterAssets = async (req, res) => {
         }
       });
 
-      // Diagnostic: show unique location_types and sample data
-      const locTypes = {};
-      assets.forEach(a => { locTypes[a.location_type || 'undefined'] = (locTypes[a.location_type || 'undefined'] || 0) + 1; });
-      console.log(`[ASSETS] ${character.character_name}: ${assets.length} assets, location_types: ${JSON.stringify(locTypes)}`);
 
-      // Show first 3 assets for debugging
-      assets.slice(0, 3).forEach((a, i) => {
-        console.log(`[ASSETS]   sample[${i}]: item_id=${a.item_id}, location_id=${a.location_id}, location_type=${a.location_type}, location_flag=${a.location_flag}, type_id=${a.type_id}`);
-      });
-
-      // Show chain resolution results for first 3 items with location_type 'item'
-      const itemTypeAssets = assets.filter(a => a.location_type === 'item').slice(0, 3);
-      itemTypeAssets.forEach((a, i) => {
-        const { rootLocationId, rootLocationType } = resolveRootLocation(a);
-        const parentFound = !!itemMap[a.location_id];
-        console.log(`[ASSETS]   chain[${i}]: item_id=${a.item_id} → location_id=${a.location_id} (parent_found=${parentFound}) → root: ${rootLocationId} (type=${rootLocationType})`);
-      });
-
-      console.log(`[ASSETS] ${character.character_name}: ${locIdsToResolve.size} locations to resolve: ${[...locIdsToResolve].slice(0, 10).join(', ')}${locIdsToResolve.size > 10 ? '...' : ''}`);
-
-      // Resolve locations — try multiple methods for structures
+      // Resolve locations
       for (const locId of locIdsToResolve) {
         if (resolvedLocations[locId] && !resolvedLocations[locId].unresolved) continue;
 
         try {
-          // Refresh token before structure resolution (tokens may have expired during type name resolution)
           const freshToken = await getValidAccessToken(character);
-
           let info = await getLocationInfo(locId, freshToken);
 
-          // If structure unresolved, try ALL other characters with fresh tokens
+          // For unresolved structures, try assets/names with each character
           if (info.unresolved) {
-            console.log(`[ASSETS] Structure ${locId} unresolved with ${character.character_name}, trying other characters...`);
-            for (const { character: otherChar } of charTokens) {
-              if (otherChar.character_id === character.character_id) continue;
-              try {
-                const otherFreshToken = await getValidAccessToken(otherChar);
-                console.log(`[ASSETS] Trying ${otherChar.character_name} for structure ${locId}`);
-                const retry = await getLocationInfo(locId, otherFreshToken);
-                if (!retry.unresolved) {
-                  console.log(`[ASSETS] SUCCESS: ${otherChar.character_name} resolved structure ${locId} = "${retry.name}"`);
-                  info = retry;
-                  break;
-                }
-              } catch (e) {
-                console.log(`[ASSETS] ${otherChar.character_name} failed for ${locId}: ${e.message}`);
-              }
-            }
-          }
-
-          // If STILL unresolved, try POST /characters/{id}/assets/names/ with the structure ID
-          if (info.unresolved) {
-            console.log(`[ASSETS] Trying assets/names fallback for structure ${locId}`);
             for (const { character: ch } of charTokens) {
               try {
                 const tok = await getValidAccessToken(ch);
                 const nameResult = await getAssetNames(ch.character_id, [locId], tok);
                 if (nameResult[locId] && nameResult[locId] !== 'None' && nameResult[locId] !== '') {
-                  console.log(`[ASSETS] assets/names resolved ${locId} = "${nameResult[locId]}" via ${ch.character_name}`);
                   info = { name: nameResult[locId], system_id: null, location_class: 'structure' };
                   break;
                 }
@@ -956,15 +908,13 @@ exports.getCharacterAssets = async (req, res) => {
             }
           }
 
-          // Final fallback
+          // Final fallback for structures
           if (info.unresolved || !info.name) {
-            console.log(`[ASSETS] Could not resolve structure ${locId} with any method`);
             info = { name: `Player Structure #${String(locId).slice(-6)}`, system_id: null, location_class: 'structure' };
           }
 
           resolvedLocations[locId] = info;
         } catch (locErr) {
-          console.error(`[ASSETS] Error resolving location ${locId}:`, locErr.message);
           resolvedLocations[locId] = { name: `Location ${locId}`, system_id: null, location_class: 'unknown' };
         }
       }
