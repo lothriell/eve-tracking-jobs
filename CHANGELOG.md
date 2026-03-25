@@ -2,6 +2,27 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.7.2] - 2026-03-25
+
+### Fixed
+- **Location resolution rewritten with proper ESI ID range logic**: Locations are now classified by ID range before resolution:
+  - Station IDs (60M-64M) → `/universe/stations/{id}/` (public, always works)
+  - System IDs (30M-33M) → `/universe/systems/{id}/` (public, always works)
+  - Player structures (>1T) → `/universe/structures/{id}/` with auth (may 403 if no docking access)
+  - Asset Safety (ID 2004) → labeled "Asset Safety"
+  - Previously all IDs > 1B were treated as structures, causing incorrect resolution attempts
+- **Visual tree indentation completely reworked**:
+  - Station content indented with left border connector line (blue)
+  - Container headers styled as bordered cards with orange accent
+  - Container content wrapped in dedicated indented div with orange left border
+  - Clear visual hierarchy: System → Station (indented) → Container (card) → Items (further indented)
+- **ESI reference skill created**: Comprehensive EVE ESI API reference saved to memory for daily use — covers all endpoints, ID ranges, scopes, and location resolution patterns
+
+### Technical Note
+- Player structures that return 403 (no docking access) show "Player Structure" — this is an ESI limitation with no available workaround. The `esi-universe.read_structures.v1` scope was removed by CCP; structure names can only be resolved when the character has docking access.
+
+---
+
 ## [v3.7.1] - 2026-03-25
 
 ### Fixed

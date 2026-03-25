@@ -151,6 +151,15 @@ async function getLocationName(locationId, accessToken) {
   return info.name;
 }
 
+// Identify location type from ID range
+function classifyLocationId(locationId) {
+  if (locationId === 2004) return 'asset_safety';
+  if (locationId >= 30000000 && locationId < 33000000) return 'solar_system';
+  if (locationId >= 60000000 && locationId < 64000000) return 'station';
+  if (locationId >= 1000000000000) return 'structure';
+  return 'unknown';
+}
+
 // Get location info including name and system_id
 async function getLocationInfo(locationId, accessToken) {
   const cacheKey = `location_info_${locationId}`;
@@ -160,41 +169,56 @@ async function getLocationInfo(locationId, accessToken) {
     return cached.info;
   }
 
+  const locType = classifyLocationId(locationId);
+  let info = { name: `Location ${locationId}`, system_id: null, location_class: locType };
+
   try {
-    if (locationId < 1000000000000) {
-      // NPC station
-      const url = `${ESI_BASE_URL}/universe/stations/${locationId}/`;
-      const data = await makeESIRequest(url);
-      const info = {
-        name: data.name || `Station ${locationId}`,
-        system_id: data.system_id || null
-      };
-      typeNameCache.set(cacheKey, { info, timestamp: Date.now() });
-      return info;
-    } else {
-      // Player structure — try authenticated endpoint
-      try {
-        const url = `${ESI_BASE_URL}/universe/structures/${locationId}/`;
-        const data = await makeESIRequest(url, accessToken);
-        const info = {
-          name: data.name || `Structure ${locationId}`,
-          system_id: data.solar_system_id || null
+    switch (locType) {
+      case 'asset_safety':
+        info = { name: 'Asset Safety', system_id: null, location_class: locType };
+        break;
+
+      case 'solar_system':
+        info = { name: await getSystemName(locationId), system_id: locationId, location_class: locType };
+        break;
+
+      case 'station': {
+        const url = `${ESI_BASE_URL}/universe/stations/${locationId}/`;
+        const data = await makeESIRequest(url);
+        info = {
+          name: data.name || `Station ${locationId}`,
+          system_id: data.system_id || null,
+          location_class: locType
         };
-        typeNameCache.set(cacheKey, { info, timestamp: Date.now() });
-        return info;
-      } catch (structError) {
-        // 403 = can't see structure name (no docking access)
-        // Try to get at least the system from asset locations endpoint
-        console.warn(`Cannot resolve structure ${locationId} (${structError.response?.status || structError.message})`);
-        const info = { name: `Player Structure`, system_id: null };
-        typeNameCache.set(cacheKey, { info, timestamp: Date.now() });
-        return info;
+        break;
       }
+
+      case 'structure': {
+        try {
+          const url = `${ESI_BASE_URL}/universe/structures/${locationId}/`;
+          const data = await makeESIRequest(url, accessToken);
+          info = {
+            name: data.name || `Structure ${locationId}`,
+            system_id: data.solar_system_id || null,
+            location_class: locType
+          };
+        } catch (structError) {
+          // 403 = no docking access, no ESI fallback exists for structure names
+          console.warn(`Cannot resolve structure ${locationId} (${structError.response?.status || 'error'})`);
+          info = { name: 'Player Structure', system_id: null, location_class: locType };
+        }
+        break;
+      }
+
+      default:
+        info = { name: `Location ${locationId}`, system_id: null, location_class: locType };
     }
   } catch (error) {
     console.error(`Failed to get location info for ${locationId}:`, error.message);
-    return { name: `Location ${locationId}`, system_id: null };
   }
+
+  typeNameCache.set(cacheKey, { info, timestamp: Date.now() });
+  return info;
 }
 
 // Get character's industry jobs with enhanced data

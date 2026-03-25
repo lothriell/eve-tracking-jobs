@@ -277,7 +277,7 @@ function Assets({ selectedCharacter, onError }) {
                                       <span className="asset-container-title">{contExpanded ? '▾' : '▸'} {contData.name}</span>
                                       <span className="badge badge-gray">{contData.items.length} items</span>
                                     </div>
-                                    {contExpanded && renderItemsTable(contData.items)}
+                                    {contExpanded && <div className="asset-container-content">{renderItemsTable(contData.items)}</div>}
                                   </div>
                                 );
                               })}
@@ -311,7 +311,7 @@ function Assets({ selectedCharacter, onError }) {
                                         <span className="asset-container-title">{contExpanded ? '▾' : '▸'} {contData.name}</span>
                                         <span className="badge badge-gray">{contData.items.length} items</span>
                                       </div>
-                                      {contExpanded && renderItemsTable(contData.items)}
+                                      {contExpanded && <div className="asset-container-content">{renderItemsTable(contData.items)}</div>}
                                     </div>
                                   );
                                 })}

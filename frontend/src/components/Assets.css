@@ -45,7 +45,7 @@
   flex-shrink: 0;
 }
 
-/* Tab bar — matches jobs toolbar style */
+/* Tab bar */
 .assets-tabs {
   display: flex;
   gap: 4px;
@@ -135,9 +135,8 @@
   white-space: nowrap;
 }
 
-/* ============== TREE HIERARCHY ============== */
+/* ============== TREE: SYSTEM LEVEL ============== */
 
-/* System level */
 .asset-system-group {
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -167,7 +166,8 @@
   color: #e2e8f0;
 }
 
-/* Station level */
+/* ============== TREE: STATION LEVEL ============== */
+
 .asset-station-group {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -176,7 +176,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 16px 10px 32px;
+  padding: 10px 16px 10px 36px;
   background: rgba(0, 0, 0, 0.15);
   cursor: pointer;
   user-select: none;
@@ -193,32 +193,43 @@
   color: #a3bffa;
 }
 
-/* Station content — items and containers are indented */
-.asset-station-content {
-  padding-left: 32px;
-  border-left: 2px solid rgba(163, 191, 250, 0.15);
-  margin-left: 32px;
+.assets-location-badges {
+  display: flex;
+  gap: 6px;
+  align-items: center;
 }
 
-/* Container level */
+/* Station content — indented with visual connector */
+.asset-station-content {
+  margin-left: 36px;
+  padding-left: 16px;
+  border-left: 1px solid rgba(163, 191, 250, 0.2);
+}
+
+/* ============== TREE: CONTAINER LEVEL ============== */
+
 .asset-container-group {
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
-  margin-top: 2px;
+  margin-top: 4px;
+  margin-bottom: 4px;
 }
 
 .asset-container-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px 8px 16px;
-  background: rgba(255, 255, 255, 0.02);
+  padding: 7px 16px;
+  background: rgba(246, 173, 85, 0.04);
+  border: 1px solid rgba(246, 173, 85, 0.1);
+  border-radius: 6px;
+  margin: 4px 0;
   cursor: pointer;
   user-select: none;
-  transition: background 0.2s;
+  transition: all 0.15s;
 }
 
 .asset-container-header:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(246, 173, 85, 0.08);
+  border-color: rgba(246, 173, 85, 0.25);
 }
 
 .asset-container-title {
@@ -228,27 +239,25 @@
 }
 
 /* Container content — further indented */
-.asset-container-group .assets-table {
+.asset-container-content {
   margin-left: 16px;
-  border-left: 2px solid rgba(246, 173, 85, 0.15);
+  padding-left: 12px;
+  border-left: 1px solid rgba(246, 173, 85, 0.15);
+  margin-bottom: 8px;
 }
 
-.assets-location-badges {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
+/* ============== ASSETS TABLE ============== */
 
-/* Assets table — matches jobs-table */
 .assets-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  margin: 4px 0;
 }
 
 .assets-table th {
   background: rgba(0, 0, 0, 0.4);
-  padding: 12px 16px;
+  padding: 10px 16px;
   text-align: left;
   font-weight: 600;
   color: #a0aec0;
@@ -265,19 +274,18 @@
 }
 
 .assets-table td {
-  padding: 12px 16px;
+  padding: 8px 16px;
   color: #e2e8f0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   vertical-align: middle;
 }
 
 .assets-table tbody tr {
-  background: rgba(0, 0, 0, 0.2);
-  transition: background 0.2s;
+  transition: background 0.15s;
 }
 
 .assets-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .assets-table tr:last-child td {
@@ -294,7 +302,8 @@
   color: #a0aec0;
 }
 
-/* Badges — pill style matching existing */
+/* ============== BADGES ============== */
+
 .badge {
   display: inline-block;
   padding: 3px 10px;
@@ -323,7 +332,8 @@
   color: #6ee7b7;
 }
 
-/* Select character prompt */
+/* ============== NO ACCESS / SELECT CHAR ============== */
+
 .select-character-prompt {
   text-align: center;
   padding: 60px 20px;
@@ -342,7 +352,6 @@
   margin-bottom: 8px;
 }
 
-/* No access panel */
 .no-access-panel {
   display: flex;
   flex-direction: column;
@@ -393,8 +402,12 @@
     text-align: center;
   }
 
-  .assets-table th,
-  .assets-table td {
-    padding: 8px 12px;
+  .asset-station-header {
+    padding-left: 20px;
+  }
+
+  .asset-station-content {
+    margin-left: 16px;
+    padding-left: 8px;
   }
 }
