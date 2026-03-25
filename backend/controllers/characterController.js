@@ -930,17 +930,6 @@ exports.getCharacterAssets = async (req, res) => {
         a.character_name = character.character_name;
         allAssets.push(a);
       });
-      } catch (error) {
-        if (error.response?.status === 403) {
-          return res.json({
-            assets: [],
-            total: 0,
-            error: 'missing_scope',
-            message: 'Character needs to be re-authorized with asset read scopes'
-          });
-        }
-        console.error(`Failed to get assets for character ${character.character_id}:`, error.message);
-      }
     }
 
     res.json({ assets: allAssets, total: allAssets.length });
