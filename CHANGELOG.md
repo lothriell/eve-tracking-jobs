@@ -2,6 +2,13 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.7.4] - 2026-03-25
+
+### Fixed
+- **Login broken after better-sqlite3 migration**: Added `linux-headers` to Alpine build dependencies required by `better-sqlite3` native compilation. Changed Dockerfile to install all deps first (including devDeps for native build), then prune after compilation. This ensures the native SQLite module compiles correctly on Alpine Linux.
+
+---
+
 ## [v3.7.3] - 2026-03-25
 
 ### Fixed
