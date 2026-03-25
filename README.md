@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v3.3.10 | **Build Date:** 2026-03-11
+**Current Version:** v3.4.0 | **Build Date:** 2026-03-25
 
 A comprehensive web application for tracking EVE Online industry jobs across multiple characters and corporations.
 
@@ -9,6 +9,14 @@ EVE Industry Tracker provides real-time tracking of your industry jobs, slot uti
 ---
 
 ## 📋 Recent Updates
+
+### v3.4.0 (2026-03-25) - Assets & Planetary Industry
+- ✅ Personal and Corporation asset inventory with filtering and location grouping
+- ✅ Planetary Industry view: colony overview, planet type colors, upgrade stars, expiry countdown
+- ✅ Expandable colony detail with extractor/factory/storage breakdown and pin table
+- ✅ 5 new API endpoints (assets, assets/corp, planets, planets/layout, planets/customs)
+- ✅ 4 new ESI scopes for assets, corp assets, planets, and structure resolution
+- ✅ Sidebar updated with Assets (📦) and Planets (🪐) navigation
 
 ### v3.3.10 (2026-03-11) - Configuration Architecture
 - ✅ Removed all hardcoded IP addresses
@@ -45,6 +53,7 @@ EVE Industry Tracker provides real-time tracking of your industry jobs, slot uti
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| v3.4.0  | 2026-03-25 | Assets view (personal + corp), Planetary Industry view (colonies, detail, customs) |
 | v3.3.10 | 2026-03-11 | Removed all hardcoded IPs, 100% .env-driven configuration |
 | v3.3.9 | 2026-03-11 | Fixed loading page issue, relative URLs, Nginx proxy |
 | v3.3.8 | 2026-03-11 | Multi-deployment support, updated .env.example |

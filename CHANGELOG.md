@@ -2,6 +2,55 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.4.0] - 2026-03-25
+
+### New Features: Assets & Planetary Industry
+
+#### Assets View
+- **Personal Assets**: Browse character asset inventory with type name resolution
+- **Corporation Assets**: View corp assets with role-based access (Director, Accountant, Station Manager)
+- **Real-time Filtering**: Search by item name, type ID, or location ID
+- **Location Grouping**: Assets grouped by location with collapsible sections, sorted by item count
+- **Quantity Display**: Formatted unit counts, location flag badges, assembled/stack state indicators
+
+#### Planetary Industry (PI) View
+- **Colony Overview**: Summary table showing all planet colonies per character
+- **Planet Type Colors**: Color-coded badges matching EVE planet types (temperate, barren, oceanic, ice, gas, lava, storm, plasma, shattered)
+- **Upgrade Stars**: Visual star rating for colony upgrade level (1-5)
+- **Expiry Countdown**: Real-time countdown showing time remaining before colony expires
+- **Colony Detail Panel**: Expandable detail view with extractors, factories, storage breakdown
+- **Pin Table**: Type classification (Extractor/Factory/Storage), pin ID, expiry timer, contents listing
+- **Multi-Character Support**: Shows colonies for all characters or selected character
+
+#### Backend
+- **5 New API Endpoints**:
+  - `GET /api/assets` — Personal character assets (paginated, supports all-characters mode)
+  - `GET /api/assets/corp` — Corporation assets with role check
+  - `GET /api/planets` — Planet colony listing
+  - `GET /api/planets/layout` — Colony detail (pins, links, routes)
+  - `GET /api/planets/customs` — Corporation customs offices
+- **ESI Integration**: Paginated asset fetching (1000 items/page), colony layout with pin/link/route data
+- **Role-Based Access**: Corporation assets require Director, Accountant, or Station Manager role
+
+#### Authentication
+- **4 New ESI Scopes** added to authorization flow:
+  - `esi-assets.read_assets.v1` — Personal asset inventory
+  - `esi-assets.read_corporation_assets.v1` — Corporation asset inventory
+  - `esi-planets.manage_planets.v1` — Planetary industry colonies and layouts
+  - `esi-universe.read_structures.v1` — Player structure name resolution
+- **Graceful Scope Handling**: Characters without new scopes see a re-authorization prompt instead of errors
+
+#### Navigation
+- **Sidebar Updated**: Assets (📦) and Planets (🪐) added to both expanded and collapsed sidebar navigation
+
+### Notes
+- Existing characters need to be re-added to get the new ESI scopes
+- No database schema changes required
+- No Docker configuration changes required
+- All existing functionality (Dashboard, Industry Jobs, Corp Jobs) unchanged
+
+---
+
 ## [v3.3.10] - 2026-03-11
 
 ### Configuration Architecture
