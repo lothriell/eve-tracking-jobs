@@ -44,7 +44,68 @@
   to { transform: rotate(360deg); }
 }
 
-/* Reauth banner */
+/* ============== PI TOOLBAR ============== */
+
+.pi-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 8px 0;
+}
+
+.alert-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #a0aec0;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+
+.alert-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+}
+
+.alert-mode-btn.active {
+  background: rgba(171, 50, 74, 0.2);
+  border-color: rgba(171, 50, 74, 0.5);
+  color: #fc8181;
+}
+
+.alert-mode-icon {
+  font-size: 14px;
+}
+
+.pi-toolbar-info {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.pi-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #718096;
+}
+
+.pi-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* ============== REAUTH BANNER ============== */
+
 .reauth-banner {
   display: flex;
   align-items: center;
@@ -63,32 +124,14 @@
   flex-shrink: 0;
 }
 
-/* Character section header */
+/* ============== CHARACTER SECTION ============== */
+
 .character-colonies-section {
   margin-bottom: 24px;
 }
 
-.character-colonies-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-}
+/* ============== COLONY CARD ============== */
 
-.character-colonies-portrait {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.character-colonies-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #e2e8f0;
-}
-
-/* Colony summary card */
 .colonies-card {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -112,7 +155,8 @@
   color: #e2e8f0;
 }
 
-/* Colony table */
+/* ============== COLONY TABLE ============== */
+
 .colonies-table {
   width: 100%;
   border-collapse: collapse;
@@ -151,7 +195,17 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
-/* Planet type badge */
+/* Alert row highlight */
+.colony-row-alert td {
+  background: rgba(171, 50, 74, 0.05);
+}
+
+.colony-row-alert:hover td {
+  background: rgba(171, 50, 74, 0.08);
+}
+
+/* ============== PLANET TYPE BADGE ============== */
+
 .planet-type-badge {
   display: inline-flex;
   align-items: center;
@@ -170,7 +224,8 @@
   flex-shrink: 0;
 }
 
-/* Upgrade level stars */
+/* ============== UPGRADE STARS ============== */
+
 .upgrade-stars {
   color: #f6c90e;
   letter-spacing: 1px;
@@ -181,22 +236,19 @@
   color: #4a5568;
 }
 
-/* Expiry countdown */
-.expiry-ok {
-  color: #68d391;
+/* ============== LIVE COUNTDOWN ============== */
+
+.live-countdown {
   font-family: 'Consolas', 'Monaco', monospace;
   font-size: 12px;
+  font-weight: 500;
 }
 
-.expiry-warning {
-  color: #fbd38d;
-  font-family: 'Consolas', 'Monaco', monospace;
+.expiry-stopped {
+  color: #AB324A;
   font-size: 12px;
-}
-
-.expiry-expired {
-  color: #fc8181;
-  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
 }
 
 .date-muted {
@@ -204,7 +256,82 @@
   font-size: 12px;
 }
 
-/* Detail button */
+/* ============== ALERT BADGES ============== */
+
+.alert-badges {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.alert-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.alert-expired {
+  background: rgba(171, 50, 74, 0.25);
+  color: #fc8181;
+  border: 1px solid rgba(171, 50, 74, 0.5);
+}
+
+.alert-offbalance {
+  background: rgba(237, 137, 54, 0.2);
+  color: #fbd38d;
+  border: 1px solid rgba(237, 137, 54, 0.4);
+}
+
+.alert-lowrate {
+  background: rgba(246, 201, 14, 0.15);
+  color: #f6c90e;
+  border: 1px solid rgba(246, 201, 14, 0.3);
+}
+
+.alert-storage {
+  background: rgba(99, 179, 237, 0.15);
+  color: #63b3ed;
+  border: 1px solid rgba(99, 179, 237, 0.3);
+}
+
+/* ============== STORAGE BAR ============== */
+
+.storage-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 80px;
+}
+
+.storage-bar-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 40px;
+}
+
+.storage-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.storage-bar-label {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 28px;
+  text-align: right;
+}
+
+/* ============== DETAIL BUTTON ============== */
+
 .detail-btn {
   padding: 3px 10px;
   background: rgba(99, 179, 237, 0.1);
@@ -225,7 +352,8 @@
   cursor: default;
 }
 
-/* Colony detail panel */
+/* ============== COLONY DETAIL PANEL ============== */
+
 .colony-detail-panel {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -265,13 +393,18 @@
   color: #a0aec0;
 }
 
-/* Stats grid */
+/* ============== STATS GRID ============== */
+
 .colony-stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1px;
   background: rgba(255, 255, 255, 0.06);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.colony-stats-5col {
+  grid-template-columns: repeat(5, 1fr);
 }
 
 .colony-stat-box {
@@ -297,7 +430,8 @@
 .colony-stat-value.factories  { color: #63b3ed; }
 .colony-stat-value.contents   { color: #fbd38d; }
 
-/* Pins table */
+/* ============== PINS TABLE ============== */
+
 .pins-table {
   width: 100%;
   border-collapse: collapse;
@@ -315,10 +449,18 @@
   background: rgba(0, 0, 0, 0.15);
 }
 
+.pins-table th.text-right {
+  text-align: right;
+}
+
 .pins-table td {
   padding: 6px 16px;
   color: #a0aec0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.pins-table td.text-right {
+  text-align: right;
 }
 
 .pins-table tr:last-child td {
@@ -331,7 +473,8 @@
   font-family: 'Consolas', 'Monaco', monospace;
 }
 
-/* Badges (shared) */
+/* ============== BADGES ============== */
+
 .badge {
   display: inline-block;
   padding: 2px 8px;
@@ -358,7 +501,14 @@
   border: 1px solid rgba(237, 137, 54, 0.3);
 }
 
-/* Select character prompt */
+.badge-red {
+  background: rgba(171, 50, 74, 0.2);
+  color: #fc8181;
+  border: 1px solid rgba(171, 50, 74, 0.4);
+}
+
+/* ============== SELECT CHARACTER PROMPT ============== */
+
 .select-character-prompt {
   text-align: center;
   padding: 60px 20px;

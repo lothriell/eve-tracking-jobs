@@ -2,6 +2,68 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.5.0] - 2026-03-25
+
+### Enhanced Planetary Industry — Inspired by eve-pi
+
+#### Live Countdown Timers
+- **Real-time ticking countdowns** for all extractor expiry times (updates every second)
+- **Color-coded urgency system** matching EVE conventions:
+  - Red (#AB324A) — Expired / Stopped
+  - Dark red (#9C4438) — Less than 2 hours
+  - Brown (#765B21) — Less than 4 hours
+  - Olive (#63620D) — Less than 8 hours
+  - Green (#2C6C2F) — Less than 12 hours
+  - Teal (#2F695A) — Less than 24/48 hours
+  - Blue (#006596) — Normal / OK
+- **STOPPED indicator** for extractors with no expiry time set
+
+#### Extraction Rate Calculation
+- **Units per hour (u/h)** calculated from `qty_per_cycle` and `cycle_time` for each extractor
+- **Total extraction rate** displayed per colony in summary table and detail panel
+- **Low extraction warning** when rate drops below 500 u/h threshold
+- **Per-extractor rates** shown in colony detail pin table
+
+#### Extractor Balance Detection
+- Detects when two extractors on the same planet differ by more than 1,000 u/h
+- **OFF-BAL badge** displayed on colony summary row and detail panel
+- Helps optimize extractor head placement for even resource distribution
+
+#### Storage Fill Tracking
+- **Visual storage bar** with fill percentage for each colony
+- Calculates used vs. total capacity across launchpads and storage facilities
+- **Color-coded warnings**: green (<60%), amber (60-80%), red (>80%)
+- **Tooltip** showing exact m³ used / capacity
+- Uses accurate PI product volume constants (R0 through P4)
+
+#### Alert System
+- **Four alert types**: EXPIRED, OFF-BAL (off-balance), LOW (low extraction), STORAGE (>60% full)
+- **Alert badges** displayed inline on colony summary rows
+- **Alert count** shown in character section header
+- **Alert Mode toggle** — filter to show only planets needing attention
+- **Row highlighting** for colonies with active alerts
+- **Color legend** in toolbar for quick reference
+
+#### Colony Summary Table Enhancements
+- Added **Rate** column showing total extraction u/h per colony
+- Added **Storage** column with visual fill bar
+- Added **Status** column showing alert badges
+- Colony layouts **pre-fetched** in background for instant alert computation
+- Earliest extractor expiry shown (not just colony-level expiry)
+
+#### Colony Detail Panel Enhancements
+- Stats grid expanded to **5 columns**: Extractors, Factories, With Contents, Extraction Rate, Storage
+- Pin table now includes **Rate** column for per-extractor u/h display
+- Live countdowns on individual extractor pins
+
+### Technical
+- No new ESI scopes or endpoints needed — all data from existing planet layout API
+- PI product volume constants for all tiers (R0, P1, P2, P3, P4)
+- Storage capacity constants for launchpads, storage facilities, and command centers
+- 1-second interval timer for live countdown updates (single timer per component)
+
+---
+
 ## [v3.4.0] - 2026-03-25
 
 ### New Features: Assets & Planetary Industry

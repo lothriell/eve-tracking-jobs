@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v3.4.0 | **Build Date:** 2026-03-25
+**Current Version:** v3.5.0 | **Build Date:** 2026-03-25
 
 A comprehensive web application for tracking EVE Online industry jobs across multiple characters and corporations.
 
@@ -9,6 +9,14 @@ EVE Industry Tracker provides real-time tracking of your industry jobs, slot uti
 ---
 
 ## 📋 Recent Updates
+
+### v3.5.0 (2026-03-25) - Enhanced Planetary Industry
+- ✅ Live color-coded countdown timers (ticking every second, 8-level urgency colors)
+- ✅ Extraction rate calculation (units/hour per extractor and per colony)
+- ✅ Extractor balance detection with OFF-BAL warning badge
+- ✅ Storage fill tracking with visual bar and capacity percentages
+- ✅ Alert system: EXPIRED, OFF-BAL, LOW, STORAGE badges with alert mode filter
+- ✅ Enhanced colony summary table with Rate, Storage, and Status columns
 
 ### v3.4.0 (2026-03-25) - Assets & Planetary Industry
 - ✅ Personal and Corporation asset inventory with filtering and location grouping
@@ -53,6 +61,7 @@ EVE Industry Tracker provides real-time tracking of your industry jobs, slot uti
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| v3.5.0  | 2026-03-25 | Enhanced PI: live countdowns, extraction rates, storage tracking, alert system |
 | v3.4.0  | 2026-03-25 | Assets view (personal + corp), Planetary Industry view (colonies, detail, customs) |
 | v3.3.10 | 2026-03-11 | Removed all hardcoded IPs, 100% .env-driven configuration |
 | v3.3.9 | 2026-03-11 | Fixed loading page issue, relative URLs, Nginx proxy |
