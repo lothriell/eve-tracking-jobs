@@ -1,5 +1,6 @@
 const db = require('../database/db');
 const { getValidAccessToken } = require('../services/tokenRefresh');
+const { REQUIRED_SCOPES } = require('./authController');
 const {
   getCharacterIndustryJobs,
   getJobSlotUsage,
@@ -58,14 +59,20 @@ exports.getAllCharacters = async (req, res) => {
     }
 
     const characters = await db.getAllCharactersByUserId(req.session.userId);
-    
+
     res.json({
-      characters: characters.map(char => ({
-        id: char.id,
-        character_id: char.character_id,
-        name: char.character_name,
-        portrait_url: `https://images.evetech.net/characters/${char.character_id}/portrait?size=64`
-      }))
+      characters: characters.map(char => {
+        const charScopes = (char.scopes || '').split(/[\s,]+/).filter(Boolean);
+        const missingScopes = REQUIRED_SCOPES.filter(s => !charScopes.includes(s));
+        return {
+          id: char.id,
+          character_id: char.character_id,
+          name: char.character_name,
+          portrait_url: `https://images.evetech.net/characters/${char.character_id}/portrait?size=64`,
+          scopes_complete: missingScopes.length === 0,
+          missing_scopes: missingScopes
+        };
+      })
     });
   } catch (error) {
     console.error('Get all characters error:', error);

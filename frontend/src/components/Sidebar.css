@@ -201,6 +201,20 @@
   object-fit: cover;
 }
 
+/* Collapsed portrait wrapper */
+.collapsed-char-item .portrait-wrapper {
+  position: relative;
+  margin-right: 0;
+}
+
+.collapsed-char-item .scope-dot {
+  bottom: -1px;
+  right: -1px;
+  width: 8px;
+  height: 8px;
+  border-width: 1.5px;
+}
+
 /* ========== EXPANDED STATE STYLES ========== */
 .sidebar-header {
   /* Match main header exactly: 16px padding top/bottom + 22px h1 = 54px */
@@ -319,6 +333,37 @@
 
 .character-item.active .character-portrait {
   border-color: #667eea;
+}
+
+/* Portrait wrapper for scope dot positioning */
+.portrait-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  margin-right: 12px;
+}
+
+/* Remove margin from portrait when inside wrapper */
+.portrait-wrapper .character-portrait {
+  margin-right: 0;
+}
+
+/* ESI scope indicator dot */
+.scope-dot {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid #1a1f2e;
+}
+
+.scope-ok {
+  background-color: #10b981;
+}
+
+.scope-missing {
+  background-color: #f56565;
 }
 
 .character-name {

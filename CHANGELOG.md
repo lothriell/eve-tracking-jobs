@@ -2,6 +2,18 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.6.1] - 2026-03-25
+
+### Added
+- **ESI scope completeness indicator**: Tiny colored dot on each character's portrait in the sidebar
+  - **Green dot**: All required ESI scopes are granted — character has full functionality
+  - **Red dot**: One or more scopes are missing — character needs to be re-added to get new permissions
+  - Visible in both expanded and collapsed sidebar states
+  - Hover tooltip shows "All ESI scopes granted" or "Missing N scope(s) — re-add character to fix"
+  - Backend compares stored character scopes against current `REQUIRED_SCOPES` list and returns `scopes_complete` flag and `missing_scopes` array per character
+
+---
+
 ## [v3.6.0] - 2026-03-25
 
 ### Migrated: Frontend CRA → Vite

@@ -155,14 +155,20 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
                 onClick={() => handleSelectCharacter(char)}
                 title={char.name}
               >
-                <img 
-                  src={char.portrait_url}
-                  alt={char.name}
-                  className="collapsed-portrait"
-                />
+                <div className="portrait-wrapper">
+                  <img
+                    src={char.portrait_url}
+                    alt={char.name}
+                    className="collapsed-portrait"
+                  />
+                  <span
+                    className={`scope-dot ${char.scopes_complete ? 'scope-ok' : 'scope-missing'}`}
+                    title={char.scopes_complete ? 'All ESI scopes granted' : `Missing ${char.missing_scopes?.length || 0} scope(s)`}
+                  />
+                </div>
               </div>
             ))}
-            <div 
+            <div
               className="collapsed-char-item add-btn"
               onClick={handleAddCharacter}
               title="Add Character"
@@ -204,11 +210,17 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
                     className={`character-item ${selectedCharacter?.character_id === char.character_id ? 'active' : ''}`}
                     onClick={() => handleSelectCharacter(char)}
                   >
-                    <img 
-                      src={char.portrait_url}
-                      alt={char.name}
-                      className="character-portrait"
-                    />
+                    <div className="portrait-wrapper">
+                      <img
+                        src={char.portrait_url}
+                        alt={char.name}
+                        className="character-portrait"
+                      />
+                      <span
+                        className={`scope-dot ${char.scopes_complete ? 'scope-ok' : 'scope-missing'}`}
+                        title={char.scopes_complete ? 'All ESI scopes granted' : `Missing ${char.missing_scopes?.length || 0} scope(s) — re-add character to fix`}
+                      />
+                    </div>
                     <span className="character-name">{char.name}</span>
                     <button
                       className="delete-character-btn"

@@ -197,3 +197,6 @@ exports.handleEveCallback = async (req, res) => {
     res.redirect('/?error=eve_auth_failed');
   }
 };
+
+// Export REQUIRED_SCOPES for use by other modules
+exports.REQUIRED_SCOPES = REQUIRED_SCOPES;
