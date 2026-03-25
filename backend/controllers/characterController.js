@@ -886,49 +886,38 @@ exports.getCharacterAssets = async (req, res) => {
       });
 
 
-      // Resolve locations
+      // Resolve locations (stations and systems only — structures endpoint is broken)
       for (const locId of locIdsToResolve) {
-        if (resolvedLocations[locId] && !resolvedLocations[locId].unresolved) continue;
+        if (resolvedLocations[locId]) continue;
 
         try {
-          const freshToken = await getValidAccessToken(character);
-          let info = await getLocationInfo(locId, freshToken);
-
-          // For unresolved structures, try assets/names with each character
+          const info = await getLocationInfo(locId, accessToken);
           if (info.unresolved) {
-            for (const { character: ch } of charTokens) {
-              try {
-                const tok = await getValidAccessToken(ch);
-                const nameResult = await getAssetNames(ch.character_id, [locId], tok);
-                if (nameResult[locId] && nameResult[locId] !== 'None' && nameResult[locId] !== '') {
-                  info = { name: nameResult[locId], system_id: null, location_class: 'structure' };
-                  break;
-                }
-              } catch (e) { /* next character */ }
-            }
+            // Structure — endpoint broken by CCP, use short ID label
+            resolvedLocations[locId] = { name: `Player Structure #${String(locId).slice(-6)}`, system_id: null, location_class: 'structure' };
+          } else {
+            resolvedLocations[locId] = info;
           }
-
-          // Final fallback for structures
-          if (info.unresolved || !info.name) {
-            info = { name: `Player Structure #${String(locId).slice(-6)}`, system_id: null, location_class: 'structure' };
-          }
-
-          resolvedLocations[locId] = info;
         } catch (locErr) {
           resolvedLocations[locId] = { name: `Location ${locId}`, system_id: null, location_class: 'unknown' };
         }
       }
 
-      // Resolve system names for newly resolved locations
+      // Resolve system names
       const systemIds = [...new Set(Object.values(resolvedLocations).map(i => i.system_id).filter(Boolean))];
       const systemNames = systemIds.length > 0 ? await getSystemNames(systemIds) : {};
 
-      // Get custom names for containers (named ships, etc.)
-      const allItemIds = assets.map(a => a.item_id).filter(Boolean);
+      // Get custom names ONLY for containers (items that have children), not all 5000+ items
+      const containerItemIds = [...new Set(
+        assets.filter(a => a.location_type === 'item' && itemMap[a.location_id])
+          .map(a => a.location_id)
+      )];
       let customNames = {};
-      try {
-        customNames = await getAssetNames(character.character_id, allItemIds, accessToken);
-      } catch (e) { /* not critical */ }
+      if (containerItemIds.length > 0) {
+        try {
+          customNames = await getAssetNames(character.character_id, containerItemIds, accessToken);
+        } catch (e) { /* not critical */ }
+      }
 
       // Enrich assets
       assets.forEach(a => {
