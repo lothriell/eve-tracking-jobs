@@ -813,6 +813,8 @@ exports.getCharacterAssets = async (req, res) => {
       return res.status(404).json({ error: 'No character found' });
     }
 
+    console.log(`[ASSETS] === Starting asset resolution for ${characters.length} characters ===`);
+
     // ===== PASS 1: Collect all assets and tokens =====
     const allAssets = [];
     const charTokens = []; // { character, accessToken }
@@ -867,6 +869,8 @@ exports.getCharacterAssets = async (req, res) => {
           if (rootLocationType !== 'item' && rootLocationType !== 'other') locIdsToResolve.add(rootLocationId);
         }
       });
+
+      console.log(`[ASSETS] ${character.character_name}: ${assets.length} assets, ${locIdsToResolve.size} locations to resolve: ${[...locIdsToResolve].join(', ')}`);
 
       // Resolve locations — try multiple methods for structures
       for (const locId of locIdsToResolve) {
