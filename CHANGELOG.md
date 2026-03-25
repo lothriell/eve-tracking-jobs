@@ -2,6 +2,24 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.5.3] - 2026-03-25
+
+### Fixed
+- **Character selection no longer forces Jobs view**: Selecting a character now stays on the current view (Assets, Planets, etc.) instead of always switching to Industry Jobs. Previously, clicking a character in the sidebar always navigated to the "jobs" view.
+
+### Improved
+- **CSS theme alignment for Assets and Planets**: Both new views now match the existing EVE dark theme used by Dashboard, Industry Jobs, and Corporation Jobs:
+  - Table styling: `rgba(0,0,0,0.2)` backgrounds, `rgba(0,0,0,0.4)` headers, consistent padding (12px 16px), font-weight 600
+  - Badges: pill-shaped (`border-radius: 12px`) matching existing status badges
+  - Cards/sections: `border-radius: 12px`, matching `jobs-section` styling
+  - Buttons: Assets tabs and PI toolbar buttons now match the auto-refresh/filter button design
+  - Stat cards in colony detail now match slot-cards-grid hover effect
+  - Color values aligned to existing palette (`#10b981`, `#4a9eff`, `#ff6b35`, etc.)
+  - Responsive breakpoints added for mobile
+  - Input fields match existing filter styling (`rgba(0,0,0,0.3)` background)
+
+---
+
 ## [v3.5.2] - 2026-03-25
 
 ### Fixed

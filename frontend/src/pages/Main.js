@@ -47,7 +47,6 @@ function Main({ onLogout }) {
 
   const handleSelectCharacter = (character) => {
     setSelectedCharacter(character);
-    setCurrentView('jobs');
   };
 
   const handleShowAllCharacters = () => {
