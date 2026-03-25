@@ -10,7 +10,8 @@ const {
   getCharacterAssets,
   getCorporationAssets,
   getCharacterColonies,
-  getColonyLayout
+  getColonyLayout,
+  getSystemNames
 } = require('../services/esiClient');
 const {
   getCharacterCorporation,
@@ -946,10 +947,21 @@ exports.getCharacterPlanets = async (req, res) => {
         const accessToken = await getValidAccessToken(character);
         const colonies = await getCharacterColonies(character.character_id, accessToken);
 
+        // Resolve system names
+        const colonyList = colonies || [];
+        const systemIds = colonyList.map(c => c.solar_system_id).filter(Boolean);
+        const systemNames = systemIds.length > 0 ? await getSystemNames(systemIds) : {};
+
+        colonyList.forEach(colony => {
+          if (colony.solar_system_id) {
+            colony.system_name = systemNames[colony.solar_system_id] || `System ${colony.solar_system_id}`;
+          }
+        });
+
         result.push({
           character_id: character.character_id,
           character_name: character.character_name,
-          colonies: colonies || []
+          colonies: colonyList
         });
       } catch (error) {
         if (error.response?.status === 403) {
@@ -992,6 +1004,41 @@ exports.getColonyLayout = async (req, res) => {
 
     const accessToken = await getValidAccessToken(character);
     const layout = await getColonyLayout(character.character_id, parseInt(planetId), accessToken);
+
+    // Resolve type names for pins and contents
+    const typeIds = new Set();
+    const pins = layout.pins || [];
+    pins.forEach(pin => {
+      if (pin.type_id) typeIds.add(pin.type_id);
+      if (pin.contents) {
+        pin.contents.forEach(item => {
+          if (item.type_id) typeIds.add(item.type_id);
+        });
+      }
+      // Also resolve extractor product type
+      if (pin.extractor_details?.product_type_id) {
+        typeIds.add(pin.extractor_details.product_type_id);
+      }
+      // Also resolve factory schematic output
+      if (pin.factory_details?.schematic_id) {
+        // schematic_id is not a type_id, skip
+      }
+    });
+
+    const typeNames = typeIds.size > 0 ? await getTypeNames([...typeIds]) : {};
+
+    // Enrich pins with resolved names
+    pins.forEach(pin => {
+      pin.type_name = typeNames[pin.type_id] || `Type ${pin.type_id}`;
+      if (pin.contents) {
+        pin.contents.forEach(item => {
+          item.type_name = typeNames[item.type_id] || `Type ${item.type_id}`;
+        });
+      }
+      if (pin.extractor_details?.product_type_id) {
+        pin.extractor_details.product_name = typeNames[pin.extractor_details.product_type_id] || null;
+      }
+    });
 
     res.json(layout);
   } catch (error) {

@@ -2,6 +2,19 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.5.2] - 2026-03-25
+
+### Fixed
+- **Extractor timers showing STOPPED incorrectly**: Fixed `expiry_time` being read from `pin.extractor_details.expiry_time` (wrong) instead of `pin.expiry_time` (correct ESI path). All running extractors now show proper live countdowns.
+- **Name resolution throughout PI view**: Solar system IDs now resolved to actual system names (e.g., "Auga" instead of "System 30001396"). Pin types show structure names (e.g., "Extractor Control Unit" instead of type IDs). Content items show item names (e.g., "Base Metals ×534" instead of "2267×534").
+
+### Improved
+- Pin table column renamed from "Pin ID" to "Structure" showing readable type names
+- Backend resolves all type IDs and system IDs before sending to frontend
+- Added `getSystemNames()` to ESI client for batch solar system name resolution
+
+---
+
 ## [v3.5.1] - 2026-03-25
 
 ### Fixed

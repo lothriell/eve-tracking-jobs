@@ -145,8 +145,8 @@ function getAlertState(pins, expiryDate) {
 
   // Expired extractors
   extractorPins.forEach(p => {
-    if (p.extractor_details?.expiry_time) {
-      if (new Date(p.extractor_details.expiry_time) - Date.now() <= 0) {
+    if (p.expiry_time) {
+      if (new Date(p.expiry_time) - Date.now() <= 0) {
         alerts.expired = true;
       }
     } else {
@@ -361,7 +361,7 @@ function ColonyDetail({ characterId, planetId, planetType, onClose }) {
               <thead>
                 <tr>
                   <th>Type</th>
-                  <th>Pin ID</th>
+                  <th>Structure</th>
                   <th>Expiry</th>
                   <th className="text-right">Rate</th>
                   <th>Contents</th>
@@ -373,17 +373,17 @@ function ColonyDetail({ characterId, planetId, planetType, onClose }) {
                   const isFactory   = !!pin.factory_details;
                   const kind  = isExtractor ? 'Extractor' : isFactory ? 'Factory' : 'Storage/CC';
                   const badge = isExtractor ? 'badge-green' : isFactory ? 'badge-blue' : 'badge-amber';
-                  const expiry = pin.extractor_details?.expiry_time;
+                  const expiry = pin.expiry_time;
                   const uph = isExtractor ? calcExtractorUPH(pin) : 0;
                   const contents = pin.contents || [];
                   const contentStr = contents.length
-                    ? contents.map(c => `${c.type_id}×${c.amount}`).join(', ')
+                    ? contents.map(c => `${c.type_name || `Type ${c.type_id}`} ×${c.amount}`).join(', ')
                     : '—';
 
                   return (
                     <tr key={pin.pin_id || idx}>
                       <td><span className={`badge ${badge}`}>{kind}</span></td>
-                      <td style={{ fontFamily: 'monospace', color: '#718096' }}>{pin.pin_id || pin.type_id}</td>
+                      <td style={{ color: '#a0aec0', fontSize: 12 }}>{pin.type_name || `Type ${pin.type_id}`}</td>
                       <td>
                         {isExtractor
                           ? <LiveCountdown expiryTime={expiry} />
@@ -518,7 +518,7 @@ function CharacterColonies({ characterData, alertMode }) {
 
               // Find the earliest extractor expiry for this colony
               const extractorExpiries = extractorPins
-                .map(p => p.extractor_details?.expiry_time)
+                .map(p => p.expiry_time)
                 .filter(Boolean);
               const earliestExpiry = extractorExpiries.length > 0
                 ? extractorExpiries.sort()[0]
@@ -529,7 +529,7 @@ function CharacterColonies({ characterData, alertMode }) {
                   <tr className={hasAnyAlert(alerts) ? 'colony-row-alert' : ''}>
                     <td>
                       <span className="planet-dot" style={{ backgroundColor: style.dot, width: 8, height: 8, borderRadius: '50%', display: 'inline-block', marginRight: 6, verticalAlign: 'middle' }} />
-                      System {colony.solar_system_id || '—'}
+                      {colony.system_name || `System ${colony.solar_system_id}` || '—'}
                     </td>
                     <td>
                       <span className="planet-type-badge" style={{ backgroundColor: style.bg, borderColor: style.border, color: style.dot }}>

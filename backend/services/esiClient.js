@@ -451,6 +451,39 @@ async function transformCorporationJobs(jobs, corporationInfo) {
   return transformedJobs;
 }
 
+// Get solar system name (public, no auth needed)
+async function getSystemName(systemId) {
+  const cacheKey = `system_${systemId}`;
+  const cached = typeNameCache.get(cacheKey);
+
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.name;
+  }
+
+  try {
+    const url = `${ESI_BASE_URL}/universe/systems/${systemId}/`;
+    const data = await makeESIRequest(url);
+    const name = data.name || `System ${systemId}`;
+    typeNameCache.set(cacheKey, { name, timestamp: Date.now() });
+    return name;
+  } catch (error) {
+    console.error(`Failed to get system name for ${systemId}:`, error.message);
+    return `System ${systemId}`;
+  }
+}
+
+// Batch get system names
+async function getSystemNames(systemIds) {
+  const uniqueIds = [...new Set(systemIds)].filter(Boolean);
+  const results = {};
+
+  for (const id of uniqueIds) {
+    results[id] = await getSystemName(id);
+  }
+
+  return results;
+}
+
 // Get character assets (paginated)
 async function getCharacterAssets(characterId, accessToken) {
   const allAssets = [];
@@ -535,5 +568,7 @@ module.exports = {
   getCorporationAssets,
   getCharacterColonies,
   getColonyLayout,
+  getSystemName,
+  getSystemNames,
   ACTIVITY_MAP
 };
