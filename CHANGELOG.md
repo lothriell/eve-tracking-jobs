@@ -2,6 +2,19 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.6.3] - 2026-03-25
+
+### Fixed
+- **Corporation Jobs broken**: Fixed `useCallback` hook ordering — `loadData` was referenced in `useEffect` before being defined, causing the component to fail silently. Moved `loadData` definition above the `useEffect` that depends on it.
+- **Player structure names showing as IDs**: Assets inside containers (`location_type: "item"`) were incorrectly being resolved as structures (returning 403). Now skips ESI resolution for container items and shows "In Container" instead. Station/structure resolution only attempted for actual station and solar_system location types.
+- **Assets now loads all characters by default**: No longer requires selecting a specific character. Opens with all characters' assets aggregated, with a character dropdown filter to narrow down. Shows a "Character" column when viewing all characters.
+
+### Added
+- **Character filter dropdown** on Assets view: Filter assets by character when viewing all characters, matching the Corporation Jobs filter pattern. Dropdown styled consistently with existing filter controls.
+- **Search by character name**: Filter input now also matches character names.
+
+---
+
 ## [v3.6.2] - 2026-03-25
 
 ### Fixed

@@ -17,27 +17,6 @@ function CorporationJobs({ selectedCharacter, onError }) {
   const [expandedCorps, setExpandedCorps] = useState({});
   const timerRef = useRef(null);
 
-  useEffect(() => {
-    loadData();
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [selectedCharacter, loadData]);
-
-  // Real-time countdown timer
-  useEffect(() => {
-    timerRef.current = setInterval(() => {
-      setJobs(prevJobs => prevJobs.map(job => ({
-        ...job,
-        time_remaining_ms: Math.max(0, new Date(job.end_date) - new Date())
-      })));
-    }, 1000);
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, []);
-
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
@@ -105,6 +84,27 @@ function CorporationJobs({ selectedCharacter, onError }) {
       setLoading(false);
     }
   }, [selectedCharacter, onError]);
+
+  useEffect(() => {
+    loadData();
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [loadData]);
+
+  // Real-time countdown timer
+  useEffect(() => {
+    timerRef.current = setInterval(() => {
+      setJobs(prevJobs => prevJobs.map(job => ({
+        ...job,
+        time_remaining_ms: Math.max(0, new Date(job.end_date) - new Date())
+      })));
+    }, 1000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
 
   const handleRefresh = () => {
     loadData();

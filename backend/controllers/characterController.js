@@ -822,10 +822,14 @@ exports.getCharacterAssets = async (req, res) => {
         const typeIds = [...new Set(assets.map(a => a.type_id).filter(Boolean))];
         const typeNames = typeIds.length > 0 ? await getTypeNames(typeIds) : {};
 
-        // Resolve location names
-        const locationIds = [...new Set(assets.map(a => a.location_id).filter(Boolean))];
+        // Resolve location names — only for station/solar_system types, skip items (containers)
+        const stationLocIds = [...new Set(
+          assets
+            .filter(a => a.location_id && a.location_type !== 'item' && a.location_type !== 'other')
+            .map(a => a.location_id)
+        )];
         const locationNames = {};
-        for (const locId of locationIds) {
+        for (const locId of stationLocIds) {
           try {
             locationNames[locId] = await getLocationName(locId, accessToken);
           } catch (e) {
@@ -835,7 +839,7 @@ exports.getCharacterAssets = async (req, res) => {
 
         assets.forEach(a => {
           a.type_name = typeNames[a.type_id] || `Type ${a.type_id}`;
-          a.location_name = locationNames[a.location_id] || `Location ${a.location_id}`;
+          a.location_name = locationNames[a.location_id] || (a.location_type === 'item' ? 'In Container' : `Location ${a.location_id}`);
           a.character_id = character.character_id;
           a.character_name = character.character_name;
           allAssets.push(a);
@@ -908,10 +912,14 @@ exports.getCorporationAssets = async (req, res) => {
       const typeIds = [...new Set(assets.map(a => a.type_id).filter(Boolean))];
       const typeNames = typeIds.length > 0 ? await getTypeNames(typeIds) : {};
 
-      // Resolve location names
-      const locationIds = [...new Set(assets.map(a => a.location_id).filter(Boolean))];
+      // Resolve location names — only for station/solar_system types, skip items (containers)
+      const stationLocIds = [...new Set(
+        assets
+          .filter(a => a.location_id && a.location_type !== 'item' && a.location_type !== 'other')
+          .map(a => a.location_id)
+      )];
       const locationNames = {};
-      for (const locId of locationIds) {
+      for (const locId of stationLocIds) {
         try {
           locationNames[locId] = await getLocationName(locId, accessToken);
         } catch (e) {
@@ -921,7 +929,7 @@ exports.getCorporationAssets = async (req, res) => {
 
       assets.forEach(a => {
         a.type_name = typeNames[a.type_id] || `Type ${a.type_id}`;
-        a.location_name = locationNames[a.location_id] || `Location ${a.location_id}`;
+        a.location_name = locationNames[a.location_id] || (a.location_type === 'item' ? 'In Container' : `Location ${a.location_id}`);
       });
 
       res.json({ assets, total: assets.length, has_access: true });
