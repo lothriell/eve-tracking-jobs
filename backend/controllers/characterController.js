@@ -866,7 +866,19 @@ exports.getCharacterAssets = async (req, res) => {
           locIdsToResolve.add(a.location_id);
         } else if (a.location_type === 'item') {
           const { rootLocationId, rootLocationType } = resolveRootLocation(a);
-          if (rootLocationType !== 'item' && rootLocationType !== 'other') locIdsToResolve.add(rootLocationId);
+          if (rootLocationType !== 'item' && rootLocationType !== 'other') {
+            locIdsToResolve.add(rootLocationId);
+          } else if (rootLocationId >= 1000000000000) {
+            // Dead-end chain: parent not in assets — but ID is in structure range
+            // Player structures are "items" in EVE's data model and won't be in character assets
+            locIdsToResolve.add(rootLocationId);
+          } else if (rootLocationId >= 60000000 && rootLocationId < 64000000) {
+            // Dead-end chain but ID is in station range
+            locIdsToResolve.add(rootLocationId);
+          } else if (rootLocationId >= 30000000 && rootLocationId < 33000000) {
+            // Dead-end chain but ID is in solar system range
+            locIdsToResolve.add(rootLocationId);
+          }
         }
       });
 
@@ -968,6 +980,7 @@ exports.getCharacterAssets = async (req, res) => {
         if (a.location_type === 'item') {
           const { rootLocationId } = resolveRootLocation(a);
           rootLocId = rootLocationId;
+          // Only set container_name if the direct parent is a real container (not the structure itself)
           const directParent = itemMap[a.location_id];
           if (directParent) {
             const customName = customNames[directParent.item_id];
@@ -975,6 +988,8 @@ exports.getCharacterAssets = async (req, res) => {
             a.container_name = customName ? `${typeName} (${customName})` : typeName;
             a.container_id = directParent.item_id;
           }
+          // If direct parent not found but location_id is a structure, item is directly in structure hangar
+          // Don't set container_name — it's a direct hangar item
         } else {
           rootLocId = a.location_id;
         }
