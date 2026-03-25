@@ -14,7 +14,11 @@ const REQUIRED_SCOPES = [
   'esi-skills.read_skills.v1',                // Required for calculating max job slots
   'esi-industry.read_corporation_jobs.v1',    // Required for corporation industry jobs
   'esi-corporations.read_corporation_membership.v1',  // Required for corp membership
-  'esi-characters.read_corporation_roles.v1'  // Required for reading character corp roles (Director/Factory_Manager check)
+  'esi-characters.read_corporation_roles.v1', // Required for reading character corp roles (Director/Factory_Manager check)
+  'esi-assets.read_assets.v1',               // Required for personal asset inventory
+  'esi-assets.read_corporation_assets.v1',   // Required for corporation asset inventory
+  'esi-planets.manage_planets.v1',           // Required for planetary industry (colonies, layouts)
+  'esi-universe.read_structures.v1'          // Required for resolving player structure names
 ];
 
 // PKCE helper functions

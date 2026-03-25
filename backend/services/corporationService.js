@@ -15,6 +15,9 @@ const CACHE_DURATION = 3600000; // 1 hour
 // Industry-related corporation roles
 const INDUSTRY_ROLES = ['Director', 'Factory_Manager'];
 
+// Asset-related corporation roles
+const CORP_ASSET_ROLES = ['Director', 'Accountant', 'Station_Manager'];
+
 /**
  * Get character's corporation ID from ESI
  */
@@ -104,6 +107,39 @@ function getIndustryRoleName(roles) {
   if (roles.roles.includes('Director')) return 'Director';
   if (roles.roles.includes('Factory_Manager')) return 'Factory Manager';
   return null;
+}
+
+/**
+ * Check if character has asset-related corporation roles
+ * Checks for: Director, Accountant, or Station_Manager
+ */
+function hasCorporationAssetRole(roles) {
+  if (!roles || !roles.roles) return false;
+  return roles.roles.some(role => CORP_ASSET_ROLES.includes(role));
+}
+
+/**
+ * Get corporation customs offices from ESI
+ * Requires: esi-planets.manage_planets.v1 scope + Director role
+ */
+async function getCustomsOffices(corporationId, accessToken) {
+  try {
+    const response = await axios.get(
+      `${ESI_BASE_URL}/corporations/${corporationId}/customs_offices/`,
+      {
+        headers: { 'Authorization': `Bearer ${accessToken}` },
+        params: { datasource: ESI_DATASOURCE }
+      }
+    );
+    return response.data || [];
+  } catch (error) {
+    if (error.response?.status === 403) {
+      console.log(`No customs office access for corp ${corporationId} - missing scope or role`);
+      return [];
+    }
+    console.error(`Failed to get customs offices for ${corporationId}:`, error.message);
+    return [];
+  }
 }
 
 /**
@@ -214,8 +250,11 @@ module.exports = {
   getCharacterRoles,
   hasIndustryRole,
   getIndustryRoleName,
+  hasCorporationAssetRole,
+  getCustomsOffices,
   getCorporationInfo,
   getCorporationJobs,
   getCorporationMemberNames,
-  INDUSTRY_ROLES
+  INDUSTRY_ROLES,
+  CORP_ASSET_ROLES
 };

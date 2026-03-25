@@ -115,12 +115,26 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
             >
               🏭
             </div>
-            <div 
+            <div
               className={`collapsed-nav-item ${currentView === 'corp-jobs' ? 'active' : ''}`}
               onClick={() => onViewChange('corp-jobs')}
               title="Corporation Jobs"
             >
               🏢
+            </div>
+            <div
+              className={`collapsed-nav-item ${currentView === 'assets' ? 'active' : ''}`}
+              onClick={() => onViewChange('assets')}
+              title="Assets"
+            >
+              📦
+            </div>
+            <div
+              className={`collapsed-nav-item ${currentView === 'planets' ? 'active' : ''}`}
+              onClick={() => onViewChange('planets')}
+              title="Planets"
+            >
+              🪐
             </div>
           </div>
 
@@ -241,12 +255,26 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
               <span className="nav-icon">🏭</span>
               <span>My Industry Jobs</span>
             </div>
-            <div 
+            <div
               className={`nav-item ${currentView === 'corp-jobs' ? 'active' : ''}`}
               onClick={() => onViewChange('corp-jobs')}
             >
               <span className="nav-icon">🏢</span>
               <span>Corporation Jobs</span>
+            </div>
+            <div
+              className={`nav-item ${currentView === 'assets' ? 'active' : ''}`}
+              onClick={() => onViewChange('assets')}
+            >
+              <span className="nav-icon">📦</span>
+              <span>Assets</span>
+            </div>
+            <div
+              className={`nav-item ${currentView === 'planets' ? 'active' : ''}`}
+              onClick={() => onViewChange('planets')}
+            >
+              <span className="nav-icon">🪐</span>
+              <span>Planets</span>
             </div>
           </div>
         </>

@@ -1,17 +1,24 @@
 const db = require('../database/db');
 const { getValidAccessToken } = require('../services/tokenRefresh');
-const { 
-  getCharacterIndustryJobs, 
-  getJobSlotUsage, 
+const {
+  getCharacterIndustryJobs,
+  getJobSlotUsage,
   getCharacterNames,
   getLocationName,
-  transformCorporationJobs
+  transformCorporationJobs,
+  getTypeNames,
+  getCharacterAssets,
+  getCorporationAssets,
+  getCharacterColonies,
+  getColonyLayout
 } = require('../services/esiClient');
 const {
   getCharacterCorporation,
   getCharacterRoles,
   hasIndustryRole,
   getIndustryRoleName,
+  hasCorporationAssetRole,
+  getCustomsOffices,
   getCorporationInfo,
   getCorporationJobs,
   getCorporationMemberNames
@@ -764,5 +771,262 @@ exports.getAllCorporationJobs = async (req, res) => {
   } catch (error) {
     console.error('Get all corporation jobs error:', error);
     res.status(500).json({ error: 'Failed to get corporation jobs' });
+  }
+};
+
+
+// ============== ASSET ENDPOINTS ==============
+
+// Get personal character assets
+exports.getCharacterAssets = async (req, res) => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const { characterId, all } = req.query;
+    let characters = [];
+
+    if (all === 'true') {
+      characters = await db.getAllCharactersByUserId(req.session.userId);
+    } else if (characterId) {
+      const character = await db.getCharacterById(parseInt(characterId));
+      if (character && character.user_id === req.session.userId) {
+        characters = [character];
+      }
+    } else {
+      const character = await db.getCharacterByUserId(req.session.userId);
+      if (character) characters = [character];
+    }
+
+    if (characters.length === 0) {
+      return res.status(404).json({ error: 'No character found' });
+    }
+
+    const allAssets = [];
+
+    for (const character of characters) {
+      try {
+        const accessToken = await getValidAccessToken(character);
+        const assets = await getCharacterAssets(character.character_id, accessToken);
+
+        // Resolve type names in batches
+        const typeIds = [...new Set(assets.map(a => a.type_id).filter(Boolean))];
+        const typeNames = typeIds.length > 0 ? await getTypeNames(typeIds) : {};
+
+        assets.forEach(a => {
+          a.type_name = typeNames[a.type_id] || `Type ${a.type_id}`;
+          a.character_id = character.character_id;
+          a.character_name = character.character_name;
+          allAssets.push(a);
+        });
+      } catch (error) {
+        if (error.response?.status === 403) {
+          return res.json({
+            assets: [],
+            total: 0,
+            error: 'missing_scope',
+            message: 'Character needs to be re-authorized with asset read scopes'
+          });
+        }
+        console.error(`Failed to get assets for character ${character.character_id}:`, error.message);
+      }
+    }
+
+    res.json({ assets: allAssets, total: allAssets.length });
+  } catch (error) {
+    console.error('Get character assets error:', error);
+    res.status(500).json({ error: 'Failed to get character assets' });
+  }
+};
+
+// Get corporation assets
+exports.getCorporationAssets = async (req, res) => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const { characterId } = req.query;
+    if (!characterId) {
+      return res.status(400).json({ error: 'characterId query parameter required' });
+    }
+
+    const character = await db.getCharacterById(parseInt(characterId));
+    if (!character || character.user_id !== req.session.userId) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
+
+    const accessToken = await getValidAccessToken(character);
+
+    // Check corporation roles
+    const roles = await getCharacterRoles(character.character_id, accessToken);
+
+    if (roles.needsReauthorization) {
+      return res.json({
+        assets: [],
+        has_access: false,
+        error: 'needs_reauthorization',
+        message: 'Character needs to be re-authorized with corporation role scopes'
+      });
+    }
+
+    if (!hasCorporationAssetRole(roles)) {
+      return res.json({
+        assets: [],
+        has_access: false,
+        error: 'missing_role',
+        message: 'Character requires Director, Accountant, or Station Manager role to view corporation assets'
+      });
+    }
+
+    const corpData = await getCharacterCorporation(character.character_id, accessToken);
+
+    try {
+      const assets = await getCorporationAssets(corpData.corporation_id, accessToken);
+
+      const typeIds = [...new Set(assets.map(a => a.type_id).filter(Boolean))];
+      const typeNames = typeIds.length > 0 ? await getTypeNames(typeIds) : {};
+
+      assets.forEach(a => {
+        a.type_name = typeNames[a.type_id] || `Type ${a.type_id}`;
+      });
+
+      res.json({ assets, total: assets.length, has_access: true });
+    } catch (error) {
+      if (error.response?.status === 403) {
+        return res.json({
+          assets: [],
+          has_access: false,
+          error: 'missing_scope',
+          message: 'Character needs to be re-authorized with corporation asset read scopes'
+        });
+      }
+      throw error;
+    }
+  } catch (error) {
+    console.error('Get corporation assets error:', error);
+    res.status(500).json({ error: 'Failed to get corporation assets' });
+  }
+};
+
+
+// ============== PLANETARY INDUSTRY ENDPOINTS ==============
+
+// Get character planet colonies
+exports.getCharacterPlanets = async (req, res) => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const { characterId, all } = req.query;
+    let characters = [];
+
+    if (all === 'true') {
+      characters = await db.getAllCharactersByUserId(req.session.userId);
+    } else if (characterId) {
+      const character = await db.getCharacterById(parseInt(characterId));
+      if (character && character.user_id === req.session.userId) {
+        characters = [character];
+      }
+    } else {
+      const character = await db.getCharacterByUserId(req.session.userId);
+      if (character) characters = [character];
+    }
+
+    if (characters.length === 0) {
+      return res.status(404).json({ error: 'No character found' });
+    }
+
+    const result = [];
+
+    for (const character of characters) {
+      try {
+        const accessToken = await getValidAccessToken(character);
+        const colonies = await getCharacterColonies(character.character_id, accessToken);
+
+        result.push({
+          character_id: character.character_id,
+          character_name: character.character_name,
+          colonies: colonies || []
+        });
+      } catch (error) {
+        if (error.response?.status === 403) {
+          result.push({
+            character_id: character.character_id,
+            character_name: character.character_name,
+            colonies: [],
+            error: 'missing_scope',
+            message: 'Character needs to be re-authorized with planets scope'
+          });
+          continue;
+        }
+        console.error(`Failed to get colonies for character ${character.character_id}:`, error.message);
+      }
+    }
+
+    res.json({ characters: result });
+  } catch (error) {
+    console.error('Get character planets error:', error);
+    res.status(500).json({ error: 'Failed to get planet colonies' });
+  }
+};
+
+// Get colony layout (pins, links, routes)
+exports.getColonyLayout = async (req, res) => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const { characterId, planetId } = req.query;
+    if (!characterId || !planetId) {
+      return res.status(400).json({ error: 'characterId and planetId query parameters required' });
+    }
+
+    const character = await db.getCharacterById(parseInt(characterId));
+    if (!character || character.user_id !== req.session.userId) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
+
+    const accessToken = await getValidAccessToken(character);
+    const layout = await getColonyLayout(character.character_id, parseInt(planetId), accessToken);
+
+    res.json(layout);
+  } catch (error) {
+    console.error('Get colony layout error:', error);
+    if (error.response?.status === 403) {
+      return res.status(403).json({ error: 'Missing required scopes for planet layout' });
+    }
+    res.status(500).json({ error: 'Failed to get colony layout' });
+  }
+};
+
+// Get corporation customs offices
+exports.getCustomsOffices = async (req, res) => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const { characterId } = req.query;
+    if (!characterId) {
+      return res.status(400).json({ error: 'characterId query parameter required' });
+    }
+
+    const character = await db.getCharacterById(parseInt(characterId));
+    if (!character || character.user_id !== req.session.userId) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
+
+    const accessToken = await getValidAccessToken(character);
+    const corpData = await getCharacterCorporation(character.character_id, accessToken);
+    const offices = await getCustomsOffices(corpData.corporation_id, accessToken);
+
+    res.json({ offices: offices || [] });
+  } catch (error) {
+    console.error('Get customs offices error:', error);
+    res.status(500).json({ error: 'Failed to get customs offices' });
   }
 };

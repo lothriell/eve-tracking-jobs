@@ -5,6 +5,8 @@ import Sidebar from '../components/Sidebar';
 import Dashboard from '../components/Dashboard';
 import IndustryJobs from '../components/IndustryJobs';
 import CorporationJobs from '../components/CorporationJobs';
+import Assets from '../components/Assets';
+import Planets from '../components/Planets';
 import './Main.css';
 
 function Main({ onLogout }) {
@@ -62,6 +64,10 @@ function Main({ onLogout }) {
         return <IndustryJobs selectedCharacter={selectedCharacter} onError={setError} />;
       case 'corp-jobs':
         return <CorporationJobs selectedCharacter={selectedCharacter} onError={setError} />;
+      case 'assets':
+        return <Assets selectedCharacter={selectedCharacter} onError={setError} />;
+      case 'planets':
+        return <Planets selectedCharacter={selectedCharacter} onError={setError} />;
       case 'dashboard':
       default:
         return <Dashboard onError={setError} />;

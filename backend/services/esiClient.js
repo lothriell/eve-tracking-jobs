@@ -451,6 +451,74 @@ async function transformCorporationJobs(jobs, corporationInfo) {
   return transformedJobs;
 }
 
+// Get character assets (paginated)
+async function getCharacterAssets(characterId, accessToken) {
+  const allAssets = [];
+  let page = 1;
+
+  while (true) {
+    await waitForRateLimit();
+    try {
+      const url = `${ESI_BASE_URL}/characters/${characterId}/assets/`;
+      const data = await makeESIRequest(url, accessToken, { page });
+      if (!data || data.length === 0) break;
+      allAssets.push(...data);
+      if (data.length < 1000) break;
+      page++;
+    } catch (error) {
+      if (error.response?.status === 304) break; // Not modified
+      throw error;
+    }
+  }
+
+  return allAssets;
+}
+
+// Get corporation assets (paginated)
+async function getCorporationAssets(corporationId, accessToken) {
+  const allAssets = [];
+  let page = 1;
+
+  while (true) {
+    await waitForRateLimit();
+    try {
+      const url = `${ESI_BASE_URL}/corporations/${corporationId}/assets/`;
+      const data = await makeESIRequest(url, accessToken, { page });
+      if (!data || data.length === 0) break;
+      allAssets.push(...data);
+      if (data.length < 1000) break;
+      page++;
+    } catch (error) {
+      if (error.response?.status === 304) break;
+      throw error;
+    }
+  }
+
+  return allAssets;
+}
+
+// Get character planet colonies
+async function getCharacterColonies(characterId, accessToken) {
+  try {
+    const url = `${ESI_BASE_URL}/characters/${characterId}/planets/`;
+    return await makeESIRequest(url, accessToken);
+  } catch (error) {
+    console.error(`Get colonies error for character ${characterId}:`, error.message);
+    throw error;
+  }
+}
+
+// Get colony layout (pins, links, routes)
+async function getColonyLayout(characterId, planetId, accessToken) {
+  try {
+    const url = `${ESI_BASE_URL}/characters/${characterId}/planets/${planetId}/`;
+    return await makeESIRequest(url, accessToken);
+  } catch (error) {
+    console.error(`Get colony layout error for planet ${planetId}:`, error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   makeESIRequest,
   getCharacterIndustryJobs,
@@ -463,5 +531,9 @@ module.exports = {
   getCharacterNames,
   getActivityInfo,
   transformCorporationJobs,
+  getCharacterAssets,
+  getCorporationAssets,
+  getCharacterColonies,
+  getColonyLayout,
   ACTIVITY_MAP
 };

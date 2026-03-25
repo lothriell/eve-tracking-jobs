@@ -5,9 +5,9 @@ const characterController = require('../controllers/characterController');
 // Version endpoint (for deployment verification)
 router.get('/version', (req, res) => {
   res.json({ 
-    version: '3.3.10',
+    version: '3.4.0',
     name: 'EVE Industry Tracker',
-    buildDate: '2026-03-09'
+    buildDate: '2026-03-25'
   });
 });
 
@@ -41,5 +41,14 @@ router.get('/corporation/roles/:characterId', requireAuth, characterController.g
 
 // Dashboard endpoint
 router.get('/dashboard/stats', requireAuth, characterController.getDashboardStats);
+
+// Asset endpoints
+router.get('/assets', requireAuth, characterController.getCharacterAssets);
+router.get('/assets/corp', requireAuth, characterController.getCorporationAssets);
+
+// Planetary industry endpoints (specific routes before parameterized)
+router.get('/planets', requireAuth, characterController.getCharacterPlanets);
+router.get('/planets/customs', requireAuth, characterController.getCustomsOffices);
+router.get('/planets/layout', requireAuth, characterController.getColonyLayout);
 
 module.exports = router;

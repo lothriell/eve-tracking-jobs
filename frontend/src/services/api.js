@@ -95,4 +95,38 @@ export const getCorporationRoles = (characterId) => {
   return api.get(`/api/corporation/roles/${characterId}`);
 };
 
+// Asset endpoints
+export const getCharacterAssets = (characterId = null, all = false) => {
+  const params = new URLSearchParams();
+  if (all) {
+    params.append('all', 'true');
+  } else if (characterId) {
+    params.append('characterId', characterId);
+  }
+  return api.get(`/api/assets?${params.toString()}`);
+};
+
+export const getCorporationAssets = (characterId) => {
+  return api.get(`/api/assets/corp?characterId=${characterId}`);
+};
+
+// Planetary industry endpoints
+export const getCharacterPlanets = (characterId = null, all = false) => {
+  const params = new URLSearchParams();
+  if (all) {
+    params.append('all', 'true');
+  } else if (characterId) {
+    params.append('characterId', characterId);
+  }
+  return api.get(`/api/planets?${params.toString()}`);
+};
+
+export const getColonyLayout = (characterId, planetId) => {
+  return api.get(`/api/planets/layout?characterId=${characterId}&planetId=${planetId}`);
+};
+
+export const getCustomsOffices = (characterId) => {
+  return api.get(`/api/planets/customs?characterId=${characterId}`);
+};
+
 export default api;
