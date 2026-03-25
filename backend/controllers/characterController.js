@@ -872,21 +872,30 @@ exports.getCharacterAssets = async (req, res) => {
       for (const locId of locIdsToResolve) {
         if (resolvedLocations[locId]) continue; // already resolved by another character
 
-        let info = await getLocationInfo(locId, accessToken);
+        try {
+          let info = await getLocationInfo(locId, accessToken);
 
-        // If structure failed (name is "Player Structure"), try other characters' tokens
-        if (info.name === 'Player Structure' && charTokens.length > 1) {
-          for (const { accessToken: otherToken } of charTokens) {
-            if (otherToken === accessToken) continue;
-            const retry = await getLocationInfo(locId, otherToken);
-            if (retry.name !== 'Player Structure') {
-              info = retry;
-              break;
+          // If structure failed (name is "Player Structure"), try other characters' tokens
+          if (info.name === 'Player Structure' && charTokens.length > 1) {
+            for (const { accessToken: otherToken } of charTokens) {
+              if (otherToken === accessToken) continue;
+              try {
+                const retry = await getLocationInfo(locId, otherToken);
+                if (retry.name !== 'Player Structure') {
+                  info = retry;
+                  break;
+                }
+              } catch (retryErr) {
+                // Continue to next token
+              }
             }
           }
-        }
 
-        resolvedLocations[locId] = info;
+          resolvedLocations[locId] = info;
+        } catch (locErr) {
+          console.error(`Failed to resolve location ${locId}:`, locErr.message);
+          resolvedLocations[locId] = { name: `Location ${locId}`, system_id: null, location_class: 'unknown' };
+        }
       }
 
       // Resolve system names for newly resolved locations
