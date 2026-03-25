@@ -822,8 +822,20 @@ exports.getCharacterAssets = async (req, res) => {
         const typeIds = [...new Set(assets.map(a => a.type_id).filter(Boolean))];
         const typeNames = typeIds.length > 0 ? await getTypeNames(typeIds) : {};
 
+        // Resolve location names
+        const locationIds = [...new Set(assets.map(a => a.location_id).filter(Boolean))];
+        const locationNames = {};
+        for (const locId of locationIds) {
+          try {
+            locationNames[locId] = await getLocationName(locId, accessToken);
+          } catch (e) {
+            locationNames[locId] = `Location ${locId}`;
+          }
+        }
+
         assets.forEach(a => {
           a.type_name = typeNames[a.type_id] || `Type ${a.type_id}`;
+          a.location_name = locationNames[a.location_id] || `Location ${a.location_id}`;
           a.character_id = character.character_id;
           a.character_name = character.character_name;
           allAssets.push(a);
@@ -896,8 +908,20 @@ exports.getCorporationAssets = async (req, res) => {
       const typeIds = [...new Set(assets.map(a => a.type_id).filter(Boolean))];
       const typeNames = typeIds.length > 0 ? await getTypeNames(typeIds) : {};
 
+      // Resolve location names
+      const locationIds = [...new Set(assets.map(a => a.location_id).filter(Boolean))];
+      const locationNames = {};
+      for (const locId of locationIds) {
+        try {
+          locationNames[locId] = await getLocationName(locId, accessToken);
+        } catch (e) {
+          locationNames[locId] = `Location ${locId}`;
+        }
+      }
+
       assets.forEach(a => {
         a.type_name = typeNames[a.type_id] || `Type ${a.type_id}`;
+        a.location_name = locationNames[a.location_id] || `Location ${a.location_id}`;
       });
 
       res.json({ assets, total: assets.length, has_access: true });

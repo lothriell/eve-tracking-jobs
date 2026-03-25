@@ -2,6 +2,15 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.6.2] - 2026-03-25
+
+### Fixed
+- **Asset locations now show station/structure names** instead of numeric IDs. Locations are resolved via ESI: NPC stations use `/universe/stations/`, player structures use `/universe/structures/`. Results are cached for 1 hour.
+- **Asset search now includes location names**: Filter input searches across item name, station name, and system name — enabling future "find everything in Jita" workflows.
+- Groups in the asset view now display the resolved station/structure name as the section header.
+
+---
+
 ## [v3.6.1] - 2026-03-25
 
 ### Added

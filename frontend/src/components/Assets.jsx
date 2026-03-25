@@ -92,6 +92,7 @@ function Assets({ selectedCharacter, onError }) {
     const filtered = f
       ? assets.filter(a =>
           (a.type_name || '').toLowerCase().includes(f) ||
+          (a.location_name || '').toLowerCase().includes(f) ||
           String(a.type_id).includes(f) ||
           String(a.location_id).includes(f)
         )
@@ -99,7 +100,7 @@ function Assets({ selectedCharacter, onError }) {
 
     const grouped = {};
     filtered.forEach(a => {
-      const loc = String(a.location_id || 'Unknown');
+      const loc = a.location_name || `Location ${a.location_id || 'Unknown'}`;
       if (!grouped[loc]) grouped[loc] = [];
       grouped[loc].push(a);
     });
@@ -195,7 +196,7 @@ function Assets({ selectedCharacter, onError }) {
             <input
               type="text"
               className="assets-filter-input"
-              placeholder="Filter by item name, type ID, or location ID..."
+              placeholder="Filter by item name, station, system..."
               value={filter}
               onChange={e => setFilter(e.target.value)}
             />
@@ -225,7 +226,7 @@ function Assets({ selectedCharacter, onError }) {
                       onClick={() => toggleLocation(locId)}
                     >
                       <span className="assets-location-title">
-                        {isExpanded ? '▾' : '▸'} Location {locId}
+                        {isExpanded ? '▾' : '▸'} {locId}
                       </span>
                       <div className="assets-location-badges">
                         <span className="badge badge-amber">{items.length} items</span>
