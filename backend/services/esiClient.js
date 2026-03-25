@@ -1,4 +1,5 @@
 const axios = require('axios');
+const db = require('../database/db');
 
 const ESI_BASE_URL = 'https://esi.evetech.net/latest';
 const ESI_DATASOURCE = 'tranquility';
@@ -10,9 +11,6 @@ const RATE_LIMIT = {
   minInterval: 1000 / 20
 };
 
-// Cache for type names
-const typeNameCache = new Map();
-const CACHE_DURATION = 3600000; // 1 hour
 
 // Wait to respect rate limits
 function waitForRateLimit() {
@@ -76,67 +74,72 @@ function getActivityInfo(activityId) {
   return ACTIVITY_MAP[activityId] || { name: `Activity ${activityId}`, category: 'other' };
 }
 
-// Get type name from ESI
+// Get type name — checks SQLite cache first, then ESI
 async function getTypeName(typeId) {
-  const cacheKey = `type_${typeId}`;
-  const cached = typeNameCache.get(cacheKey);
-  
-  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    return cached.name;
-  }
+  // Check SQLite cache
+  const cached = db.getCachedName(typeId, 'type');
+  if (cached) return cached.name;
 
   try {
     const url = `${ESI_BASE_URL}/universe/types/${typeId}/`;
     const data = await makeESIRequest(url);
     const name = data.name || `Type ${typeId}`;
-    typeNameCache.set(cacheKey, { name, timestamp: Date.now() });
+    db.setCachedName(typeId, 'type', name);
     return name;
   } catch (error) {
-    console.error(`Failed to get type name for ${typeId}:`, error.message);
     return `Type ${typeId}`;
   }
 }
 
-// Batch get type names
+// Batch get type names — SQLite cache first, then ESI POST /universe/names/
 async function getTypeNames(typeIds) {
-  const uniqueIds = [...new Set(typeIds)];
+  const uniqueIds = [...new Set(typeIds)].filter(Boolean);
+  if (uniqueIds.length === 0) return {};
+
   const results = {};
   const idsToFetch = [];
 
-  // Check cache first
+  // Check SQLite cache first (single batch query)
+  const cachedNames = db.getCachedNames(uniqueIds, 'type');
   for (const id of uniqueIds) {
-    const cacheKey = `type_${id}`;
-    const cached = typeNameCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      results[id] = cached.name;
+    if (cachedNames[id]) {
+      results[id] = cachedNames[id].name;
     } else {
       idsToFetch.push(id);
     }
   }
 
-  // Fetch remaining from ESI using POST endpoint
+  // Fetch remaining from ESI using POST /universe/names/
   if (idsToFetch.length > 0) {
-    try {
-      await waitForRateLimit();
-      const response = await axios.post(
-        `${ESI_BASE_URL}/universe/names/`,
-        idsToFetch,
-        {
-          headers: { 'Content-Type': 'application/json' },
-          params: { datasource: ESI_DATASOURCE }
-        }
-      );
+    // POST /universe/names/ accepts max 1000 IDs, batch if needed
+    for (let i = 0; i < idsToFetch.length; i += 1000) {
+      const batch = idsToFetch.slice(i, i + 1000);
+      try {
+        await waitForRateLimit();
+        const response = await axios.post(
+          `${ESI_BASE_URL}/universe/names/`,
+          batch,
+          {
+            headers: { 'Content-Type': 'application/json' },
+            params: { datasource: ESI_DATASOURCE }
+          }
+        );
 
-      for (const item of response.data) {
-        results[item.id] = item.name;
-        typeNameCache.set(`type_${item.id}`, { name: item.name, timestamp: Date.now() });
-      }
-    } catch (error) {
-      console.error('Failed to batch fetch type names:', error.message);
-      // Fallback to individual requests
-      for (const id of idsToFetch) {
-        if (!results[id]) {
-          results[id] = await getTypeName(id);
+        const cacheEntries = [];
+        for (const item of response.data) {
+          results[item.id] = item.name;
+          cacheEntries.push({ id: item.id, category: 'type', name: item.name });
+        }
+        // Batch store in SQLite
+        if (cacheEntries.length > 0) {
+          db.setCachedNames(cacheEntries);
+        }
+      } catch (error) {
+        // Fallback: individual lookups for remaining
+        for (const id of batch) {
+          if (!results[id]) {
+            results[id] = await getTypeName(id);
+          }
         }
       }
     }
@@ -162,22 +165,33 @@ function classifyLocationId(locationId) {
 
 // Get location info including name and system_id
 async function getLocationInfo(locationId, accessToken) {
-  const cacheKey = `location_info_${locationId}`;
-  const cached = typeNameCache.get(cacheKey);
+  const locType = classifyLocationId(locationId);
 
-  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    return cached.info;
+  // Structures are broken (CCP removed the scope) — return immediately
+  if (locType === 'structure') {
+    return { name: null, system_id: null, location_class: locType, unresolved: true };
   }
 
-  const locType = classifyLocationId(locationId);
+  if (locType === 'asset_safety') {
+    return { name: 'Asset Safety', system_id: null, location_class: locType };
+  }
+
+  // Check SQLite cache for stations
+  if (locType === 'station') {
+    const cached = db.getCachedName(locationId, 'station');
+    if (cached) {
+      return {
+        name: cached.name,
+        system_id: cached.extra_data ? parseInt(cached.extra_data) : null,
+        location_class: locType
+      };
+    }
+  }
+
   let info = { name: `Location ${locationId}`, system_id: null, location_class: locType };
 
   try {
     switch (locType) {
-      case 'asset_safety':
-        info = { name: 'Asset Safety', system_id: null, location_class: locType };
-        break;
-
       case 'solar_system':
         info = { name: await getSystemName(locationId), system_id: locationId, location_class: locType };
         break;
@@ -190,13 +204,9 @@ async function getLocationInfo(locationId, accessToken) {
           system_id: data.system_id || null,
           location_class: locType
         };
+        // Store station in SQLite with system_id as extra_data
+        db.setCachedName(locationId, 'station', info.name, String(info.system_id || ''));
         break;
-      }
-
-      case 'structure': {
-        // CCP removed esi-universe.read_structures.v1 from SSO but the endpoint
-        // still requires it — skip the API call entirely, it always returns 401
-        return { name: null, system_id: null, location_class: locType, unresolved: true };
       }
 
       default:
@@ -206,7 +216,6 @@ async function getLocationInfo(locationId, accessToken) {
     console.error(`Failed to get location info for ${locationId}:`, error.message);
   }
 
-  typeNameCache.set(cacheKey, { info, timestamp: Date.now() });
   return info;
 }
 
@@ -487,21 +496,17 @@ async function transformCorporationJobs(jobs, corporationInfo) {
 
 // Get solar system name (public, no auth needed)
 async function getSystemName(systemId) {
-  const cacheKey = `system_${systemId}`;
-  const cached = typeNameCache.get(cacheKey);
-
-  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    return cached.name;
-  }
+  // Check SQLite cache
+  const cached = db.getCachedName(systemId, 'system');
+  if (cached) return cached.name;
 
   try {
     const url = `${ESI_BASE_URL}/universe/systems/${systemId}/`;
     const data = await makeESIRequest(url);
     const name = data.name || `System ${systemId}`;
-    typeNameCache.set(cacheKey, { name, timestamp: Date.now() });
+    db.setCachedName(systemId, 'system', name);
     return name;
   } catch (error) {
-    console.error(`Failed to get system name for ${systemId}:`, error.message);
     return `System ${systemId}`;
   }
 }
@@ -509,9 +514,23 @@ async function getSystemName(systemId) {
 // Batch get system names
 async function getSystemNames(systemIds) {
   const uniqueIds = [...new Set(systemIds)].filter(Boolean);
-  const results = {};
+  if (uniqueIds.length === 0) return {};
 
+  const results = {};
+  const idsToFetch = [];
+
+  // Check SQLite cache first
+  const cachedNames = db.getCachedNames(uniqueIds, 'system');
   for (const id of uniqueIds) {
+    if (cachedNames[id]) {
+      results[id] = cachedNames[id].name;
+    } else {
+      idsToFetch.push(id);
+    }
+  }
+
+  // Fetch remaining from ESI
+  for (const id of idsToFetch) {
     results[id] = await getSystemName(id);
   }
 

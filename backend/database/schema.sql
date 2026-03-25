@@ -24,3 +24,16 @@ CREATE TABLE IF NOT EXISTS characters (
 -- Index for faster lookups
 CREATE INDEX IF NOT EXISTS idx_user_id ON characters(user_id);
 CREATE INDEX IF NOT EXISTS idx_character_id ON characters(character_id);
+
+-- Name cache for ESI lookups (types, stations, systems)
+CREATE TABLE IF NOT EXISTS name_cache (
+    id INTEGER NOT NULL,
+    category TEXT NOT NULL,
+    name TEXT NOT NULL,
+    extra_data TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id, category)
+);
+
+CREATE INDEX IF NOT EXISTS idx_name_cache_category ON name_cache(category);
+CREATE INDEX IF NOT EXISTS idx_name_cache_updated ON name_cache(updated_at);

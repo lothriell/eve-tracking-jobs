@@ -2,6 +2,28 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.8.0] - 2026-03-26
+
+### Added: Persistent SQLite Name Cache
+- **New `name_cache` table** in SQLite for storing resolved type names, station names, and system names
+- **First load**: fetches from ESI and stores in database
+- **All subsequent loads**: instant lookup from SQLite (zero ESI calls for known items)
+- **Batch operations**: `getCachedNames()` and `setCachedNames()` for efficient bulk lookups/writes using SQLite transactions
+- **Cache stats**: `getCacheStats()` returns counts and age per category
+- **Stale purge**: `purgeStaleCache(hours)` removes entries older than specified hours
+
+### Improved: Performance
+- **Type names**: SQLite cache checked before ESI — 500+ types resolved instantly after first load
+- **Station names**: cached with `system_id` as extra data — station + system resolved in one lookup
+- **System names**: cached in SQLite — zero ESI calls for known systems
+- **Removed in-memory cache**: SQLite is the single source of truth, simpler and survives container restarts
+- **Assets load dramatically faster** on second+ view — only new/unknown IDs hit ESI
+
+### Fixed
+- **Assets blank page**: Reduced API calls from 200+ to minimum needed. Structures skip broken endpoint immediately. Custom names only fetched for containers (~50 items) not all assets (~5000).
+
+---
+
 ## [v3.7.5] - 2026-03-25
 
 ### Improved

@@ -105,6 +105,62 @@ class DB {
     return result.changes;
   }
 
+  // ===== NAME CACHE =====
+
+  // Get a cached name by id and category
+  getCachedName(id, category) {
+    return this.db.prepare('SELECT name, extra_data FROM name_cache WHERE id = ? AND category = ?').get(id, category);
+  }
+
+  // Get multiple cached names
+  getCachedNames(ids, category) {
+    if (!ids || ids.length === 0) return {};
+    const placeholders = ids.map(() => '?').join(',');
+    const rows = this.db.prepare(
+      `SELECT id, name, extra_data FROM name_cache WHERE category = ? AND id IN (${placeholders})`
+    ).all(category, ...ids);
+    const result = {};
+    for (const row of rows) {
+      result[row.id] = { name: row.name, extra_data: row.extra_data };
+    }
+    return result;
+  }
+
+  // Store a name in cache
+  setCachedName(id, category, name, extraData = null) {
+    this.db.prepare(
+      `INSERT OR REPLACE INTO name_cache (id, category, name, extra_data, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`
+    ).run(id, category, name, extraData);
+  }
+
+  // Store multiple names in cache (batch)
+  setCachedNames(entries) {
+    const stmt = this.db.prepare(
+      `INSERT OR REPLACE INTO name_cache (id, category, name, extra_data, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`
+    );
+    const batch = this.db.transaction((items) => {
+      for (const item of items) {
+        stmt.run(item.id, item.category, item.name, item.extra_data || null);
+      }
+    });
+    batch(entries);
+  }
+
+  // Get count of cached names by category
+  getCacheStats() {
+    return this.db.prepare(
+      'SELECT category, COUNT(*) as count, MIN(updated_at) as oldest, MAX(updated_at) as newest FROM name_cache GROUP BY category'
+    ).all();
+  }
+
+  // Delete stale cache entries (older than given hours)
+  purgeStaleCache(olderThanHours = 24) {
+    const result = this.db.prepare(
+      `DELETE FROM name_cache WHERE updated_at < datetime('now', '-' || ? || ' hours')`
+    ).run(olderThanHours);
+    return result.changes;
+  }
+
   close() {
     if (this.db) {
       this.db.close();
