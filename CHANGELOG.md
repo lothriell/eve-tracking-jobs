@@ -2,6 +2,34 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.6.0] - 2026-03-25
+
+### Migrated: Frontend CRA → Vite
+- **Replaced Create React App with Vite 6**: Eliminates ~1000 transitive dependencies and all associated deprecation warnings
+- **Build time improvement**: Vite builds significantly faster than CRA's webpack-based build
+- **Cleaner dependency tree**: From ~1300 packages down to ~300
+- **All CRA-originated vulnerabilities eliminated** (26 vulnerabilities removed)
+- React component files renamed from `.js` to `.jsx` (Vite convention)
+- Entry point moved from `public/index.html` to root `index.html` with `<script type="module">` tag
+- Environment variables changed from `REACT_APP_*` to `VITE_*` prefix
+- Dev server proxy configured in `vite.config.js`
+
+### Migrated: Backend sqlite3 → better-sqlite3
+- **Replaced callback-based `sqlite3` with synchronous `better-sqlite3`**: Simpler, faster, no native build warnings
+- **All sqlite3-originated vulnerabilities eliminated** (9 vulnerabilities removed: npmlog, gauge, glob, rimraf, tar, etc.)
+- Database class rewritten with synchronous API (no more Promise wrappers)
+- WAL journal mode enabled for better concurrent read performance
+- Foreign keys enforced at connection level
+- Dockerfile updated with `python3 make g++` build tools for native module compilation
+- Existing database files are fully compatible (no migration needed)
+
+### Technical Notes
+- All existing functionality unchanged — both migrations are infrastructure-only
+- Existing SQLite database files work without modification
+- Docker build will be clean with minimal warnings
+
+---
+
 ## [v3.5.5] - 2026-03-25
 
 ### Fixed

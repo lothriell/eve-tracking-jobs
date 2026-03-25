@@ -1,5 +1,8 @@
 FROM node:22-alpine
 
+# Install build tools for native modules (better-sqlite3, bcrypt)
+RUN apk add --no-cache python3 make g++
+
 # Set working directory
 WORKDIR /app
 

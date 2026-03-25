@@ -1,4 +1,4 @@
-const sqlite3 = require('sqlite3').verbose();
+const Database = require('better-sqlite3');
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcrypt');
@@ -6,44 +6,25 @@ const bcrypt = require('bcrypt');
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'eve_esi.db');
 const SCHEMA_PATH = path.join(__dirname, 'schema.sql');
 
-class Database {
+class DB {
   constructor() {
     this.db = null;
   }
 
   async init() {
-    return new Promise((resolve, reject) => {
-      this.db = new sqlite3.Database(DB_PATH, async (err) => {
-        if (err) {
-          console.error('Failed to open database:', err);
-          reject(err);
-        } else {
-          console.log('Connected to SQLite database');
-          try {
-            await this.initializeSchema();
-            await this.createDefaultUser();
-            resolve();
-          } catch (error) {
-            reject(error);
-          }
-        }
-      });
-    });
+    this.db = new Database(DB_PATH);
+    this.db.pragma('journal_mode = WAL');
+    this.db.pragma('foreign_keys = ON');
+    console.log('Connected to SQLite database');
+
+    this.initializeSchema();
+    await this.createDefaultUser();
   }
 
-  async initializeSchema() {
+  initializeSchema() {
     const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
-    return new Promise((resolve, reject) => {
-      this.db.exec(schema, (err) => {
-        if (err) {
-          console.error('Failed to initialize schema:', err);
-          reject(err);
-        } else {
-          console.log('Database schema initialized');
-          resolve();
-        }
-      });
-    });
+    this.db.exec(schema);
+    console.log('Database schema initialized');
   }
 
   async createDefaultUser() {
@@ -55,159 +36,81 @@ class Database {
       return;
     }
 
-    return new Promise((resolve, reject) => {
-      this.db.get('SELECT id FROM users WHERE username = ?', [username], async (err, row) => {
-        if (err) {
-          reject(err);
-          return;
-        }
+    const row = this.db.prepare('SELECT id FROM users WHERE username = ?').get(username);
 
-        if (row) {
-          console.log('Default user already exists');
-          resolve();
-          return;
-        }
+    if (row) {
+      console.log('Default user already exists');
+      return;
+    }
 
-        const passwordHash = await bcrypt.hash(password, 10);
-        this.db.run(
-          'INSERT INTO users (username, password_hash) VALUES (?, ?)',
-          [username, passwordHash],
-          (err) => {
-            if (err) {
-              console.error('Failed to create default user:', err);
-              reject(err);
-            } else {
-              console.log('Default user created successfully');
-              resolve();
-            }
-          }
-        );
-      });
-    });
+    const passwordHash = await bcrypt.hash(password, 10);
+    this.db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run(username, passwordHash);
+    console.log('Default user created successfully');
   }
 
   // User operations
-  async getUserByUsername(username) {
-    return new Promise((resolve, reject) => {
-      this.db.get('SELECT * FROM users WHERE username = ?', [username], (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
+  getUserByUsername(username) {
+    return this.db.prepare('SELECT * FROM users WHERE username = ?').get(username);
   }
 
   // Character operations - Multiple character support
-  async getCharacterByUserId(userId) {
-    // Returns first character for backward compatibility
-    return new Promise((resolve, reject) => {
-      this.db.get('SELECT * FROM characters WHERE user_id = ? ORDER BY created_at ASC LIMIT 1', [userId], (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
+  getCharacterByUserId(userId) {
+    return this.db.prepare('SELECT * FROM characters WHERE user_id = ? ORDER BY created_at ASC LIMIT 1').get(userId);
   }
 
-  // Get all characters for a user
-  async getAllCharactersByUserId(userId) {
-    return new Promise((resolve, reject) => {
-      this.db.all('SELECT * FROM characters WHERE user_id = ? ORDER BY created_at ASC', [userId], (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows || []);
-      });
-    });
+  getAllCharactersByUserId(userId) {
+    return this.db.prepare('SELECT * FROM characters WHERE user_id = ? ORDER BY created_at ASC').all(userId);
   }
 
-  async getCharacterById(characterId) {
-    return new Promise((resolve, reject) => {
-      this.db.get('SELECT * FROM characters WHERE character_id = ?', [characterId], (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
+  getCharacterById(characterId) {
+    return this.db.prepare('SELECT * FROM characters WHERE character_id = ?').get(characterId);
   }
 
-  async getCharacterByDbId(id) {
-    return new Promise((resolve, reject) => {
-      this.db.get('SELECT * FROM characters WHERE id = ?', [id], (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
+  getCharacterByDbId(id) {
+    return this.db.prepare('SELECT * FROM characters WHERE id = ?').get(id);
   }
 
-  async saveCharacter(userId, characterId, characterName, accessToken, refreshToken, tokenExpiry, scopes) {
-    return new Promise((resolve, reject) => {
-      // Check if character already exists for any user
-      this.db.get('SELECT id, user_id FROM characters WHERE character_id = ?', [characterId], (err, existing) => {
-        if (err) {
-          reject(err);
-          return;
-        }
+  saveCharacter(userId, characterId, characterName, accessToken, refreshToken, tokenExpiry, scopes) {
+    const existing = this.db.prepare('SELECT id, user_id FROM characters WHERE character_id = ?').get(characterId);
 
-        if (existing) {
-          // Update existing character
-          this.db.run(
-            `UPDATE characters 
-             SET user_id = ?, character_name = ?, access_token = ?, refresh_token = ?, token_expiry = ?, scopes = ?, updated_at = CURRENT_TIMESTAMP 
-             WHERE character_id = ?`,
-            [userId, characterName, accessToken, refreshToken, tokenExpiry, scopes, characterId],
-            function(err) {
-              if (err) reject(err);
-              else resolve(existing.id);
-            }
-          );
-        } else {
-          // Insert new character
-          this.db.run(
-            `INSERT INTO characters (user_id, character_id, character_name, access_token, refresh_token, token_expiry, scopes, updated_at) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-            [userId, characterId, characterName, accessToken, refreshToken, tokenExpiry, scopes],
-            function(err) {
-              if (err) reject(err);
-              else resolve(this.lastID);
-            }
-          );
-        }
-      });
-    });
+    if (existing) {
+      this.db.prepare(
+        `UPDATE characters
+         SET user_id = ?, character_name = ?, access_token = ?, refresh_token = ?, token_expiry = ?, scopes = ?, updated_at = CURRENT_TIMESTAMP
+         WHERE character_id = ?`
+      ).run(userId, characterName, accessToken, refreshToken, tokenExpiry, scopes, characterId);
+      return existing.id;
+    } else {
+      const result = this.db.prepare(
+        `INSERT INTO characters (user_id, character_id, character_name, access_token, refresh_token, token_expiry, scopes, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+      ).run(userId, characterId, characterName, accessToken, refreshToken, tokenExpiry, scopes);
+      return result.lastInsertRowid;
+    }
   }
 
-  async updateCharacterTokens(characterId, accessToken, refreshToken, tokenExpiry) {
-    return new Promise((resolve, reject) => {
-      this.db.run(
-        `UPDATE characters 
-         SET access_token = ?, refresh_token = ?, token_expiry = ?, updated_at = CURRENT_TIMESTAMP 
-         WHERE character_id = ?`,
-        [accessToken, refreshToken, tokenExpiry, characterId],
-        function(err) {
-          if (err) reject(err);
-          else resolve(this.changes);
-        }
-      );
-    });
+  updateCharacterTokens(characterId, accessToken, refreshToken, tokenExpiry) {
+    const result = this.db.prepare(
+      `UPDATE characters
+       SET access_token = ?, refresh_token = ?, token_expiry = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE character_id = ?`
+    ).run(accessToken, refreshToken, tokenExpiry, characterId);
+    return result.changes;
   }
 
-  async deleteCharacter(characterId, userId) {
-    return new Promise((resolve, reject) => {
-      this.db.run(
-        'DELETE FROM characters WHERE character_id = ? AND user_id = ?',
-        [characterId, userId],
-        function(err) {
-          if (err) reject(err);
-          else resolve(this.changes);
-        }
-      );
-    });
+  deleteCharacter(characterId, userId) {
+    const result = this.db.prepare(
+      'DELETE FROM characters WHERE character_id = ? AND user_id = ?'
+    ).run(characterId, userId);
+    return result.changes;
   }
 
   close() {
     if (this.db) {
-      this.db.close((err) => {
-        if (err) console.error('Error closing database:', err);
-        else console.log('Database connection closed');
-      });
+      this.db.close();
+      console.log('Database connection closed');
     }
   }
 }
 
-module.exports = new Database();
+module.exports = new DB();
