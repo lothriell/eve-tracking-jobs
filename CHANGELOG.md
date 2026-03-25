@@ -2,6 +2,13 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.5.1] - 2026-03-25
+
+### Fixed
+- **Invalid ESI scope**: Removed `esi-universe.read_structures.v1` from required scopes — this scope is no longer valid in EVE SSO and was causing character authorization to fail. Structure name resolution works with any authenticated token without a dedicated scope.
+
+---
+
 ## [v3.5.0] - 2026-03-25
 
 ### Enhanced Planetary Industry — Inspired by eve-pi

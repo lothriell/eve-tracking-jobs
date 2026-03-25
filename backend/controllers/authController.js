@@ -17,8 +17,7 @@ const REQUIRED_SCOPES = [
   'esi-characters.read_corporation_roles.v1', // Required for reading character corp roles (Director/Factory_Manager check)
   'esi-assets.read_assets.v1',               // Required for personal asset inventory
   'esi-assets.read_corporation_assets.v1',   // Required for corporation asset inventory
-  'esi-planets.manage_planets.v1',           // Required for planetary industry (colonies, layouts)
-  'esi-universe.read_structures.v1'          // Required for resolving player structure names
+  'esi-planets.manage_planets.v1'            // Required for planetary industry (colonies, layouts)
 ];
 
 // PKCE helper functions
