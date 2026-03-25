@@ -870,7 +870,25 @@ exports.getCharacterAssets = async (req, res) => {
         }
       });
 
-      console.log(`[ASSETS] ${character.character_name}: ${assets.length} assets, ${locIdsToResolve.size} locations to resolve: ${[...locIdsToResolve].join(', ')}`);
+      // Diagnostic: show unique location_types and sample data
+      const locTypes = {};
+      assets.forEach(a => { locTypes[a.location_type || 'undefined'] = (locTypes[a.location_type || 'undefined'] || 0) + 1; });
+      console.log(`[ASSETS] ${character.character_name}: ${assets.length} assets, location_types: ${JSON.stringify(locTypes)}`);
+
+      // Show first 3 assets for debugging
+      assets.slice(0, 3).forEach((a, i) => {
+        console.log(`[ASSETS]   sample[${i}]: item_id=${a.item_id}, location_id=${a.location_id}, location_type=${a.location_type}, location_flag=${a.location_flag}, type_id=${a.type_id}`);
+      });
+
+      // Show chain resolution results for first 3 items with location_type 'item'
+      const itemTypeAssets = assets.filter(a => a.location_type === 'item').slice(0, 3);
+      itemTypeAssets.forEach((a, i) => {
+        const { rootLocationId, rootLocationType } = resolveRootLocation(a);
+        const parentFound = !!itemMap[a.location_id];
+        console.log(`[ASSETS]   chain[${i}]: item_id=${a.item_id} → location_id=${a.location_id} (parent_found=${parentFound}) → root: ${rootLocationId} (type=${rootLocationType})`);
+      });
+
+      console.log(`[ASSETS] ${character.character_name}: ${locIdsToResolve.size} locations to resolve: ${[...locIdsToResolve].slice(0, 10).join(', ')}${locIdsToResolve.size > 10 ? '...' : ''}`);
 
       // Resolve locations — try multiple methods for structures
       for (const locId of locIdsToResolve) {
