@@ -2,6 +2,30 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.7.0] - 2026-03-25
+
+### Redesigned: Hierarchical Asset Tree View
+Complete rework of the Assets view from flat location grouping to a proper hierarchical tree:
+
+#### Tree Structure
+- **Level 1 — Solar System**: Top-level grouping by system name (e.g., "Rens", "Jita"), sorted alphabetically, default expanded
+- **Level 2 — Station/Structure**: Station or player structure within that system, shows item count and container count, default expanded
+- **Level 3 — Container**: Ships, secure containers, and other items that contain other items, shown in orange text, default collapsed, expandable to reveal contents
+- **Direct hangar items** displayed directly under the station level (no container wrapper)
+
+#### Backend Improvements
+- **System name resolution**: Stations and structures now return their `system_id` from ESI, which is resolved to a system name. Each asset includes `system_name`, `location_name`, and optionally `container_name`.
+- **`getLocationInfo()`**: New ESI client function that returns both station/structure name and system_id in a single call (cached 1 hour).
+- **Container chain following**: Items nested multiple levels deep (item inside container inside ship) correctly resolve to the root station.
+
+#### Frontend
+- Three-level expandable tree with indented headers (system 0px, station 32px, container 52px)
+- Each level has its own visual styling: system (bold white), station (blue), container (orange)
+- Search filter works across all levels: item name, system, station, container, character
+- Stats bar shows system count instead of location count
+
+---
+
 ## [v3.6.4] - 2026-03-25
 
 ### Fixed

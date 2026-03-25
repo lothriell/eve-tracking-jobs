@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v3.6.4 | **Build Date:** 2026-03-25
+**Current Version:** v3.7.0 | **Build Date:** 2026-03-25
 
 A comprehensive web application for tracking EVE Online industry jobs across multiple characters and corporations.
 
@@ -9,6 +9,12 @@ EVE Industry Tracker provides real-time tracking of your industry jobs, slot uti
 ---
 
 ## 📋 Recent Updates
+
+### v3.7.0 (2026-03-25) - Hierarchical Asset Tree
+- ✅ Tree view: System → Station → Container → Items
+- ✅ System names resolved from ESI station/structure data
+- ✅ Containers expandable to show contents (ships, secure containers)
+- ✅ Search across all levels (item, system, station, container, character)
 
 ### v3.6.0 (2026-03-25) - Vite + better-sqlite3 Migration
 - ✅ Frontend migrated from Create React App to Vite 6 (eliminates ~1000 deps + 26 vulnerabilities)
@@ -66,6 +72,7 @@ EVE Industry Tracker provides real-time tracking of your industry jobs, slot uti
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| v3.7.0  | 2026-03-25 | Hierarchical asset tree: System → Station → Container → Items |
 | v3.6.0  | 2026-03-25 | Migrated frontend to Vite 6, backend to better-sqlite3 — clean builds |
 | v3.5.0  | 2026-03-25 | Enhanced PI: live countdowns, extraction rates, storage tracking, alert system |
 | v3.4.0  | 2026-03-25 | Assets view (personal + corp), Planetary Industry view (colonies, detail, customs) |

@@ -6,6 +6,7 @@ const {
   getJobSlotUsage,
   getCharacterNames,
   getLocationName,
+  getLocationInfo,
   transformCorporationJobs,
   getTypeNames,
   getCharacterAssets,
@@ -860,31 +861,41 @@ exports.getCharacterAssets = async (req, res) => {
           }
         });
 
-        const locationNames = {};
+        // Resolve location info (name + system_id) and system names
+        const locationInfo = {};
         for (const locId of stationLocIds) {
           try {
-            locationNames[locId] = await getLocationName(locId, accessToken);
+            locationInfo[locId] = await getLocationInfo(locId, accessToken);
           } catch (e) {
-            locationNames[locId] = `Location ${locId}`;
+            locationInfo[locId] = { name: `Location ${locId}`, system_id: null };
           }
         }
+
+        // Resolve system names
+        const systemIds = [...new Set(Object.values(locationInfo).map(i => i.system_id).filter(Boolean))];
+        const systemNames = systemIds.length > 0 ? await getSystemNames(systemIds) : {};
 
         // Enrich each asset with resolved names
         assets.forEach(a => {
           a.type_name = typeNames[a.type_id] || `Type ${a.type_id}`;
 
+          let rootLocId;
           if (a.location_type === 'item') {
-            const { rootLocationId, chain } = resolveRootLocation(a);
-            a.location_name = locationNames[rootLocationId] || `Location ${rootLocationId}`;
-            // The direct parent is the container
+            const { rootLocationId } = resolveRootLocation(a);
+            rootLocId = rootLocationId;
             const directParent = itemMap[a.location_id];
             if (directParent) {
               a.container_name = typeNames[directParent.type_id] || `Type ${directParent.type_id}`;
               a.container_id = directParent.item_id;
             }
           } else {
-            a.location_name = locationNames[a.location_id] || `Location ${a.location_id}`;
+            rootLocId = a.location_id;
           }
+
+          const locInfo = locationInfo[rootLocId] || { name: `Location ${rootLocId}`, system_id: null };
+          a.location_name = locInfo.name;
+          a.system_id = locInfo.system_id;
+          a.system_name = locInfo.system_id ? (systemNames[locInfo.system_id] || `System ${locInfo.system_id}`) : null;
 
           a.character_id = character.character_id;
           a.character_name = character.character_name;
@@ -983,25 +994,33 @@ exports.getCorporationAssets = async (req, res) => {
         }
       });
 
-      const locationNames = {};
+      const locationInfo = {};
       for (const locId of stationLocIds) {
-        try { locationNames[locId] = await getLocationName(locId, accessToken); }
-        catch (e) { locationNames[locId] = `Location ${locId}`; }
+        try { locationInfo[locId] = await getLocationInfo(locId, accessToken); }
+        catch (e) { locationInfo[locId] = { name: `Location ${locId}`, system_id: null }; }
       }
+
+      const systemIds = [...new Set(Object.values(locationInfo).map(i => i.system_id).filter(Boolean))];
+      const systemNames = systemIds.length > 0 ? await getSystemNames(systemIds) : {};
 
       assets.forEach(a => {
         a.type_name = typeNames[a.type_id] || `Type ${a.type_id}`;
+        let rootLocId;
         if (a.location_type === 'item') {
           const { rootLocationId } = resolveRootLocation(a);
-          a.location_name = locationNames[rootLocationId] || `Location ${rootLocationId}`;
+          rootLocId = rootLocationId;
           const directParent = itemMap[a.location_id];
           if (directParent) {
             a.container_name = typeNames[directParent.type_id] || `Type ${directParent.type_id}`;
             a.container_id = directParent.item_id;
           }
         } else {
-          a.location_name = locationNames[a.location_id] || `Location ${a.location_id}`;
+          rootLocId = a.location_id;
         }
+        const locInfo = locationInfo[rootLocId] || { name: `Location ${rootLocId}`, system_id: null };
+        a.location_name = locInfo.name;
+        a.system_id = locInfo.system_id;
+        a.system_name = locInfo.system_id ? (systemNames[locInfo.system_id] || `System ${locInfo.system_id}`) : null;
       });
 
       res.json({ assets, total: assets.length, has_access: true });

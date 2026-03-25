@@ -135,8 +135,10 @@
   white-space: nowrap;
 }
 
-/* Location groups — matches jobs-section */
-.assets-location-group {
+/* ============== TREE HIERARCHY ============== */
+
+/* System level */
+.asset-system-group {
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
@@ -144,26 +146,81 @@
   overflow: hidden;
 }
 
-.assets-location-header {
+.asset-system-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.3);
   cursor: pointer;
   user-select: none;
   transition: background 0.2s;
 }
 
-.assets-location-header:hover {
+.asset-system-header:hover {
   background: rgba(255, 255, 255, 0.05);
 }
 
-.assets-location-title {
-  font-size: 14px;
-  font-weight: 600;
+.asset-system-title {
+  font-size: 15px;
+  font-weight: 700;
   color: #e2e8f0;
+}
+
+/* Station level */
+.asset-station-group {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.asset-station-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px 10px 32px;
+  background: rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.asset-station-header:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.asset-station-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #a3bffa;
+}
+
+.asset-station-content {
+  /* items and containers inside */
+}
+
+/* Container level */
+.asset-container-group {
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.asset-container-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px 8px 52px;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.asset-container-header:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.asset-container-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f6ad55;
 }
 
 .assets-location-badges {

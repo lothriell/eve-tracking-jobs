@@ -147,32 +147,44 @@ async function getTypeNames(typeIds) {
 
 // Get station/structure name
 async function getLocationName(locationId, accessToken) {
-  const cacheKey = `location_${locationId}`;
+  const info = await getLocationInfo(locationId, accessToken);
+  return info.name;
+}
+
+// Get location info including name and system_id
+async function getLocationInfo(locationId, accessToken) {
+  const cacheKey = `location_info_${locationId}`;
   const cached = typeNameCache.get(cacheKey);
-  
+
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    return cached.name;
+    return cached.info;
   }
 
   try {
-    // Try station first (NPC stations)
     if (locationId < 1000000000000) {
+      // NPC station
       const url = `${ESI_BASE_URL}/universe/stations/${locationId}/`;
       const data = await makeESIRequest(url);
-      const name = data.name || `Station ${locationId}`;
-      typeNameCache.set(cacheKey, { name, timestamp: Date.now() });
-      return name;
+      const info = {
+        name: data.name || `Station ${locationId}`,
+        system_id: data.system_id || null
+      };
+      typeNameCache.set(cacheKey, { info, timestamp: Date.now() });
+      return info;
     } else {
       // Player structure
       const url = `${ESI_BASE_URL}/universe/structures/${locationId}/`;
       const data = await makeESIRequest(url, accessToken);
-      const name = data.name || `Structure ${locationId}`;
-      typeNameCache.set(cacheKey, { name, timestamp: Date.now() });
-      return name;
+      const info = {
+        name: data.name || `Structure ${locationId}`,
+        system_id: data.solar_system_id || null
+      };
+      typeNameCache.set(cacheKey, { info, timestamp: Date.now() });
+      return info;
     }
   } catch (error) {
-    console.error(`Failed to get location name for ${locationId}:`, error.message);
-    return `Location ${locationId}`;
+    console.error(`Failed to get location info for ${locationId}:`, error.message);
+    return { name: `Location ${locationId}`, system_id: null };
   }
 }
 
@@ -561,6 +573,7 @@ module.exports = {
   getTypeName,
   getTypeNames,
   getLocationName,
+  getLocationInfo,
   getCharacterNames,
   getActivityInfo,
   transformCorporationJobs,
