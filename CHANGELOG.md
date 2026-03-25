@@ -2,6 +2,29 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.5.4] - 2026-03-25
+
+### Updated
+- **Node.js 18 → 22 LTS**: Updated both frontend and backend Dockerfiles from `node:18-alpine` (EOL April 2025) to `node:22-alpine` (current LTS)
+- **Backend dependencies updated**:
+  - express: 4.18.2 → 4.21.2
+  - express-session: 1.17.3 → 1.18.1
+  - sqlite3: 5.1.6 → 5.1.7
+  - axios: 1.6.2 → 1.7.9
+  - dotenv: 16.3.1 → 16.4.7
+  - nodemon: 3.0.2 → 3.1.9
+  - Removed deprecated `crypto` npm package (built-in to Node.js)
+- **Frontend dependencies updated**:
+  - react: 18.2.0 → 18.3.1
+  - react-dom: 18.2.0 → 18.3.1
+  - react-router-dom: 6.20.0 → 6.28.1
+  - axios: 1.6.2 → 1.7.9
+
+### Note
+- `react-scripts` remains at 5.0.1 as it is the last released version (Create React App is deprecated by the React team). Most build warnings originate from its transitive dependencies. A future migration to Vite would eliminate these warnings entirely.
+
+---
+
 ## [v3.5.3] - 2026-03-25
 
 ### Fixed

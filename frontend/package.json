@@ -4,10 +4,10 @@
   "description": "EVE Online ESI Frontend",
   "private": true,
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.20.0",
-    "axios": "^1.6.2"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.1",
+    "axios": "^1.7.9"
   },
   "scripts": {
     "start": "react-scripts start",
