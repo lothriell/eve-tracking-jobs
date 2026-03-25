@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getAllCharacters, initiateEveAuth, deleteCharacter } from '../services/api';
 import './Sidebar.css';
 
@@ -9,11 +9,7 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
   const [deletingId, setDeletingId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
 
-  useEffect(() => {
-    loadCharacters();
-  }, []);
-
-  const loadCharacters = async () => {
+  const loadCharacters = useCallback(async () => {
     try {
       const response = await getAllCharacters();
       const chars = response.data.characters || [];
@@ -26,7 +22,11 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
     } finally {
       setLoading(false);
     }
-  };
+  }, [onCharactersChange]);
+
+  useEffect(() => {
+    loadCharacters();
+  }, [loadCharacters]);
 
   const handleAddCharacter = async () => {
     try {

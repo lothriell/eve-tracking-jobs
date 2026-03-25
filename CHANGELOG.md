@@ -2,6 +2,23 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.5.5] - 2026-03-25
+
+### Fixed
+- **ESLint warnings eliminated**: Fixed all 3 build warnings:
+  - `CorporationJobs.js`: Wrapped `loadData` in `useCallback` and added to useEffect dependency array
+  - `Sidebar.js`: Wrapped `loadCharacters` in `useCallback` and added to useEffect dependency array
+  - `Planets.js`: Removed unused `CC_STORAGE_CAPACITY` constant
+- **Backend Dockerfile**: Changed deprecated `npm install --production` to `npm install --omit=dev`
+- **Removed deprecated `crypto` npm package**: Already built into Node.js, the npm package was unnecessary (removed in v3.5.4)
+
+### Note on remaining build warnings
+- **Backend transitive deps** (npmlog, gauge, glob, rimraf, etc.): All originate from `sqlite3`'s native build tool `node-pre-gyp`. Cannot be fixed without migrating to `better-sqlite3`.
+- **Frontend transitive deps** (@babel/plugin-proposal-*, workbox-*, svgo, eslint@8, etc.): All originate from `react-scripts` (Create React App, deprecated). Cannot be fixed without migrating to Vite.
+- These are cosmetic warnings and do not affect runtime behavior.
+
+---
+
 ## [v3.5.4] - 2026-03-25
 
 ### Updated

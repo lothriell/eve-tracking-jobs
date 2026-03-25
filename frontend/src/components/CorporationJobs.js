@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getCorporationJobs, getCorporations, initiateEveAuth, getAllCharacters } from '../services/api';
 import './CorporationJobs.css';
 
@@ -22,7 +22,7 @@ function CorporationJobs({ selectedCharacter, onError }) {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [selectedCharacter]);
+  }, [selectedCharacter, loadData]);
 
   // Real-time countdown timer
   useEffect(() => {
@@ -38,10 +38,10 @@ function CorporationJobs({ selectedCharacter, onError }) {
     };
   }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       // Load all characters for the filter dropdown
       let charsList = [];
       try {
@@ -51,7 +51,7 @@ function CorporationJobs({ selectedCharacter, onError }) {
       } catch (charError) {
         console.log('Failed to load characters:', charError.message);
       }
-      
+
       // Load corporations first
       const corpsResponse = await getCorporations();
       const corps = corpsResponse.data.corporations || [];
@@ -104,7 +104,7 @@ function CorporationJobs({ selectedCharacter, onError }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCharacter, onError]);
 
   const handleRefresh = () => {
     loadData();

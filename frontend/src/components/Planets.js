@@ -16,11 +16,6 @@ const PLANET_COLORS = {
   shattered: { bg: 'rgba(136,136,136,0.15)', border: 'rgba(136,136,136,0.4)', dot: '#888888' },
 };
 
-// Storage capacity by command center level (m³)
-const CC_STORAGE_CAPACITY = {
-  0: 500, 1: 500, 2: 500, 3: 500, 4: 500, 5: 500
-};
-
 // Launchpad and storage facility capacities
 const STORAGE_PIN_CAPACITIES = {
   2256: 10000,  // Launchpad
