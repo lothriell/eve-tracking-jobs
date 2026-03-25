@@ -172,15 +172,24 @@ async function getLocationInfo(locationId, accessToken) {
       typeNameCache.set(cacheKey, { info, timestamp: Date.now() });
       return info;
     } else {
-      // Player structure
-      const url = `${ESI_BASE_URL}/universe/structures/${locationId}/`;
-      const data = await makeESIRequest(url, accessToken);
-      const info = {
-        name: data.name || `Structure ${locationId}`,
-        system_id: data.solar_system_id || null
-      };
-      typeNameCache.set(cacheKey, { info, timestamp: Date.now() });
-      return info;
+      // Player structure — try authenticated endpoint
+      try {
+        const url = `${ESI_BASE_URL}/universe/structures/${locationId}/`;
+        const data = await makeESIRequest(url, accessToken);
+        const info = {
+          name: data.name || `Structure ${locationId}`,
+          system_id: data.solar_system_id || null
+        };
+        typeNameCache.set(cacheKey, { info, timestamp: Date.now() });
+        return info;
+      } catch (structError) {
+        // 403 = can't see structure name (no docking access)
+        // Try to get at least the system from asset locations endpoint
+        console.warn(`Cannot resolve structure ${locationId} (${structError.response?.status || structError.message})`);
+        const info = { name: `Player Structure`, system_id: null };
+        typeNameCache.set(cacheKey, { info, timestamp: Date.now() });
+        return info;
+      }
     }
   } catch (error) {
     console.error(`Failed to get location info for ${locationId}:`, error.message);
@@ -496,6 +505,75 @@ async function getSystemNames(systemIds) {
   return results;
 }
 
+// Get asset location names via character asset locations endpoint
+// This can resolve structure names that the /universe/structures/ endpoint can't
+async function getAssetLocationNames(characterId, itemIds, accessToken) {
+  if (!itemIds || itemIds.length === 0) return {};
+
+  const results = {};
+  const batchSize = 1000;
+
+  for (let i = 0; i < itemIds.length; i += batchSize) {
+    const batch = itemIds.slice(i, i + batchSize);
+    try {
+      await waitForRateLimit();
+      const response = await axios.post(
+        `${ESI_BASE_URL}/characters/${characterId}/assets/locations/`,
+        batch,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          params: { datasource: ESI_DATASOURCE }
+        }
+      );
+      for (const item of response.data) {
+        if (item.position) {
+          results[item.item_id] = item.position;
+        }
+      }
+    } catch (error) {
+      // Silently fail — this is a best-effort resolution
+    }
+  }
+  return results;
+}
+
+// Get asset names (structure/station names) via character asset names endpoint
+async function getAssetNames(characterId, itemIds, accessToken) {
+  if (!itemIds || itemIds.length === 0) return {};
+
+  const results = {};
+  const batchSize = 1000;
+
+  for (let i = 0; i < itemIds.length; i += batchSize) {
+    const batch = itemIds.slice(i, i + batchSize);
+    try {
+      await waitForRateLimit();
+      const response = await axios.post(
+        `${ESI_BASE_URL}/characters/${characterId}/assets/names/`,
+        batch,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          params: { datasource: ESI_DATASOURCE }
+        }
+      );
+      for (const item of response.data) {
+        if (item.name && item.name !== 'None' && item.name !== '') {
+          results[item.item_id] = item.name;
+        }
+      }
+    } catch (error) {
+      // Silently fail
+    }
+  }
+  return results;
+}
+
 // Get character assets (paginated)
 async function getCharacterAssets(characterId, accessToken) {
   const allAssets = [];
@@ -579,6 +657,7 @@ module.exports = {
   transformCorporationJobs,
   getCharacterAssets,
   getCorporationAssets,
+  getAssetNames,
   getCharacterColonies,
   getColonyLayout,
   getSystemName,

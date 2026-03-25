@@ -2,6 +2,18 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.7.1] - 2026-03-25
+
+### Fixed
+- **Player structures no longer show raw IDs**: When the `/universe/structures/` endpoint returns 403 (no docking access), structures are labeled "Player Structure" instead of showing a 13-digit ID. When the system can't be resolved, assets group directly under the location name without an "Unknown System" wrapper.
+- **Proper tree indentation**: Station-level content indented with a left border line (blue). Container content further indented with its own left border (orange). Expanded items now visually nest under their parent instead of appearing as separate full-width tables.
+
+### Added
+- **Custom container names**: Ships and containers with player-assigned names now show both the type and custom name, e.g. "Orca (My Mining Ship)". Uses ESI `POST /characters/{id}/assets/names/` endpoint.
+- **Smart grouping for unresolvable locations**: When system_name can't be resolved, the location_name is used as the top-level group (no redundant "Unknown System" → "Player Structure" nesting).
+
+---
+
 ## [v3.7.0] - 2026-03-25
 
 ### Redesigned: Hierarchical Asset Tree View

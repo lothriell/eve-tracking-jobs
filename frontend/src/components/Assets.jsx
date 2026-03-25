@@ -106,23 +106,27 @@ function Assets({ selectedCharacter, onError }) {
     }
 
     // Group: system → station → container → items
+    // If system_name is missing, use location_name as the system-level label
     const tree = {};
     filtered.forEach(a => {
-      const sys = a.system_name || 'Unknown System';
-      const station = a.location_name || 'Unknown Location';
-      const container = a.container_name || null; // null = direct hangar
+      const sys = a.system_name || a.location_name || 'Unknown Location';
+      const station = a.system_name ? (a.location_name || 'Unknown Location') : null;
+      const container = a.container_name || null;
 
       if (!tree[sys]) tree[sys] = {};
-      if (!tree[sys][station]) tree[sys][station] = { direct: [], containers: {} };
+
+      // If station is null (no system resolved), items go directly under system level
+      const stationKey = station || '__direct__';
+      if (!tree[sys][stationKey]) tree[sys][stationKey] = { direct: [], containers: {} };
 
       if (container) {
         const contKey = `${container} #${a.container_id || ''}`;
-        if (!tree[sys][station].containers[contKey]) {
-          tree[sys][station].containers[contKey] = { name: container, items: [] };
+        if (!tree[sys][stationKey].containers[contKey]) {
+          tree[sys][stationKey].containers[contKey] = { name: container, items: [] };
         }
-        tree[sys][station].containers[contKey].items.push(a);
+        tree[sys][stationKey].containers[contKey].items.push(a);
       } else {
-        tree[sys][station].direct.push(a);
+        tree[sys][stationKey].direct.push(a);
       }
     });
 
@@ -252,11 +256,34 @@ function Assets({ selectedCharacter, onError }) {
                     {sysExpanded && Object.entries(stations)
                       .sort(([a], [b]) => a.localeCompare(b))
                       .map(([stationName, stationData]) => {
+                        const isDirectLevel = stationName === '__direct__';
                         const staKey = `sta_${systemName}_${stationName}`;
                         const staExpanded = expanded[staKey] !== false;
                         const staItemCount = stationData.direct.length +
                           Object.values(stationData.containers).reduce((s, c) => s + c.items.length, 0);
                         const containerEntries = Object.entries(stationData.containers);
+
+                        // If no station level (unresolved system), render items directly under system
+                        if (isDirectLevel) {
+                          return (
+                            <div className="asset-station-content" key="__direct__">
+                              {stationData.direct.length > 0 && renderItemsTable(stationData.direct)}
+                              {containerEntries.map(([contKey, contData]) => {
+                                const cKey = `cont_${systemName}_direct_${contKey}`;
+                                const contExpanded = expanded[cKey] === true;
+                                return (
+                                  <div className="asset-container-group" key={contKey}>
+                                    <div className="asset-container-header" onClick={() => toggle(cKey)}>
+                                      <span className="asset-container-title">{contExpanded ? '▾' : '▸'} {contData.name}</span>
+                                      <span className="badge badge-gray">{contData.items.length} items</span>
+                                    </div>
+                                    {contExpanded && renderItemsTable(contData.items)}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        }
 
                         return (
                           <div className="asset-station-group" key={stationName}>
@@ -274,20 +301,14 @@ function Assets({ selectedCharacter, onError }) {
 
                             {staExpanded && (
                               <div className="asset-station-content">
-                                {/* Direct hangar items */}
                                 {stationData.direct.length > 0 && renderItemsTable(stationData.direct)}
-
-                                {/* Containers */}
                                 {containerEntries.map(([contKey, contData]) => {
                                   const cKey = `cont_${systemName}_${stationName}_${contKey}`;
-                                  const contExpanded = expanded[cKey] === true; // default collapsed
-
+                                  const contExpanded = expanded[cKey] === true;
                                   return (
                                     <div className="asset-container-group" key={contKey}>
                                       <div className="asset-container-header" onClick={() => toggle(cKey)}>
-                                        <span className="asset-container-title">
-                                          {contExpanded ? '▾' : '▸'} {contData.name}
-                                        </span>
+                                        <span className="asset-container-title">{contExpanded ? '▾' : '▸'} {contData.name}</span>
                                         <span className="badge badge-gray">{contData.items.length} items</span>
                                       </div>
                                       {contExpanded && renderItemsTable(contData.items)}

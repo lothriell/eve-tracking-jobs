@@ -11,6 +11,7 @@ const {
   getTypeNames,
   getCharacterAssets,
   getCorporationAssets,
+  getAssetNames,
   getCharacterColonies,
   getColonyLayout,
   getSystemNames
@@ -875,6 +876,15 @@ exports.getCharacterAssets = async (req, res) => {
         const systemIds = [...new Set(Object.values(locationInfo).map(i => i.system_id).filter(Boolean))];
         const systemNames = systemIds.length > 0 ? await getSystemNames(systemIds) : {};
 
+        // Get custom names for items (named ships, containers, etc.)
+        const allItemIds = assets.map(a => a.item_id).filter(Boolean);
+        let customNames = {};
+        try {
+          customNames = await getAssetNames(character.character_id, allItemIds, accessToken);
+        } catch (e) {
+          // Not critical
+        }
+
         // Enrich each asset with resolved names
         assets.forEach(a => {
           a.type_name = typeNames[a.type_id] || `Type ${a.type_id}`;
@@ -885,17 +895,20 @@ exports.getCharacterAssets = async (req, res) => {
             rootLocId = rootLocationId;
             const directParent = itemMap[a.location_id];
             if (directParent) {
-              a.container_name = typeNames[directParent.type_id] || `Type ${directParent.type_id}`;
+              // Use custom name if available, otherwise type name
+              const customName = customNames[directParent.item_id];
+              const typeName = typeNames[directParent.type_id] || `Type ${directParent.type_id}`;
+              a.container_name = customName ? `${typeName} (${customName})` : typeName;
               a.container_id = directParent.item_id;
             }
           } else {
             rootLocId = a.location_id;
           }
 
-          const locInfo = locationInfo[rootLocId] || { name: `Location ${rootLocId}`, system_id: null };
+          const locInfo = locationInfo[rootLocId] || { name: `Structure ${rootLocId}`, system_id: null };
           a.location_name = locInfo.name;
           a.system_id = locInfo.system_id;
-          a.system_name = locInfo.system_id ? (systemNames[locInfo.system_id] || `System ${locInfo.system_id}`) : null;
+          a.system_name = locInfo.system_id ? (systemNames[locInfo.system_id] || null) : null;
 
           a.character_id = character.character_id;
           a.character_name = character.character_name;

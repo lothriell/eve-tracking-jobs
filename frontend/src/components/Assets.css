@@ -193,20 +193,24 @@
   color: #a3bffa;
 }
 
+/* Station content — items and containers are indented */
 .asset-station-content {
-  /* items and containers inside */
+  padding-left: 32px;
+  border-left: 2px solid rgba(163, 191, 250, 0.15);
+  margin-left: 32px;
 }
 
 /* Container level */
 .asset-container-group {
   border-top: 1px solid rgba(255, 255, 255, 0.04);
+  margin-top: 2px;
 }
 
 .asset-container-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px 8px 52px;
+  padding: 8px 16px 8px 16px;
   background: rgba(255, 255, 255, 0.02);
   cursor: pointer;
   user-select: none;
@@ -221,6 +225,12 @@
   font-size: 12px;
   font-weight: 600;
   color: #f6ad55;
+}
+
+/* Container content — further indented */
+.asset-container-group .assets-table {
+  margin-left: 16px;
+  border-left: 2px solid rgba(246, 173, 85, 0.15);
 }
 
 .assets-location-badges {
