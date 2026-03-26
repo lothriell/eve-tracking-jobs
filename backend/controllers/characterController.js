@@ -1,6 +1,22 @@
 const db = require('../database/db');
 const { getValidAccessToken } = require('../services/tokenRefresh');
 const { REQUIRED_SCOPES } = require('./authController');
+
+// PI commodity type IDs (P0 through P4) — used to detect Customs Office / Skyhook locations
+const PI_COMMODITY_TYPE_IDS = new Set([
+  // P0 - Raw resources
+  2267, 2268, 2270, 2272, 2286, 2287, 2288, 2305, 2306, 2307, 2308, 2309, 2310, 2311, 2073,
+  // P1 - Basic processed
+  2389, 2390, 2392, 2393, 2395, 2396, 2397, 2398, 2399, 2400, 2401, 3645, 3683, 3779, 9828,
+  // P2 - Refined
+  44, 2312, 2317, 2319, 2321, 2327, 2328, 2329, 2463, 3689, 3691, 3693, 3695, 3697, 3725,
+  3775, 9830, 9832, 9834, 9836, 9838, 9840, 9842, 15317,
+  // P3 - Specialized
+  2344, 2345, 2346, 2348, 2349, 2351, 2352, 2354, 2358, 2360, 2361, 2366, 2367, 12836,
+  17136, 17392, 17898, 28444,
+  // P4 - Advanced
+  2867, 2868, 2869, 2870, 2871, 2872, 2875, 2876,
+]);
 const {
   getCharacterIndustryJobs,
   getJobSlotUsage,
@@ -894,8 +910,16 @@ exports.getCharacterAssets = async (req, res) => {
         try {
           const info = await getLocationInfo(locId, accessToken);
           if (info.unresolved) {
-            // Structure — endpoint broken by CCP, use short ID label
-            resolvedLocations[locId] = { name: `Player Structure #${String(locId).slice(-6)}`, system_id: null, location_class: 'structure' };
+            // Check if all items at this location are PI commodities → Customs Office / Skyhook
+            const itemsAtLocation = assets.filter(a => {
+              if (a.location_id === locId) return true;
+              // Also check items inside containers at this location
+              const root = resolveRootLocation(a);
+              return root.rootLocationId === locId;
+            });
+            const isPICommodities = itemsAtLocation.length > 0 && itemsAtLocation.every(a => PI_COMMODITY_TYPE_IDS.has(a.type_id));
+            const label = isPICommodities ? 'Customs Office / Skyhook' : `Player Structure #${String(locId).slice(-6)}`;
+            resolvedLocations[locId] = { name: label, system_id: null, location_class: isPICommodities ? 'customs_office' : 'structure' };
           } else {
             resolvedLocations[locId] = info;
           }
@@ -1066,7 +1090,13 @@ exports.getCorporationAssets = async (req, res) => {
         try {
           const info = await getLocationInfo(locId, accessToken);
           if (info.unresolved) {
-            locationInfo[locId] = { name: `Player Structure #${String(locId).slice(-6)}`, system_id: null };
+            const itemsAtLoc = assets.filter(a => {
+              if (a.location_id === locId) return true;
+              const root = resolveRootLocation(a);
+              return root.rootLocationId === locId;
+            });
+            const isPI = itemsAtLoc.length > 0 && itemsAtLoc.every(a => PI_COMMODITY_TYPE_IDS.has(a.type_id));
+            locationInfo[locId] = { name: isPI ? 'Customs Office / Skyhook' : `Player Structure #${String(locId).slice(-6)}`, system_id: null };
           } else {
             locationInfo[locId] = info;
           }
