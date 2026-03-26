@@ -207,7 +207,7 @@
 
 /* Station content */
 .asset-station-content {
-  padding-left: 36px;
+  padding-left: 0;
 }
 
 /* ============== TREE: CONTAINER LEVEL ============== */
@@ -446,6 +446,6 @@
   }
 
   .asset-station-content {
-    padding-left: 16px;
+    padding-left: 0;
   }
 }
