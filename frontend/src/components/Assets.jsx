@@ -23,8 +23,9 @@ function Assets({ selectedCharacter, onError }) {
   const [scopeError, setScopeError] = useState(false);
   const [corpAccessError, setCorpAccessError] = useState(null);
   const [expanded, setExpanded] = useState({});
-  const [renaming, setRenaming] = useState(null); // { key, structureId, currentName }
+  const [renaming, setRenaming] = useState(null);
   const [renameValue, setRenameValue] = useState('');
+  const [viewMode, setViewMode] = useState('tree'); // 'tree' or 'value'
 
   const loadPersonalAssets = useCallback(async () => {
     setLoading(true);
@@ -231,6 +232,69 @@ function Assets({ selectedCharacter, onError }) {
     );
   };
 
+  const getFilteredFlat = (assets) => {
+    let filtered = assets;
+    if (characterFilter !== 'all') {
+      filtered = filtered.filter(a => String(a.character_id) === characterFilter);
+    }
+    const f = filter.toLowerCase();
+    if (f) {
+      filtered = filtered.filter(a =>
+        (a.type_name || '').toLowerCase().includes(f) ||
+        (a.location_name || '').toLowerCase().includes(f) ||
+        (a.system_name || '').toLowerCase().includes(f) ||
+        (a.container_name || '').toLowerCase().includes(f) ||
+        (a.character_name || '').toLowerCase().includes(f)
+      );
+    }
+    return [...filtered].sort((a, b) => (b.total_price || 0) - (a.total_price || 0));
+  };
+
+  const renderValueView = () => {
+    const sorted = getFilteredFlat(currentAssets);
+    const valTotal = sorted.reduce((s, a) => s + (a.total_price || 0), 0);
+
+    if (sorted.length === 0) return <div className="assets-empty">No assets found.</div>;
+
+    return (
+      <div className="value-view">
+        <table className="assets-table value-table">
+          <thead>
+            <tr>
+              <th className="col-val-item">Item</th>
+              <th className="col-val-qty text-right">Qty</th>
+              <th className="col-val-value text-right">Value</th>
+              <th className="col-val-location">Location</th>
+              {showCharCol && <th className="col-val-char">Character</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((asset, idx) => {
+              const breadcrumb = [
+                asset.system_name,
+                asset.location_name,
+                asset.container_name,
+              ].filter(Boolean).join(' › ');
+
+              return (
+                <tr key={asset.item_id || idx}>
+                  <td className="item-name">{asset.type_name || `Type ${asset.type_id}`}</td>
+                  <td className="text-right qty-value">{(asset.quantity || 1).toLocaleString()}</td>
+                  <td className="text-right isk-cell">{asset.total_price > 0 ? formatISK(asset.total_price) : '—'}</td>
+                  <td className="location-breadcrumb" title={breadcrumb}>{breadcrumb || '—'}</td>
+                  {showCharCol && <td style={{ color: '#a0aec0', fontSize: 12 }}>{asset.character_name || '—'}</td>}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <div className="value-view-footer">
+          {sorted.length} items &bull; Total: <span className="isk-value">{formatISK(valTotal)} ISK</span>
+        </div>
+      </div>
+    );
+  };
+
   const renderCorpContent = () => {
     if (corpLoading) return <div className="assets-loading"><div className="spinner"></div><span>Loading corporation assets...</span></div>;
     if (corpAccessError) {
@@ -269,7 +333,14 @@ function Assets({ selectedCharacter, onError }) {
           )}
         </div>
         <div className="assets-toolbar-right">
-          {systemCount > 0 && (
+          <button
+            className={`assets-view-btn ${viewMode === 'value' ? 'active' : ''}`}
+            onClick={() => setViewMode(viewMode === 'tree' ? 'value' : 'tree')}
+            title={viewMode === 'tree' ? 'Sort by value' : 'Tree view'}
+          >
+            {viewMode === 'tree' ? '💰 Value' : '🌳 Tree'}
+          </button>
+          {viewMode === 'tree' && systemCount > 0 && (
             <button className="assets-collapse-btn" onClick={allCollapsed ? expandAll : () => collapseAll(tree)} title={allCollapsed ? 'Expand All' : 'Collapse All'}>
               {allCollapsed ? '▸ Expand' : '▾ Collapse'}
             </button>
@@ -295,6 +366,8 @@ function Assets({ selectedCharacter, onError }) {
 
           {loading ? (
             <div className="assets-loading"><div className="spinner"></div><span>Loading assets...</span></div>
+          ) : viewMode === 'value' ? (
+            renderValueView()
           ) : systemCount === 0 ? (
             <div className="assets-empty">No assets found.</div>
           ) : (

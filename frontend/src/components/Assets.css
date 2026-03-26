@@ -135,6 +135,30 @@
   border-color: #667eea;
 }
 
+/* View toggle button */
+.assets-view-btn {
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #a0aec0;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.assets-view-btn:hover {
+  border-color: rgba(246, 201, 14, 0.4);
+  color: #f6c90e;
+}
+
+.assets-view-btn.active {
+  background: rgba(246, 201, 14, 0.1);
+  border-color: rgba(246, 201, 14, 0.4);
+  color: #f6c90e;
+}
+
 .assets-collapse-btn {
   padding: 6px 12px;
   background: rgba(0, 0, 0, 0.3);
@@ -462,6 +486,47 @@
   font-size: 14px;
   width: 300px;
   outline: none;
+}
+
+/* ============== VALUE VIEW ============== */
+
+.value-view {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.value-table {
+  table-layout: fixed;
+}
+
+.value-table .col-val-item    { width: auto; }
+.value-table .col-val-qty     { width: 90px; }
+.value-table .col-val-value   { width: 100px; }
+.value-table .col-val-location { width: 35%; }
+.value-table .col-val-char    { width: 120px; }
+
+/* First column normal padding in value view */
+.value-table th:first-child,
+.value-table td:first-child {
+  padding-left: 16px;
+}
+
+.location-breadcrumb {
+  color: #718096;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.value-view-footer {
+  padding: 10px 16px;
+  font-size: 12px;
+  color: #718096;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: right;
 }
 
 /* Responsive */
