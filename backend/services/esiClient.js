@@ -216,20 +216,17 @@ async function getLocationInfo(locationId, accessToken) {
       }
 
       case 'structure': {
-        try {
-          const url = `${ESI_BASE_URL}/universe/structures/${locationId}/`;
-          const data = await makeESIRequest(url, accessToken);
-          console.log(`[STRUCTURE] Resolved ${locationId} = "${data.name}", system=${data.solar_system_id}`);
+        // /universe/structures/{id}/ is broken (requires removed scope)
+        // Structure names are resolved via corporation structures endpoint instead
+        // Check if already cached by the corp structures pre-fetch
+        const structCached = db.getCachedName(locationId, 'structure');
+        if (structCached) {
           info = {
-            name: data.name || `Structure ${locationId}`,
-            system_id: data.solar_system_id || null,
+            name: structCached.name,
+            system_id: structCached.extra_data ? parseInt(structCached.extra_data) : null,
             location_class: locType
           };
-          db.setCachedName(locationId, 'structure', info.name, String(info.system_id || ''));
-        } catch (structError) {
-          const status = structError.response?.status;
-          const errMsg = structError.response?.data?.error || structError.message;
-          console.warn(`[STRUCTURE] Failed ${locationId}: HTTP ${status} - ${errMsg}`);
+        } else {
           return { name: null, system_id: null, location_class: locType, unresolved: true };
         }
         break;
@@ -652,6 +649,54 @@ async function getAssetNames(characterId, itemIds, accessToken) {
   return results;
 }
 
+// Fetch ALL corporation structures and cache their names
+// Uses esi-structures.read_corporation.v1 scope
+async function fetchCorporationStructures(corporationId, accessToken) {
+  try {
+    const allStructures = [];
+    let page = 1;
+
+    while (true) {
+      await waitForRateLimit();
+      try {
+        const url = `${ESI_BASE_URL}/corporations/${corporationId}/structures/`;
+        const data = await makeESIRequest(url, accessToken, { page });
+        if (!data || data.length === 0) break;
+        allStructures.push(...data);
+        if (data.length < 250) break;
+        page++;
+      } catch (e) {
+        if (e.response?.status === 304) break;
+        throw e;
+      }
+    }
+
+    // Cache all structure names
+    if (allStructures.length > 0) {
+      const entries = [];
+      for (const struct of allStructures) {
+        if (struct.structure_id && struct.name) {
+          entries.push({
+            id: struct.structure_id,
+            category: 'structure',
+            name: struct.name,
+            extra_data: String(struct.solar_system_id || '')
+          });
+        }
+      }
+      if (entries.length > 0) {
+        db.setCachedNames(entries);
+        console.log(`[STRUCTURE] Cached ${entries.length} corporation structures for corp ${corporationId}`);
+      }
+    }
+
+    return allStructures;
+  } catch (error) {
+    console.warn(`[STRUCTURE] Failed to fetch corp structures for ${corporationId}: ${error.response?.status || error.message}`);
+    return [];
+  }
+}
+
 // Get character assets (paginated)
 async function getCharacterAssets(characterId, accessToken) {
   const allAssets = [];
@@ -736,6 +781,7 @@ module.exports = {
   getCharacterAssets,
   getCorporationAssets,
   getAssetNames,
+  fetchCorporationStructures,
   getCharacterColonies,
   getColonyLayout,
   getSystemName,

@@ -12,6 +12,7 @@ const {
   getCharacterAssets,
   getCorporationAssets,
   getAssetNames,
+  fetchCorporationStructures,
   getCharacterColonies,
   getColonyLayout,
   getSystemNames
@@ -835,6 +836,22 @@ exports.getCharacterAssets = async (req, res) => {
         perCharAssets.push({ character, assets, accessToken });
       } catch (error) {
         continue; // Missing asset scope or other error — skip character
+      }
+    }
+
+    // ===== PRE-FETCH: Get corporation structures for all characters =====
+    // This populates the SQLite cache with structure names before asset resolution
+    const fetchedCorps = new Set();
+    for (const { character } of charTokens) {
+      try {
+        const tok = await getValidAccessToken(character);
+        const corpData = await getCharacterCorporation(character.character_id, tok);
+        if (corpData.corporation_id && !fetchedCorps.has(corpData.corporation_id)) {
+          fetchedCorps.add(corpData.corporation_id);
+          await fetchCorporationStructures(corpData.corporation_id, tok);
+        }
+      } catch (e) {
+        // Not all characters have corp structure access — skip silently
       }
     }
 
