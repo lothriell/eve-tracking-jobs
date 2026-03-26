@@ -184,7 +184,8 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
         <>
           <div className="sidebar-header">
             <div className="sidebar-logo">
-              <img src="/logo.svg" alt="EVE Industry Tracker" />
+              <img src="/favicon.svg" alt="" className="sidebar-logo-icon" />
+              <span className="sidebar-logo-text">EVE Industry</span>
             </div>
           </div>
 
