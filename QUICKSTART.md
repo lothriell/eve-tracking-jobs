@@ -71,7 +71,7 @@ SESSION_SECRET=your_generated_secret_here
 ## 6️⃣ Build & Run
 
 ```bash
-docker-compose up -d --build
+docker-compose down && git pull origin main && docker-compose up -d --build
 ```
 
 Wait ~30 seconds for startup.
@@ -100,7 +100,7 @@ For detailed configuration options, see:
 
 | Command | Description |
 |---------|-------------|
-| `docker-compose up -d --build` | Build and start |
+| `docker-compose down && git pull origin main && docker-compose up -d --build` | Build and start |
 | `docker-compose down` | Stop containers |
 | `docker-compose logs -f` | View logs |
 | `docker-compose ps` | Check status |

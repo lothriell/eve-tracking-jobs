@@ -389,7 +389,7 @@ ALLOWED_ORIGINS=http://100.82.8.96:9000
 
 ```bash
 # Build and start the application
-docker-compose up -d --build
+docker-compose down && git pull origin main && docker-compose up -d --build
 
 # Wait a few seconds for containers to start
 sleep 5
@@ -437,7 +437,7 @@ git pull origin main
 
 # Rebuild and restart containers
 docker-compose down
-docker-compose up -d --build
+docker-compose down && git pull origin main && docker-compose up -d --build
 
 # Verify update
 docker-compose logs backend | tail -20
@@ -558,7 +558,7 @@ Each user deploys their own instance:
 
 ```bash
 cd ~/docker/eve_esi_app_userX
-docker-compose up -d --build
+docker-compose down && git pull origin main && docker-compose up -d --build
 ```
 
 Verify containers are running:
@@ -619,7 +619,7 @@ cd ~/docker/eve_esi_app_user1 && docker-compose down
 cd ~/docker/eve_esi_app_user1 && docker-compose logs -f
 
 # Update specific instance
-cd ~/docker/eve_esi_app_user1 && git pull && docker-compose up -d --build
+cd ~/docker/eve_esi_app_user1 && git pull && docker-compose down && git pull origin main && docker-compose up -d --build
 ```
 
 ---
@@ -650,7 +650,7 @@ docker-compose logs frontend
 
 # Common fixes
 docker-compose down
-docker-compose up -d --build
+docker-compose down && git pull origin main && docker-compose up -d --build
 ```
 
 ### Can't Access Web App
@@ -695,7 +695,7 @@ If you need to completely reset:
 ```bash
 docker-compose down
 docker volume rm eve-tracking-jobs_eve-esi-data
-docker-compose up -d --build
+docker-compose down && git pull origin main && docker-compose up -d --build
 ```
 **Warning**: This deletes all linked characters and you'll need to re-authorize them.
 

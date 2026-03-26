@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Full rebuild and deploy
-docker-compose up -d --build
+docker-compose down && git pull origin main && docker-compose up -d --build
 
 # View logs
 docker-compose logs -f backend

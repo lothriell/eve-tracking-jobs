@@ -31,7 +31,7 @@ Solutions to common issues with EVE Industry Tracker.
 4. **Rebuild containers**
    ```bash
    docker-compose down
-   docker-compose up -d --build
+   docker-compose down && git pull origin main && docker-compose up -d --build
    ```
 
 ---
@@ -69,7 +69,7 @@ Solutions to common issues with EVE Industry Tracker.
 4. **Rebuild after .env changes**
    ```bash
    docker-compose down
-   docker-compose up -d --build
+   docker-compose down && git pull origin main && docker-compose up -d --build
    ```
 
 ---
@@ -184,7 +184,7 @@ docker-compose logs
 
 # Rebuild from scratch
 docker-compose down -v
-docker-compose up -d --build
+docker-compose down && git pull origin main && docker-compose up -d --build
 ```
 
 ### Port already in use
@@ -223,7 +223,7 @@ docker system prune -a
 3. **Rebuild containers**
    ```bash
    docker-compose down
-   docker-compose up -d --build
+   docker-compose down && git pull origin main && docker-compose up -d --build
    ```
 
 ### Session expiring too quickly
