@@ -216,17 +216,18 @@ async function getLocationInfo(locationId, accessToken) {
       }
 
       case 'structure': {
-        // /universe/structures/{id}/ is broken (requires removed scope)
-        // Structure names are resolved via corporation structures endpoint instead
-        // Check if already cached by the corp structures pre-fetch
-        const structCached = db.getCachedName(locationId, 'structure');
-        if (structCached) {
+        // Try /universe/structures/{id}/ — may work with new scopes
+        try {
+          const url = `${ESI_BASE_URL}/universe/structures/${locationId}/`;
+          const data = await makeESIRequest(url, accessToken);
+          console.log(`[STRUCTURE] Resolved ${locationId} = "${data.name}"`);
           info = {
-            name: structCached.name,
-            system_id: structCached.extra_data ? parseInt(structCached.extra_data) : null,
+            name: data.name || `Structure ${locationId}`,
+            system_id: data.solar_system_id || null,
             location_class: locType
           };
-        } else {
+          db.setCachedName(locationId, 'structure', info.name, String(info.system_id || ''));
+        } catch (structError) {
           return { name: null, system_id: null, location_class: locType, unresolved: true };
         }
         break;

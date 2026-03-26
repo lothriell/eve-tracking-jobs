@@ -18,7 +18,9 @@ const REQUIRED_SCOPES = [
   'esi-assets.read_assets.v1',               // Required for personal asset inventory
   'esi-assets.read_corporation_assets.v1',   // Required for corporation asset inventory
   'esi-planets.manage_planets.v1',           // Required for planetary industry (colonies, layouts)
-  'esi-corporations.read_structures.v1'      // Required for resolving player structure names via corp structures endpoint
+  'esi-structures.read_character.v1',        // Read player structure names (character-level access)
+  'esi-structures.read_corporation.v1',     // Read player structure names (corporation-level access)
+  'esi-corporations.read_structures.v1'     // Read corporation-owned structures
 ];
 
 // PKCE helper functions
