@@ -653,6 +653,7 @@ async function getAssetNames(characterId, itemIds, accessToken) {
 // Uses esi-structures.read_corporation.v1 scope
 async function fetchCorporationStructures(corporationId, accessToken) {
   try {
+    console.log(`[STRUCTURE] Fetching corp ${corporationId} structures with token: ${accessToken ? accessToken.substring(0, 12) + '...' : 'NONE'}`);
     const allStructures = [];
     let page = 1;
 

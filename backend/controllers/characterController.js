@@ -850,9 +850,10 @@ exports.getCharacterAssets = async (req, res) => {
         const corpId = corpData.corporation_id;
         if (!corpId || fetchedCorps.has(corpId)) continue;
 
+        console.log(`[STRUCTURE] Trying ${character.character_name} (${character.character_id}) for corp ${corpId}`);
         const structures = await fetchCorporationStructures(corpId, tok);
         if (structures.length > 0) {
-          fetchedCorps.add(corpId); // Only mark as done on SUCCESS
+          fetchedCorps.add(corpId);
         }
         // If failed (returned []), another character with the scope might succeed
       } catch (e) {
