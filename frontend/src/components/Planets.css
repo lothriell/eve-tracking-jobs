@@ -643,10 +643,32 @@
 
 /* ============== GRID VIEW ============== */
 
-.pi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
+.pi-grid-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pi-grid-row {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+
+.pi-grid-character {
+  font-size: 13px;
+  font-weight: 600;
+  color: #a3bffa;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pi-grid-colonies {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .colony-card {
@@ -704,6 +726,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.colony-card-planet-img {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
 }
 

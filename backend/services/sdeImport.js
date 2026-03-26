@@ -83,8 +83,9 @@ async function importTypes() {
     for (const row of rows) {
       const typeId = parseInt(row.typeID);
       const name = row.typeName;
+      const volume = row.volume;
       if (typeId && name && name !== 'None') {
-        entries.push({ id: typeId, category: 'type', name });
+        entries.push({ id: typeId, category: 'type', name, extra_data: volume || null });
       }
     }
 
@@ -221,9 +222,17 @@ async function importSDE() {
   const stats = db.getCacheStats();
   const typeCount = stats.find(s => s.category === 'type')?.count || 0;
 
-  if (typeCount > 50000) {
-    console.log(`[SDE] Already have ${typeCount} types cached, skipping SDE import`);
+  // Check if types have volume data (extra_data) — if not, need re-import
+  const sampleType = db.getCachedName(11, 'type'); // Planet (Temperate)
+  const hasVolumes = sampleType && sampleType.extra_data;
+
+  if (typeCount > 50000 && hasVolumes) {
+    console.log(`[SDE] Already have ${typeCount} types cached with volumes, skipping SDE import`);
     return;
+  }
+
+  if (typeCount > 50000 && !hasVolumes) {
+    console.log(`[SDE] Types exist but missing volumes — re-importing with volume data`);
   }
 
   const start = Date.now();

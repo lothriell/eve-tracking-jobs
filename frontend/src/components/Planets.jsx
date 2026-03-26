@@ -25,34 +25,26 @@ function getStorageCapacity(pin) {
   return 0; // Not a storage pin
 }
 
-// PI product volumes (m³ per unit)
-const PI_PRODUCT_VOLUMES = {
-  // R0 - Raw resources
-  2267: 0.01, 2268: 0.01, 2270: 0.01, 2272: 0.01, 2286: 0.01,
-  2287: 0.01, 2288: 0.01, 2305: 0.01, 2306: 0.01, 2307: 0.01,
-  2308: 0.01, 2309: 0.01, 2310: 0.01, 2311: 0.01,
-  // P1 - Basic processed
-  2389: 0.38, 2390: 0.38, 2392: 0.38, 2393: 0.38, 2395: 0.38,
-  2396: 0.38, 2397: 0.38, 2398: 0.38, 2399: 0.38, 2400: 0.38,
-  2401: 0.38, 3645: 0.38, 3683: 0.38, 3779: 0.38, 9828: 0.38,
-  // P2 - Refined
-  44: 1.50, 2312: 1.50, 2317: 1.50, 2319: 1.50, 2321: 1.50,
-  2327: 1.50, 2328: 1.50, 2329: 1.50, 2463: 1.50, 3689: 1.50,
-  3691: 1.50, 3693: 1.50, 3695: 1.50, 3697: 1.50, 3725: 1.50,
-  3775: 1.50, 9830: 1.50, 9832: 1.50, 9834: 1.50, 9836: 1.50,
-  9838: 1.50, 9840: 1.50, 9842: 1.50, 15317: 1.50,
-  // P3 - Specialized
-  2344: 6.00, 2345: 6.00, 2346: 6.00, 2348: 6.00, 2349: 6.00,
-  2351: 6.00, 2352: 6.00, 2354: 6.00, 2358: 6.00, 2360: 6.00,
-  2361: 6.00, 2366: 6.00, 2367: 6.00, 12836: 6.00, 17136: 6.00,
-  17392: 6.00, 17898: 6.00, 28444: 6.00,
-  // P4 - Advanced
-  2867: 100.00, 2868: 100.00, 2869: 100.00, 2870: 100.00,
-  2871: 100.00, 2872: 100.00, 2875: 100.00, 2876: 100.00,
+// Default volume for unknown types (fallback if SDE volume not available)
+const DEFAULT_VOLUME = 0.01;
+
+// Planet type → EVE type_id for image URLs
+const PLANET_TYPE_IDS = {
+  temperate: 11,
+  ice: 12,
+  gas: 13,
+  oceanic: 2014,
+  lava: 2015,
+  barren: 2016,
+  storm: 2017,
+  plasma: 2063,
 };
 
-// Default volume for unknown types
-const DEFAULT_VOLUME = 0.01;
+function getPlanetImageUrl(planetType) {
+  const typeId = PLANET_TYPE_IDS[(planetType || '').toLowerCase()];
+  if (!typeId) return null;
+  return `https://images.evetech.net/types/${typeId}/icon?size=64`;
+}
 
 // Extractor balance threshold (units/hour)
 const BALANCE_THRESHOLD = 1000;
@@ -108,7 +100,8 @@ function calcStorageFill(pins) {
     totalCapacity += cap;
     if (pin.contents?.length) {
       for (const item of pin.contents) {
-        const vol = PI_PRODUCT_VOLUMES[item.type_id] || DEFAULT_VOLUME;
+        // Use volume from backend (SDE data), fallback to DEFAULT_VOLUME
+        const vol = item.volume || DEFAULT_VOLUME;
         totalUsed += vol * item.amount;
       }
     }
@@ -833,11 +826,19 @@ function ColonyCard({ colony, characterName, characterId }) {
             />
           )}
         </svg>
-        <div className="colony-card-planet-icon" style={{ backgroundColor: style.dot }}>
-          <span className="colony-card-planet-letter">
-            {(colony.planet_type || '?').charAt(0).toUpperCase()}
-          </span>
-        </div>
+        {getPlanetImageUrl(colony.planet_type) ? (
+          <img
+            src={getPlanetImageUrl(colony.planet_type)}
+            alt={colony.planet_type}
+            className="colony-card-planet-img"
+          />
+        ) : (
+          <div className="colony-card-planet-icon" style={{ backgroundColor: style.dot }}>
+            <span className="colony-card-planet-letter">
+              {(colony.planet_type || '?').charAt(0).toUpperCase()}
+            </span>
+          </div>
+        )}
         {needsAttention && <div className="colony-card-attention-pulse" />}
       </div>
 
@@ -951,17 +952,22 @@ function Planets({ selectedCharacter, onError }) {
       ) : allEmpty ? (
         <div className="planets-empty">No planet colonies found.</div>
       ) : viewMode === 'grid' ? (
-        <div className="pi-grid">
-          {planetData.flatMap(charData =>
-            (charData.colonies || []).map(colony => (
-              <ColonyCard
-                key={`${charData.character_id}_${colony.planet_id}`}
-                colony={colony}
-                characterName={charData.character_name}
-                characterId={charData.character_id}
-              />
-            ))
-          )}
+        <div className="pi-grid-container">
+          {planetData.filter(c => c.colonies?.length > 0).map(charData => (
+            <div className="pi-grid-row" key={charData.character_id}>
+              <div className="pi-grid-character">{charData.character_name}</div>
+              <div className="pi-grid-colonies">
+                {charData.colonies.map(colony => (
+                  <ColonyCard
+                    key={colony.planet_id}
+                    colony={colony}
+                    characterName={charData.character_name}
+                    characterId={charData.character_id}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         planetData.map(charData => (

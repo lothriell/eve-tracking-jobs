@@ -1292,12 +1292,25 @@ exports.getColonyLayout = async (req, res) => {
 
     const typeNames = typeIds.size > 0 ? await getTypeNames([...typeIds]) : {};
 
-    // Enrich pins with resolved names
+    // Get volumes from SDE cache (stored in extra_data of type entries)
+    const typeVolumes = {};
+    if (typeIds.size > 0) {
+      const cachedTypes = db.getCachedNames([...typeIds], 'type');
+      for (const [id, data] of Object.entries(cachedTypes)) {
+        if (data.extra_data) {
+          typeVolumes[id] = parseFloat(data.extra_data) || 0;
+        }
+      }
+    }
+
+    // Enrich pins with resolved names and volumes
     pins.forEach(pin => {
       pin.type_name = typeNames[pin.type_id] || `Type ${pin.type_id}`;
+      pin.volume = typeVolumes[pin.type_id] || 0;
       if (pin.contents) {
         pin.contents.forEach(item => {
           item.type_name = typeNames[item.type_id] || `Type ${item.type_id}`;
+          item.volume = typeVolumes[item.type_id] || 0;
         });
       }
       if (pin.extractor_details?.product_type_id) {
