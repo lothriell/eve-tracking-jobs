@@ -197,6 +197,38 @@ class DB {
     return this.db.prepare('SELECT MIN(updated_at) as oldest, MAX(updated_at) as newest, COUNT(*) as count FROM market_prices').get();
   }
 
+  // ===== JITA PRICES =====
+
+  getJitaPrices(typeIds) {
+    if (!typeIds || typeIds.length === 0) return {};
+    const placeholders = typeIds.map(() => '?').join(',');
+    const rows = this.db.prepare(
+      `SELECT type_id, sell_min, buy_max FROM jita_prices WHERE type_id IN (${placeholders})`
+    ).all(...typeIds);
+    const result = {};
+    for (const row of rows) {
+      result[row.type_id] = { sell_min: row.sell_min, buy_max: row.buy_max };
+    }
+    return result;
+  }
+
+  setJitaPrices(prices) {
+    const stmt = this.db.prepare(
+      `INSERT OR REPLACE INTO jita_prices (type_id, sell_min, buy_max, sell_volume, buy_volume, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+    );
+    const batch = this.db.transaction((items) => {
+      for (const item of items) {
+        stmt.run(item.type_id, item.sell_min || 0, item.buy_max || 0, item.sell_volume || 0, item.buy_volume || 0);
+      }
+    });
+    batch(prices);
+    return prices.length;
+  }
+
+  getJitaPriceAge() {
+    return this.db.prepare('SELECT MIN(updated_at) as oldest, MAX(updated_at) as newest, COUNT(*) as count FROM jita_prices').get();
+  }
+
   // ===== COST INDICES =====
 
   getCostIndex(systemId, activity) {

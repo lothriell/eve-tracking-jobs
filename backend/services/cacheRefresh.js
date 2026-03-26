@@ -4,8 +4,9 @@
  *
  * Refresh schedule:
  * - Market prices: every 6 hours (changes daily)
+ * - Jita prices: every 6 hours (min sell / max buy from The Forge)
  * - System cost indices: every 6 hours (changes daily)
- * - Constellation/region names: once on startup (never change)
+ * - SDE data: once on startup (never change)
  */
 
 const axios = require('axios');
@@ -71,6 +72,69 @@ async function refreshCostIndices() {
   }
 }
 
+// ===== JITA PRICES (min sell / max buy) =====
+const JITA_STATION_ID = 60003760;
+const FORGE_REGION_ID = 10000002;
+
+async function refreshJitaPrices() {
+  try {
+    console.log('[CACHE] Refreshing Jita prices...');
+
+    // Fetch ALL orders in The Forge region (paginated)
+    const allOrders = [];
+    let page = 1;
+    while (true) {
+      const response = await axios.get(`${ESI_BASE}/markets/${FORGE_REGION_ID}/orders/`, {
+        params: { datasource: DS, order_type: 'all', page },
+        timeout: 30000
+      });
+      const orders = response.data || [];
+      if (orders.length === 0) break;
+      // Filter to Jita station only
+      const jitaOrders = orders.filter(o => o.location_id === JITA_STATION_ID);
+      allOrders.push(...jitaOrders);
+      if (orders.length < 1000) break;
+      page++;
+    }
+
+    console.log(`[CACHE] Fetched ${page} pages, ${allOrders.length} Jita orders`);
+
+    // Compute min sell and max buy per type
+    const priceMap = {};
+    for (const order of allOrders) {
+      if (!priceMap[order.type_id]) {
+        priceMap[order.type_id] = { sell_min: Infinity, buy_max: 0, sell_volume: 0, buy_volume: 0 };
+      }
+      const entry = priceMap[order.type_id];
+      if (order.is_buy_order) {
+        if (order.price > entry.buy_max) entry.buy_max = order.price;
+        entry.buy_volume += order.volume_remain;
+      } else {
+        if (order.price < entry.sell_min) entry.sell_min = order.price;
+        entry.sell_volume += order.volume_remain;
+      }
+    }
+
+    // Convert to array and fix Infinity
+    const prices = Object.entries(priceMap).map(([typeId, p]) => ({
+      type_id: parseInt(typeId),
+      sell_min: p.sell_min === Infinity ? 0 : p.sell_min,
+      buy_max: p.buy_max,
+      sell_volume: p.sell_volume,
+      buy_volume: p.buy_volume,
+    }));
+
+    if (prices.length > 0) {
+      const count = db.setJitaPrices(prices);
+      console.log(`[CACHE] Jita prices: ${count} types cached`);
+    }
+    return prices.length;
+  } catch (error) {
+    console.error('[CACHE] Failed to refresh Jita prices:', error.message);
+    return 0;
+  }
+}
+
 // ===== FULL REFRESH =====
 async function runFullRefresh() {
   if (isRefreshing) {
@@ -88,6 +152,7 @@ async function runFullRefresh() {
 
     // Semi-static data (refreshed every cycle)
     await refreshMarketPrices();
+    await refreshJitaPrices();
     await refreshCostIndices();
 
     const stats = db.getCacheStats();

@@ -2,6 +2,28 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v4.5.0] - 2026-03-26
+
+### Added: Jita Market Prices + Price Mode Toggle
+- **Jita price cache**: Background service fetches ALL Jita 4-4 sell/buy orders every 6 hours, computes min sell and max buy per type, stores in new `jita_prices` SQLite table
+- **Price mode dropdown** in Assets toolbar with 3 options:
+  - **AVG Price** — 30-day CCP weighted average (existing, default)
+  - **Jita Sell** — minimum sell order price at Jita 4-4 ("what can I sell for")
+  - **Jita Buy** — maximum buy order price at Jita 4-4 ("what can I buy for")
+- Switching price mode **instantly re-valuates** all assets with the selected pricing
+- Golden dropdown styled to match the ISK theme
+- Works in both Tree View and Value View
+- Applied to personal and corporation assets
+
+### Technical
+- New `jita_prices` table: type_id, sell_min, buy_max, sell_volume, buy_volume
+- Fetches from `GET /markets/10000002/orders/` (The Forge region, all pages)
+- Filters to Jita station ID 60003760 only
+- ~300 pages × 1000 orders, processed to per-type min/max
+- Added to 6-hour background refresh cycle
+
+---
+
 ## [v4.4.0] - 2026-03-26
 
 ### Added: ISK Valuation on Assets

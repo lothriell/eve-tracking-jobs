@@ -96,18 +96,23 @@ export const getCorporationRoles = (characterId) => {
 };
 
 // Asset endpoints
-export const getCharacterAssets = (characterId = null, all = false) => {
+export const getCharacterAssets = (characterId = null, all = false, priceMode = 'average') => {
   const params = new URLSearchParams();
   if (all) {
     params.append('all', 'true');
   } else if (characterId) {
     params.append('characterId', characterId);
   }
+  if (priceMode !== 'average') {
+    params.append('priceMode', priceMode);
+  }
   return api.get(`/api/assets?${params.toString()}`);
 };
 
-export const getCorporationAssets = (characterId) => {
-  return api.get(`/api/assets/corp?characterId=${characterId}`);
+export const getCorporationAssets = (characterId, priceMode = 'average') => {
+  const params = new URLSearchParams({ characterId });
+  if (priceMode !== 'average') params.append('priceMode', priceMode);
+  return api.get(`/api/assets/corp?${params.toString()}`);
 };
 
 // Planetary industry endpoints

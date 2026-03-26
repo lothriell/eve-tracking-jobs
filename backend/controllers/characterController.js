@@ -978,25 +978,32 @@ exports.getCharacterAssets = async (req, res) => {
       });
     }
 
-    // Enrich with ISK values from cached market prices
+    // Enrich with ISK values — supports multiple price modes
+    const priceMode = req.query.priceMode || 'average';
     const assetTypeIds = [...new Set(allAssets.map(a => a.type_id).filter(Boolean))];
     const marketPrices = assetTypeIds.length > 0 ? db.getMarketPrices(assetTypeIds) : {};
+    const jitaPrices = (priceMode === 'jita_sell' || priceMode === 'jita_buy') && assetTypeIds.length > 0
+      ? db.getJitaPrices(assetTypeIds) : {};
 
     let grandTotal = 0;
     allAssets.forEach(a => {
-      const price = marketPrices[a.type_id];
-      if (price) {
-        const unitPrice = price.average_price || price.adjusted_price || 0;
-        a.unit_price = unitPrice;
-        a.total_price = unitPrice * (a.quantity || 1);
-        grandTotal += a.total_price;
+      let unitPrice = 0;
+      if (priceMode === 'jita_sell') {
+        const jp = jitaPrices[a.type_id];
+        unitPrice = jp?.sell_min || 0;
+      } else if (priceMode === 'jita_buy') {
+        const jp = jitaPrices[a.type_id];
+        unitPrice = jp?.buy_max || 0;
       } else {
-        a.unit_price = 0;
-        a.total_price = 0;
+        const mp = marketPrices[a.type_id];
+        unitPrice = mp ? (mp.average_price || mp.adjusted_price || 0) : 0;
       }
+      a.unit_price = unitPrice;
+      a.total_price = unitPrice * (a.quantity || 1);
+      grandTotal += a.total_price;
     });
 
-    res.json({ assets: allAssets, total: allAssets.length, total_value: grandTotal });
+    res.json({ assets: allAssets, total: allAssets.length, total_value: grandTotal, price_mode: priceMode });
   } catch (error) {
     console.error('Get character assets error:', error);
     res.status(500).json({ error: 'Failed to get character assets' });
@@ -1129,19 +1136,29 @@ exports.getCorporationAssets = async (req, res) => {
         a.system_name = locInfo.system_id ? (systemNames[locInfo.system_id] || null) : null;
       });
 
-      // Enrich with ISK values
+      // Enrich with ISK values — supports price modes
+      const corpPriceMode = req.query.priceMode || 'average';
       const corpTypeIds = [...new Set(assets.map(a => a.type_id).filter(Boolean))];
       const corpMarketPrices = corpTypeIds.length > 0 ? db.getMarketPrices(corpTypeIds) : {};
+      const corpJitaPrices = (corpPriceMode === 'jita_sell' || corpPriceMode === 'jita_buy') && corpTypeIds.length > 0
+        ? db.getJitaPrices(corpTypeIds) : {};
       let corpGrandTotal = 0;
       assets.forEach(a => {
-        const price = corpMarketPrices[a.type_id];
-        const unitPrice = price ? (price.average_price || price.adjusted_price || 0) : 0;
+        let unitPrice = 0;
+        if (corpPriceMode === 'jita_sell') {
+          unitPrice = corpJitaPrices[a.type_id]?.sell_min || 0;
+        } else if (corpPriceMode === 'jita_buy') {
+          unitPrice = corpJitaPrices[a.type_id]?.buy_max || 0;
+        } else {
+          const mp = corpMarketPrices[a.type_id];
+          unitPrice = mp ? (mp.average_price || mp.adjusted_price || 0) : 0;
+        }
         a.unit_price = unitPrice;
         a.total_price = unitPrice * (a.quantity || 1);
         corpGrandTotal += a.total_price;
       });
 
-      res.json({ assets, total: assets.length, has_access: true, total_value: corpGrandTotal });
+      res.json({ assets, total: assets.length, has_access: true, total_value: corpGrandTotal, price_mode: corpPriceMode });
     } catch (error) {
       if (error.response?.status === 403) {
         return res.json({

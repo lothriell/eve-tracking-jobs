@@ -26,6 +26,7 @@ function Assets({ selectedCharacter, onError }) {
   const [renaming, setRenaming] = useState(null);
   const [renameValue, setRenameValue] = useState('');
   const [viewMode, setViewMode] = useState('tree'); // 'tree' or 'value'
+  const [priceMode, setPriceMode] = useState('average'); // 'average', 'jita_sell', 'jita_buy'
 
   const loadPersonalAssets = useCallback(async () => {
     setLoading(true);
@@ -35,7 +36,7 @@ function Assets({ selectedCharacter, onError }) {
       setCharacters(charsResponse.data.characters || []);
       const charId = selectedCharacter?.character_id || null;
       const all = !selectedCharacter;
-      const response = await getCharacterAssets(charId, all);
+      const response = await getCharacterAssets(charId, all, priceMode);
       const data = response.data;
       if (data.error === 'missing_scope') {
         setScopeError(true);
@@ -54,7 +55,7 @@ function Assets({ selectedCharacter, onError }) {
     } finally {
       setLoading(false);
     }
-  }, [selectedCharacter, onError]);
+  }, [selectedCharacter, onError, priceMode]);
 
   const loadCorpAssets = useCallback(async () => {
     if (!selectedCharacter) {
@@ -64,7 +65,7 @@ function Assets({ selectedCharacter, onError }) {
     setCorpLoading(true);
     setCorpAccessError(null);
     try {
-      const response = await getCorporationAssets(selectedCharacter.character_id);
+      const response = await getCorporationAssets(selectedCharacter.character_id, priceMode);
       const data = response.data;
       if (data.error === 'missing_scope' || data.error === 'needs_reauthorization') {
         setCorpAccessError({ type: 'reauth', message: data.message });
@@ -333,6 +334,11 @@ function Assets({ selectedCharacter, onError }) {
           )}
         </div>
         <div className="assets-toolbar-right">
+          <select className="assets-price-mode" value={priceMode} onChange={e => setPriceMode(e.target.value)} title="Price source">
+            <option value="average">AVG Price</option>
+            <option value="jita_sell">Jita Sell</option>
+            <option value="jita_buy">Jita Buy</option>
+          </select>
           <button
             className={`assets-view-btn ${viewMode === 'value' ? 'active' : ''}`}
             onClick={() => setViewMode(viewMode === 'tree' ? 'value' : 'tree')}

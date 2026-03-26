@@ -46,6 +46,16 @@ CREATE TABLE IF NOT EXISTS market_prices (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Jita market prices (min sell / max buy per type)
+CREATE TABLE IF NOT EXISTS jita_prices (
+    type_id INTEGER PRIMARY KEY,
+    sell_min REAL DEFAULT 0,
+    buy_max REAL DEFAULT 0,
+    sell_volume INTEGER DEFAULT 0,
+    buy_volume INTEGER DEFAULT 0,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- System cost indices cache
 CREATE TABLE IF NOT EXISTS cost_indices (
     system_id INTEGER NOT NULL,
