@@ -174,11 +174,11 @@ function Assets({ selectedCharacter, onError }) {
       <table className="assets-table">
         <thead>
           <tr>
-            <th>Item</th>
-            <th className="text-right">Qty</th>
-            <th>Flag</th>
-            <th>State</th>
-            {showCharCol && <th>Character</th>}
+            <th className="col-item">Item</th>
+            <th className="col-qty text-right">Qty</th>
+            <th className="col-flag">Flag</th>
+            <th className="col-state">State</th>
+            {showCharCol && <th className="col-character">Character</th>}
           </tr>
         </thead>
         <tbody>
@@ -223,37 +223,39 @@ function Assets({ selectedCharacter, onError }) {
         </div>
       )}
 
-      <div className="assets-tabs">
-        <button className={`assets-tab ${activeTab === 'personal' ? 'active' : ''}`} onClick={() => { setActiveTab('personal'); setFilter(''); }}>
-          Personal Assets
-        </button>
-        <button className={`assets-tab ${activeTab === 'corp' ? 'active' : ''}`} onClick={() => { setActiveTab('corp'); setFilter(''); }}>
-          Corporation Assets
-        </button>
+      <div className="assets-toolbar">
+        <div className="assets-toolbar-left">
+          <button className={`assets-tab ${activeTab === 'personal' ? 'active' : ''}`} onClick={() => { setActiveTab('personal'); setFilter(''); }}>
+            Personal Assets
+          </button>
+          <button className={`assets-tab ${activeTab === 'corp' ? 'active' : ''}`} onClick={() => { setActiveTab('corp'); setFilter(''); }}>
+            Corporation Assets
+          </button>
+          {activeTab === 'personal' && assetCharacters.length > 1 && (
+            <select className="assets-char-filter" value={characterFilter} onChange={e => setCharacterFilter(e.target.value)}>
+              <option value="all">All Characters</option>
+              {assetCharacters.map(c => <option key={c.character_id} value={c.character_id}>{c.character_name}</option>)}
+            </select>
+          )}
+        </div>
+        <div className="assets-toolbar-right">
+          <input
+            type="text"
+            className="assets-filter-input"
+            placeholder="Filter..."
+            value={filter}
+            onChange={e => setFilter(e.target.value)}
+          />
+          <span className="assets-stats">
+            {totalItems} items &bull; {totalUnits.toLocaleString()} units &bull; {systemCount} systems
+          </span>
+        </div>
       </div>
 
       {activeTab === 'corp' && renderCorpContent()}
 
       {isContentReady && (
         <>
-          <div className="assets-filter-bar">
-            <input
-              type="text"
-              className="assets-filter-input"
-              placeholder="Filter by item, station, system, container, character..."
-              value={filter}
-              onChange={e => setFilter(e.target.value)}
-            />
-            {activeTab === 'personal' && assetCharacters.length > 1 && (
-              <select className="assets-char-filter" value={characterFilter} onChange={e => setCharacterFilter(e.target.value)}>
-                <option value="all">All Characters</option>
-                {assetCharacters.map(c => <option key={c.character_id} value={c.character_id}>{c.character_name}</option>)}
-              </select>
-            )}
-            <span className="assets-stats">
-              {totalItems} items &bull; {totalUnits.toLocaleString()} units &bull; {systemCount} systems
-            </span>
-          </div>
 
           {loading ? (
             <div className="assets-loading"><div className="spinner"></div><span>Loading assets...</span></div>

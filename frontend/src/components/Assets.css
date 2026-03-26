@@ -45,20 +45,34 @@
   flex-shrink: 0;
 }
 
-/* Tab bar */
-.assets-tabs {
+/* ============== TOOLBAR — matches jobs-toolbar ============== */
+
+.assets-toolbar {
   display: flex;
-  gap: 4px;
-  margin-bottom: 20px;
+  justify-content: space-between;
+  align-items: center;
   padding: 12px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 16px;
 }
 
+.assets-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.assets-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Tab buttons — integrated into toolbar, no border line */
 .assets-tab {
-  padding: 8px 20px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
+  padding: 6px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
   color: #a0aec0;
   cursor: pointer;
   font-size: 13px;
@@ -67,7 +81,6 @@
 }
 
 .assets-tab:hover {
-  background: rgba(255, 255, 255, 0.1);
   border-color: rgba(102, 126, 234, 0.4);
   color: #e2e8f0;
 }
@@ -78,23 +91,16 @@
   color: #a3bffa;
 }
 
-/* Filter bar */
-.assets-filter-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
+/* Filter + dropdown — same row as tabs */
 .assets-filter-input {
-  flex: 1;
-  padding: 8px 14px;
+  padding: 6px 12px;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
   color: #e2e8f0;
   font-size: 13px;
   outline: none;
+  width: 260px;
   transition: border-color 0.2s;
 }
 
@@ -199,29 +205,23 @@
   align-items: center;
 }
 
-/* Station content — indented with visual connector */
+/* Station content */
 .asset-station-content {
-  margin-left: 36px;
-  padding-left: 16px;
-  border-left: 1px solid rgba(163, 191, 250, 0.2);
+  padding-left: 36px;
 }
 
 /* ============== TREE: CONTAINER LEVEL ============== */
 
 .asset-container-group {
-  margin-top: 4px;
-  margin-bottom: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .asset-container-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 7px 16px;
-  background: rgba(246, 173, 85, 0.04);
-  border: 1px solid rgba(246, 173, 85, 0.1);
-  border-radius: 6px;
-  margin: 4px 0;
+  padding: 7px 16px 7px 16px;
+  background: rgba(246, 173, 85, 0.03);
   cursor: pointer;
   user-select: none;
   transition: all 0.15s;
@@ -229,7 +229,6 @@
 
 .asset-container-header:hover {
   background: rgba(246, 173, 85, 0.08);
-  border-color: rgba(246, 173, 85, 0.25);
 }
 
 .asset-container-title {
@@ -238,26 +237,29 @@
   color: #f6ad55;
 }
 
-/* Container content — further indented */
 .asset-container-content {
-  margin-left: 16px;
-  padding-left: 12px;
-  border-left: 1px solid rgba(246, 173, 85, 0.15);
-  margin-bottom: 8px;
+  padding-left: 16px;
 }
 
-/* ============== ASSETS TABLE ============== */
+/* ============== ASSETS TABLE — fixed column widths ============== */
 
 .assets-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
-  margin: 4px 0;
+  table-layout: fixed;
 }
+
+/* Fixed column widths for consistent alignment across all tables */
+.assets-table .col-item      { width: auto; }
+.assets-table .col-qty       { width: 90px; }
+.assets-table .col-flag      { width: 110px; }
+.assets-table .col-state     { width: 100px; }
+.assets-table .col-character { width: 130px; }
 
 .assets-table th {
   background: rgba(0, 0, 0, 0.4);
-  padding: 10px 16px;
+  padding: 8px 12px;
   text-align: left;
   font-weight: 600;
   color: #a0aec0;
@@ -266,6 +268,7 @@
   letter-spacing: 0.5px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   white-space: nowrap;
+  overflow: hidden;
 }
 
 .assets-table th.text-right,
@@ -274,10 +277,13 @@
 }
 
 .assets-table td {
-  padding: 8px 16px;
+  padding: 6px 12px;
   color: #e2e8f0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .assets-table tbody tr {
@@ -295,6 +301,8 @@
 .item-name {
   color: #e2e8f0;
   font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .qty-value {
@@ -420,13 +428,19 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-  .assets-filter-bar {
+  .assets-toolbar {
     flex-direction: column;
+    gap: 12px;
     align-items: stretch;
   }
 
-  .assets-stats {
-    text-align: center;
+  .assets-toolbar-left,
+  .assets-toolbar-right {
+    flex-wrap: wrap;
+  }
+
+  .assets-filter-input {
+    width: 100%;
   }
 
   .asset-station-header {
@@ -434,7 +448,6 @@
   }
 
   .asset-station-content {
-    margin-left: 16px;
-    padding-left: 8px;
+    padding-left: 16px;
   }
 }
