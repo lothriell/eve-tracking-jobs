@@ -119,6 +119,8 @@ function IndustryJobs({ selectedCharacter, onError }) {
       if (error.response?.status === 403) {
         setScopeError(true);
         onError?.(error.response.data.message || 'Missing required ESI scopes');
+      } else if (error.response?.status === 502 || error.response?.status === 503 || error.response?.status === 504) {
+        onError?.('EVE servers are in maintenance — data will refresh automatically when they come back online.');
       } else if (error.response?.status !== 404) {
         onError?.('Failed to load industry jobs');
       }

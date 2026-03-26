@@ -35,7 +35,12 @@ function Assets({ selectedCharacter, onError }) {
       }
     } catch (err) {
       console.error('Failed to load personal assets:', err);
-      if (onError) onError('Failed to load assets');
+      const status = err.response?.status;
+      if (status === 502 || status === 503 || status === 504) {
+        if (onError) onError('EVE servers are in maintenance — data will refresh automatically when they come back online.');
+      } else {
+        if (onError) onError('Failed to load assets');
+      }
     } finally {
       setLoading(false);
     }

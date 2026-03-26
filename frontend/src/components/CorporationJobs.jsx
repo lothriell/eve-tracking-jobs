@@ -78,7 +78,12 @@ function CorporationJobs({ selectedCharacter, onError }) {
       if (error.response?.status === 403) {
         setAccessMessage('Missing required ESI scopes. Please re-authorize your characters.');
       } else {
-        onError?.('Failed to load corporation jobs');
+        const status = error.response?.status;
+        if (status === 502 || status === 503 || status === 504) {
+          onError?.('EVE servers are in maintenance — data will refresh automatically when they come back online.');
+        } else {
+          onError?.('Failed to load corporation jobs');
+        }
       }
     } finally {
       setLoading(false);

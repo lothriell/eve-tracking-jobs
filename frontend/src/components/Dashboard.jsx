@@ -40,7 +40,12 @@ function Dashboard({ onError }) {
       }
     } catch (error) {
       console.error('Failed to load dashboard stats:', error);
-      onError?.('Failed to load dashboard statistics');
+      const status = error.response?.status;
+      if (status === 502 || status === 503 || status === 504) {
+        onError?.('EVE servers are in maintenance — data will refresh automatically when they come back online.');
+      } else {
+        onError?.('Failed to load dashboard statistics');
+      }
     } finally {
       setLoading(false);
     }

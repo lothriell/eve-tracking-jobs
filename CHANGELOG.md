@@ -2,6 +2,24 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v4.2.0] - 2026-03-26
+
+### Added: Landing Page Redesign
+- **Cinematic dark space landing page** inspired by eveonline.com and firewatchgame.com
+- **Parallax star field** with mouse-tracking movement effect on stars and nebula layers
+- **Hero section** with gradient title "Command Your Industrial Empire", feature stats, and CTA buttons
+- **Feature cards** (4 columns) showcasing Industry Jobs, Asset Browser, Planetary Industry, Corporation
+- **Login modal** — slides up on "Access Dashboard" click, dark glass-morphism design with blur backdrop
+- **Smooth animations** — fade-in-up on hero, staggered feature cards, modal slide transition
+- **Responsive** — 2-column features on tablet, single column on mobile
+
+### Added: EVE Server Maintenance Detection
+- All views (Dashboard, Industry Jobs, Corp Jobs, Assets, Planets) now detect HTTP 502/503/504 from ESI
+- Shows friendly message: "EVE servers are in maintenance — data will refresh automatically when they come back online"
+- Replaces generic "Failed to load" errors during EVE daily downtime (~11:00 UTC)
+
+---
+
 ## [v4.1.0] - 2026-03-26
 
 ### Added: Manual Structure Naming
