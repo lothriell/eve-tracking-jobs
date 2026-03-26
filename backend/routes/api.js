@@ -42,6 +42,42 @@ router.get('/corporation/roles/:characterId', requireAuth, characterController.g
 // Dashboard endpoint
 router.get('/dashboard/stats', requireAuth, characterController.getDashboardStats);
 
+// Total asset value (quick summary from cached prices)
+router.get('/wealth', requireAuth, async (req, res) => {
+  const db = require('../database/db');
+  const { getValidAccessToken } = require('../services/tokenRefresh');
+  const { getCharacterAssets } = require('../services/esiClient');
+
+  try {
+    const characters = db.getAllCharactersByUserId(req.session.userId);
+    let totalValue = 0;
+    let totalItems = 0;
+
+    for (const character of characters) {
+      try {
+        const accessToken = await getValidAccessToken(character);
+        const assets = await getCharacterAssets(character.character_id, accessToken);
+        const typeIds = [...new Set(assets.map(a => a.type_id).filter(Boolean))];
+        const prices = typeIds.length > 0 ? db.getMarketPrices(typeIds) : {};
+
+        for (const a of assets) {
+          const p = prices[a.type_id];
+          if (p) {
+            totalValue += (p.average_price || p.adjusted_price || 0) * (a.quantity || 1);
+          }
+        }
+        totalItems += assets.length;
+      } catch (e) {
+        // Skip character
+      }
+    }
+
+    res.json({ total_value: totalValue, total_items: totalItems });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to calculate wealth' });
+  }
+});
+
 // Manual structure naming endpoint
 router.post('/structures/name', requireAuth, (req, res) => {
   const db = require('../database/db');

@@ -134,6 +134,42 @@
   font-size: 10px;
 }
 
+/* Wealth indicator */
+.wealth-indicator {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: rgba(246, 201, 14, 0.08);
+  border: 1px solid rgba(246, 201, 14, 0.25);
+  cursor: default;
+  transition: all 0.2s;
+}
+
+.wealth-indicator:hover {
+  background: rgba(246, 201, 14, 0.12);
+  border-color: rgba(246, 201, 14, 0.4);
+}
+
+.wealth-icon {
+  font-size: 13px;
+}
+
+.wealth-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f6c90e;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.wealth-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(246, 201, 14, 0.6);
+  letter-spacing: 0.5px;
+}
+
 .logout-btn {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.2);

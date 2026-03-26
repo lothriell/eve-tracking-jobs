@@ -125,6 +125,11 @@ export const getColonyLayout = (characterId, planetId) => {
   return api.get(`/api/planets/layout?characterId=${characterId}&planetId=${planetId}`);
 };
 
+// Wealth summary
+export const getWealth = () => {
+  return api.get('/api/wealth');
+};
+
 // EVE server status
 export const getEveStatus = () => {
   return api.get('/api/eve/status');

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { logout, getEveStatus } from '../services/api';
+import { logout, getEveStatus, getWealth } from '../services/api';
 import Sidebar from '../components/Sidebar';
 import Dashboard from '../components/Dashboard';
 import IndustryJobs from '../components/IndustryJobs';
@@ -53,6 +53,45 @@ function ServerStatus() {
         <span className="status-dot" />
         <span className="status-label">ESI</span>
       </div>
+    </div>
+  );
+}
+
+function formatISKHeader(value) {
+  if (!value || value === 0) return '0';
+  if (value >= 1e12) return `${(value / 1e12).toFixed(2)}T`;
+  if (value >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
+  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
+  if (value >= 1e3) return `${(value / 1e3).toFixed(0)}K`;
+  return value.toFixed(0);
+}
+
+function WealthIndicator() {
+  const [wealth, setWealth] = useState(null);
+  const timerRef = useRef(null);
+
+  const fetchWealth = useCallback(async () => {
+    try {
+      const resp = await getWealth();
+      setWealth(resp.data);
+    } catch {
+      // Silently fail
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchWealth();
+    timerRef.current = setInterval(fetchWealth, 300000); // Refresh every 5 min
+    return () => clearInterval(timerRef.current);
+  }, [fetchWealth]);
+
+  if (!wealth || wealth.total_value === 0) return null;
+
+  return (
+    <div className="wealth-indicator" title={`Total asset value: ${wealth.total_value.toLocaleString()} ISK across ${wealth.total_items.toLocaleString()} items`}>
+      <span className="wealth-icon">💰</span>
+      <span className="wealth-value">{formatISKHeader(wealth.total_value)}</span>
+      <span className="wealth-label">ISK</span>
     </div>
   );
 }
@@ -144,6 +183,7 @@ function Main({ onLogout }) {
             )}
           </div>
           <div className="header-right">
+            <WealthIndicator />
             <ServerStatus />
             <button onClick={handleLogout} className="logout-btn">
               Logout
