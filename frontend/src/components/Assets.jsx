@@ -365,7 +365,10 @@ function Assets({ selectedCharacter, onError }) {
                                   <div className="asset-container-group" key={contKey}>
                                     <div className="asset-container-header" onClick={() => toggle(cKey)}>
                                       <span className="asset-container-title">{contExpanded ? '▾' : '▸'} {contData.name}</span>
-                                      <span className="badge badge-gray">{contData.items.length} items</span>
+                                      <div className="assets-location-badges">
+                                        <span className="badge badge-gray">{contData.items.length} items</span>
+                                        {(() => { const cv = contData.items.reduce((s, a) => s + (a.total_price || 0), 0); return cv > 0 ? <span className="badge badge-isk">{formatISK(cv)}</span> : null; })()}
+                                      </div>
                                     </div>
                                     {contExpanded && <div className="asset-container-content">{renderItemsTable(contData.items)}</div>}
                                   </div>
@@ -396,11 +399,15 @@ function Assets({ selectedCharacter, onError }) {
                                 {containerEntries.map(([contKey, contData]) => {
                                   const cKey = `cont_${systemName}_${stationName}_${contKey}`;
                                   const contExpanded = expanded[cKey] === true;
+                                  const contValue = contData.items.reduce((s, a) => s + (a.total_price || 0), 0);
                                   return (
                                     <div className="asset-container-group" key={contKey}>
                                       <div className="asset-container-header" onClick={() => toggle(cKey)}>
                                         <span className="asset-container-title">{contExpanded ? '▾' : '▸'} {contData.name}</span>
-                                        <span className="badge badge-gray">{contData.items.length} items</span>
+                                        <div className="assets-location-badges">
+                                          <span className="badge badge-gray">{contData.items.length} items</span>
+                                          {contValue > 0 && <span className="badge badge-isk">{formatISK(contValue)}</span>}
+                                        </div>
                                       </div>
                                       {contExpanded && <div className="asset-container-content">{renderItemsTable(contData.items)}</div>}
                                     </div>
