@@ -222,10 +222,8 @@
   align-items: center;
 }
 
-/* Station content — aligned under station header indent */
+/* Station content */
 .asset-station-content {
-  padding-left: 36px;
-  padding-right: 16px;
 }
 
 /* ============== TREE: CONTAINER LEVEL ============== */
@@ -238,8 +236,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 7px 16px 7px 16px;
+  padding: 7px 16px 7px 36px;
   background: rgba(246, 173, 85, 0.03);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
   cursor: pointer;
   user-select: none;
   transition: all 0.15s;
@@ -256,7 +255,6 @@
 }
 
 .asset-container-content {
-  padding-left: 16px;
 }
 
 /* ============== ASSETS TABLE — fixed column widths ============== */
@@ -285,6 +283,12 @@
   letter-spacing: 0.8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   white-space: nowrap;
+}
+
+/* First column gets extra left indent to align under station/container headers */
+.assets-table th:first-child,
+.assets-table td:first-child {
+  padding-left: 36px;
 }
 
 .assets-table th.text-right,
@@ -463,8 +467,8 @@
     padding-left: 20px;
   }
 
-  .asset-station-content {
+  .assets-table th:first-child,
+  .assets-table td:first-child {
     padding-left: 16px;
-    padding-right: 8px;
   }
 }
