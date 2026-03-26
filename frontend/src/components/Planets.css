@@ -174,7 +174,7 @@
 .colonies-table .col-storage { width: 12%; }
 .colonies-table .col-expiry  { width: 12%; }
 .colonies-table .col-status  { width: auto; }
-.colonies-table .col-action  { width: 70px; }
+.colonies-table .col-action  { width: 6%; text-align: right; }
 
 .colonies-table th {
   background: rgba(0, 0, 0, 0.4);
