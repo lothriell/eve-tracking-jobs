@@ -42,7 +42,12 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
   };
 
   const handleSelectCharacter = (character) => {
-    onSelectCharacter(character);
+    // Toggle: click active character again to deselect (show all)
+    if (selectedCharacter?.character_id === character.character_id) {
+      onShowAllCharacters();
+    } else {
+      onSelectCharacter(character);
+    }
   };
 
   const handleShowAll = () => {
