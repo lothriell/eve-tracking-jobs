@@ -842,16 +842,21 @@ exports.getCharacterAssets = async (req, res) => {
     // ===== PRE-FETCH: Get corporation structures for all characters =====
     // This populates the SQLite cache with structure names before asset resolution
     const fetchedCorps = new Set();
+    const failedCorps = new Set();
     for (const { character } of charTokens) {
       try {
         const tok = await getValidAccessToken(character);
         const corpData = await getCharacterCorporation(character.character_id, tok);
-        if (corpData.corporation_id && !fetchedCorps.has(corpData.corporation_id)) {
-          fetchedCorps.add(corpData.corporation_id);
-          await fetchCorporationStructures(corpData.corporation_id, tok);
+        const corpId = corpData.corporation_id;
+        if (!corpId || fetchedCorps.has(corpId)) continue;
+
+        const structures = await fetchCorporationStructures(corpId, tok);
+        if (structures.length > 0) {
+          fetchedCorps.add(corpId); // Only mark as done on SUCCESS
         }
+        // If failed (returned []), another character with the scope might succeed
       } catch (e) {
-        // Not all characters have corp structure access — skip silently
+        // Skip — try next character
       }
     }
 
