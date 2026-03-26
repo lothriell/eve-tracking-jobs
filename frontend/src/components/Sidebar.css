@@ -264,7 +264,7 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 12px 8px;
+  padding: 8px 6px;
 }
 
 .sidebar-loading {
@@ -289,8 +289,8 @@
 .character-item {
   display: flex;
   align-items: center;
-  padding: 10px 12px;
-  margin-bottom: 4px;
+  padding: 6px 10px;
+  margin-bottom: 2px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
@@ -306,9 +306,9 @@
 }
 
 .character-item.all-characters {
-  margin-bottom: 12px;
+  margin-bottom: 6px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 14px;
+  padding-bottom: 8px;
 }
 
 .character-icon.all-icon {
