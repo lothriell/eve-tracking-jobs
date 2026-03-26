@@ -16,14 +16,14 @@ const PLANET_COLORS = {
   shattered: { bg: 'rgba(136,136,136,0.15)', border: 'rgba(136,136,136,0.4)', dot: '#888888' },
 };
 
-// Launchpad and storage facility capacities
-const STORAGE_PIN_CAPACITIES = {
-  2256: 10000,  // Launchpad
-  2541: 10000,  // Launchpad (alternate)
-  2543: 12000,  // Storage Facility
-  2544: 12000,  // Storage Facility (alternate)
-  2552: 500,    // Command Center (level 0-5 varies, default 500)
-};
+// Storage capacities by pin type NAME (type IDs vary, names are consistent)
+function getStorageCapacity(pin) {
+  const name = (pin.type_name || '').toLowerCase();
+  if (name.includes('launchpad')) return 10000;
+  if (name.includes('storage')) return 12000;
+  if (name.includes('command center')) return 500;
+  return 0; // Not a storage pin
+}
 
 // PI product volumes (m³ per unit)
 const PI_PRODUCT_VOLUMES = {
@@ -102,16 +102,14 @@ function calcStorageFill(pins) {
   let totalCapacity = 0;
 
   for (const pin of pins) {
-    const cap = STORAGE_PIN_CAPACITIES[pin.type_id];
-    if (!cap && !pin.contents?.length) continue;
+    const cap = getStorageCapacity(pin);
+    if (!cap) continue;
 
-    if (cap) {
-      totalCapacity += cap;
-      if (pin.contents?.length) {
-        for (const item of pin.contents) {
-          const vol = PI_PRODUCT_VOLUMES[item.type_id] || DEFAULT_VOLUME;
-          totalUsed += vol * item.amount;
-        }
+    totalCapacity += cap;
+    if (pin.contents?.length) {
+      for (const item of pin.contents) {
+        const vol = PI_PRODUCT_VOLUMES[item.type_id] || DEFAULT_VOLUME;
+        totalUsed += vol * item.amount;
       }
     }
   }
