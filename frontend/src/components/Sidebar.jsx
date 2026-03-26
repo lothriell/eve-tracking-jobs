@@ -99,46 +99,6 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
               <img src="/favicon.svg" alt="EVE Industry Tracker" />
             </div>
           </div>
-          
-          <div className="collapsed-nav">
-            <div 
-              className={`collapsed-nav-item ${currentView === 'dashboard' ? 'active' : ''}`}
-              onClick={() => onViewChange('dashboard')}
-              title="Dashboard"
-            >
-              📊
-            </div>
-            <div 
-              className={`collapsed-nav-item ${currentView === 'jobs' ? 'active' : ''}`}
-              onClick={() => onViewChange('jobs')}
-              title="My Industry Jobs"
-            >
-              🏭
-            </div>
-            <div
-              className={`collapsed-nav-item ${currentView === 'corp-jobs' ? 'active' : ''}`}
-              onClick={() => onViewChange('corp-jobs')}
-              title="Corporation Jobs"
-            >
-              🏢
-            </div>
-            <div
-              className={`collapsed-nav-item ${currentView === 'assets' ? 'active' : ''}`}
-              onClick={() => onViewChange('assets')}
-              title="Assets"
-            >
-              📦
-            </div>
-            <div
-              className={`collapsed-nav-item ${currentView === 'planets' ? 'active' : ''}`}
-              onClick={() => onViewChange('planets')}
-              title="Planets"
-            >
-              🪐
-            </div>
-          </div>
-
-          <div className="collapsed-divider"></div>
 
           <div className="collapsed-characters">
             <div 
@@ -174,6 +134,46 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
               title="Add Character"
             >
               +
+            </div>
+          </div>
+
+          <div className="collapsed-divider"></div>
+
+          <div className="collapsed-nav">
+            <div
+              className={`collapsed-nav-item ${currentView === 'dashboard' ? 'active' : ''}`}
+              onClick={() => onViewChange('dashboard')}
+              title="Dashboard"
+            >
+              📊
+            </div>
+            <div
+              className={`collapsed-nav-item ${currentView === 'jobs' ? 'active' : ''}`}
+              onClick={() => onViewChange('jobs')}
+              title="My Industry Jobs"
+            >
+              🏭
+            </div>
+            <div
+              className={`collapsed-nav-item ${currentView === 'corp-jobs' ? 'active' : ''}`}
+              onClick={() => onViewChange('corp-jobs')}
+              title="Corporation Jobs"
+            >
+              🏢
+            </div>
+            <div
+              className={`collapsed-nav-item ${currentView === 'assets' ? 'active' : ''}`}
+              onClick={() => onViewChange('assets')}
+              title="Assets"
+            >
+              📦
+            </div>
+            <div
+              className={`collapsed-nav-item ${currentView === 'planets' ? 'active' : ''}`}
+              onClick={() => onViewChange('planets')}
+              title="Planets"
+            >
+              🪐
             </div>
           </div>
         </div>
