@@ -1030,14 +1030,31 @@ exports.getCorporationAssets = async (req, res) => {
           stationLocIds.add(a.location_id);
         } else if (a.location_type === 'item') {
           const { rootLocationId, rootLocationType } = resolveRootLocation(a);
-          if (rootLocationType !== 'item' && rootLocationType !== 'other') stationLocIds.add(rootLocationId);
+          if (rootLocationType !== 'item' && rootLocationType !== 'other') {
+            stationLocIds.add(rootLocationId);
+          } else if (rootLocationId >= 1000000000000) {
+            // Player structure — ESI reports as location_type "item"
+            stationLocIds.add(rootLocationId);
+          } else if (rootLocationId >= 60000000 && rootLocationId < 64000000) {
+            stationLocIds.add(rootLocationId);
+          } else if (rootLocationId >= 30000000 && rootLocationId < 33000000) {
+            stationLocIds.add(rootLocationId);
+          }
         }
       });
 
       const locationInfo = {};
       for (const locId of stationLocIds) {
-        try { locationInfo[locId] = await getLocationInfo(locId, accessToken); }
-        catch (e) { locationInfo[locId] = { name: `Location ${locId}`, system_id: null }; }
+        try {
+          const info = await getLocationInfo(locId, accessToken);
+          if (info.unresolved) {
+            locationInfo[locId] = { name: `Player Structure #${String(locId).slice(-6)}`, system_id: null };
+          } else {
+            locationInfo[locId] = info;
+          }
+        } catch (e) {
+          locationInfo[locId] = { name: `Location ${locId}`, system_id: null };
+        }
       }
 
       const systemIds = [...new Set(Object.values(locationInfo).map(i => i.system_id).filter(Boolean))];
@@ -1057,10 +1074,11 @@ exports.getCorporationAssets = async (req, res) => {
         } else {
           rootLocId = a.location_id;
         }
-        const locInfo = locationInfo[rootLocId] || { name: `Location ${rootLocId}`, system_id: null };
+        const locInfo = locationInfo[rootLocId] || { name: `Unknown Location`, system_id: null };
         a.location_name = locInfo.name;
+        a.root_location_id = rootLocId;
         a.system_id = locInfo.system_id;
-        a.system_name = locInfo.system_id ? (systemNames[locInfo.system_id] || `System ${locInfo.system_id}`) : null;
+        a.system_name = locInfo.system_id ? (systemNames[locInfo.system_id] || null) : null;
       });
 
       res.json({ assets, total: assets.length, has_access: true });
