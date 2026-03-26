@@ -125,6 +125,11 @@ export const getColonyLayout = (characterId, planetId) => {
   return api.get(`/api/planets/layout?characterId=${characterId}&planetId=${planetId}`);
 };
 
+// EVE server status
+export const getEveStatus = () => {
+  return api.get('/api/eve/status');
+};
+
 // Structure naming (manual)
 export const nameStructure = (structureId, name, systemId = null) => {
   return api.post('/api/structures/name', { structureId, name, systemId });

@@ -2,6 +2,20 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v4.3.0] - 2026-03-26
+
+### Added: Server Status Indicators
+- **Tranquility (TQ)** and **ESI API** status indicators in the header bar, next to the Logout button
+- Green dot + "TQ" with player count when Tranquility is online
+- Red dot when offline or in maintenance
+- Green/red dot for ESI API availability
+- **Auto-refresh every 60 seconds** — follows EVE best practices for status polling
+- Hover tooltip shows detailed status: player count, maintenance state
+- Backend endpoint `GET /api/eve/status` checks `GET /status/?datasource=tranquility` with 5s timeout
+- Detects maintenance (502/503), complete outage (connection refused), and partial issues
+
+---
+
 ## [v4.2.0] - 2026-03-26
 
 ### Added: Landing Page Redesign

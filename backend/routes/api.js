@@ -5,7 +5,7 @@ const characterController = require('../controllers/characterController');
 // Version endpoint (for deployment verification)
 router.get('/version', (req, res) => {
   res.json({ 
-    version: '4.2.0',
+    version: '4.3.0',
     name: 'EVE Industry Tracker',
     buildDate: '2026-03-25'
   });
@@ -51,6 +51,41 @@ router.post('/structures/name', requireAuth, (req, res) => {
   }
   db.setCachedName(parseInt(structureId), 'structure', name, systemId ? String(systemId) : null);
   res.json({ success: true, structureId, name });
+});
+
+// EVE server + ESI status endpoint
+router.get('/eve/status', async (req, res) => {
+  const axios = require('axios');
+  const result = { tranquility: { online: false }, esi: { online: false } };
+
+  // Check Tranquility server status
+  try {
+    const tqResp = await axios.get('https://esi.evetech.net/latest/status/?datasource=tranquility', { timeout: 5000 });
+    result.tranquility = {
+      online: true,
+      players: tqResp.data.players || 0,
+      server_version: tqResp.data.server_version || null,
+      start_time: tqResp.data.start_time || null,
+    };
+    result.esi = { online: true }; // If we got a TQ response, ESI is working
+  } catch (error) {
+    const status = error.response?.status;
+    if (status === 502 || status === 503) {
+      // ESI is up but TQ is down (maintenance)
+      result.esi = { online: true };
+      result.tranquility = { online: false, maintenance: true };
+    } else if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || !error.response) {
+      // ESI is completely unreachable
+      result.esi = { online: false };
+      result.tranquility = { online: false };
+    } else {
+      // ESI responded with some error but is reachable
+      result.esi = { online: true };
+      result.tranquility = { online: false };
+    }
+  }
+
+  res.json(result);
 });
 
 // Cache status endpoint

@@ -55,6 +55,79 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* Header right section */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Server status indicators */
+.server-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: default;
+  transition: all 0.2s;
+}
+
+.status-indicator.online {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.status-indicator.offline {
+  background: rgba(245, 101, 101, 0.1);
+  border: 1px solid rgba(245, 101, 101, 0.25);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-indicator.online .status-dot {
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+.status-indicator.offline .status-dot {
+  background: #f56565;
+  box-shadow: 0 0 6px rgba(245, 101, 101, 0.6);
+}
+
+.status-label {
+  color: #718096;
+}
+
+.status-indicator.online .status-label {
+  color: #6ee7b7;
+}
+
+.status-indicator.offline .status-label {
+  color: #fc8181;
+}
+
+.status-players {
+  color: #4a5568;
+  font-weight: 500;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 10px;
+}
+
 .logout-btn {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.2);

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { logout } from '../services/api';
+import { logout, getEveStatus } from '../services/api';
 import Sidebar from '../components/Sidebar';
 import Dashboard from '../components/Dashboard';
 import IndustryJobs from '../components/IndustryJobs';
@@ -8,6 +8,54 @@ import CorporationJobs from '../components/CorporationJobs';
 import Assets from '../components/Assets';
 import Planets from '../components/Planets';
 import './Main.css';
+
+function ServerStatus() {
+  const [status, setStatus] = useState(null);
+  const timerRef = useRef(null);
+
+  const fetchStatus = useCallback(async () => {
+    try {
+      const resp = await getEveStatus();
+      setStatus(resp.data);
+    } catch {
+      setStatus({ tranquility: { online: false }, esi: { online: false } });
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStatus();
+    // Refresh every 60 seconds
+    timerRef.current = setInterval(fetchStatus, 60000);
+    return () => clearInterval(timerRef.current);
+  }, [fetchStatus]);
+
+  if (!status) return null;
+
+  const tq = status.tranquility;
+  const esi = status.esi;
+
+  return (
+    <div className="server-status">
+      <div className={`status-indicator ${tq.online ? 'online' : 'offline'}`} title={
+        tq.online
+          ? `Tranquility: ${tq.players?.toLocaleString() || 0} players online`
+          : tq.maintenance ? 'Tranquility: Maintenance' : 'Tranquility: Offline'
+      }>
+        <span className="status-dot" />
+        <span className="status-label">TQ</span>
+        {tq.online && tq.players > 0 && (
+          <span className="status-players">{tq.players.toLocaleString()}</span>
+        )}
+      </div>
+      <div className={`status-indicator ${esi.online ? 'online' : 'offline'}`} title={
+        esi.online ? 'ESI API: Online' : 'ESI API: Offline'
+      }>
+        <span className="status-dot" />
+        <span className="status-label">ESI</span>
+      </div>
+    </div>
+  );
+}
 
 function Main({ onLogout }) {
   const navigate = useNavigate();
@@ -75,7 +123,7 @@ function Main({ onLogout }) {
 
   return (
     <div className="main-layout">
-      <Sidebar 
+      <Sidebar
         selectedCharacter={selectedCharacter}
         onSelectCharacter={handleSelectCharacter}
         onShowAllCharacters={handleShowAllCharacters}
@@ -84,7 +132,7 @@ function Main({ onLogout }) {
         collapsed={sidebarCollapsed}
         onCollapsedChange={setSidebarCollapsed}
       />
-      
+
       <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <div className="main-header">
           <div className="header-title">
@@ -95,9 +143,12 @@ function Main({ onLogout }) {
               </span>
             )}
           </div>
-          <button onClick={handleLogout} className="logout-btn">
-            Logout
-          </button>
+          <div className="header-right">
+            <ServerStatus />
+            <button onClick={handleLogout} className="logout-btn">
+              Logout
+            </button>
+          </div>
         </div>
 
         {error && (
