@@ -162,7 +162,19 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  table-layout: fixed;
 }
+
+/* Fixed column widths for consistent alignment across all character tables */
+.colonies-table .col-planet  { width: 140px; }
+.colonies-table .col-type    { width: 90px; }
+.colonies-table .col-level   { width: 100px; }
+.colonies-table .col-pins    { width: 60px; }
+.colonies-table .col-rate    { width: 80px; }
+.colonies-table .col-storage { width: 100px; }
+.colonies-table .col-expiry  { width: 100px; }
+.colonies-table .col-status  { width: auto; }
+.colonies-table .col-action  { width: 60px; }
 
 .colonies-table th {
   background: rgba(0, 0, 0, 0.4);

@@ -490,15 +490,15 @@ function CharacterColonies({ characterData, alertMode }) {
         <table className="colonies-table">
           <thead>
             <tr>
-              <th>Planet</th>
-              <th>Type</th>
-              <th className="text-right">Level</th>
-              <th className="text-right">Pins</th>
-              <th className="text-right">Rate</th>
-              <th>Storage</th>
-              <th>Expiry</th>
-              <th>Status</th>
-              <th></th>
+              <th className="col-planet">Planet</th>
+              <th className="col-type">Type</th>
+              <th className="col-level text-right">Level</th>
+              <th className="col-pins text-right">Pins</th>
+              <th className="col-rate text-right">Rate</th>
+              <th className="col-storage">Storage</th>
+              <th className="col-expiry">Expiry</th>
+              <th className="col-status">Status</th>
+              <th className="col-action"></th>
             </tr>
           </thead>
           <tbody>
