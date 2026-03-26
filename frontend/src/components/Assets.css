@@ -317,7 +317,7 @@
 
 /* Column widths — generous spacing */
 .assets-table .col-item      { width: auto; }
-.assets-table .col-qty       { width: 130px; }
+.assets-table .col-qty       { width: 150px; }
 .assets-table .col-flag      { width: 140px; }
 .assets-table .col-state     { width: 120px; }
 .assets-table .col-isk       { width: 100px; }
@@ -527,7 +527,7 @@
 }
 
 .value-table .col-val-item    { width: auto; }
-.value-table .col-val-qty     { width: 130px; }
+.value-table .col-val-qty     { width: 150px; }
 .value-table .col-val-value   { width: 100px; }
 .value-table .col-val-location { width: 35%; }
 .value-table .col-val-char    { width: 120px; }
