@@ -184,7 +184,7 @@ function Assets({ selectedCharacter, onError }) {
   const { tree, structureIds, totalItems, totalUnits } = buildTree(currentAssets);
   const systemCount = Object.keys(tree).length;
   const allCollapsed = systemCount > 0 && Object.keys(tree).every(sys => expanded[`sys_${sys}`] === false);
-  const showCharCol = !selectedCharacter && characterFilter === 'all';
+  const showCharCol = !selectedCharacter;
 
   const renderItemsTable = (items) => {
     const sorted = [...items].sort((a, b) => (b.quantity || 1) - (a.quantity || 1));

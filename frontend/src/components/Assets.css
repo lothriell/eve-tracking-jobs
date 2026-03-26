@@ -222,9 +222,10 @@
   align-items: center;
 }
 
-/* Station content */
+/* Station content — aligned under station header indent */
 .asset-station-content {
-  padding-left: 0;
+  padding-left: 36px;
+  padding-right: 16px;
 }
 
 /* ============== TREE: CONTAINER LEVEL ============== */
@@ -463,6 +464,7 @@
   }
 
   .asset-station-content {
-    padding-left: 0;
+    padding-left: 16px;
+    padding-right: 8px;
   }
 }
