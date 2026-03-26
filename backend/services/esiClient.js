@@ -698,6 +698,22 @@ async function fetchCorporationStructures(corporationId, accessToken) {
   }
 }
 
+// Get planet name (public, no auth)
+async function getPlanetName(planetId) {
+  const cached = db.getCachedName(planetId, 'planet');
+  if (cached) return cached.name;
+
+  try {
+    const url = `${ESI_BASE_URL}/universe/planets/${planetId}/`;
+    const data = await makeESIRequest(url);
+    const name = data.name || `Planet ${planetId}`;
+    db.setCachedName(planetId, 'planet', name, String(data.type_id || ''));
+    return name;
+  } catch (error) {
+    return `Planet ${planetId}`;
+  }
+}
+
 // Get character assets (paginated)
 async function getCharacterAssets(characterId, accessToken) {
   const allAssets = [];
@@ -779,6 +795,7 @@ module.exports = {
   getCharacterNames,
   getActivityInfo,
   transformCorporationJobs,
+  getPlanetName,
   getCharacterAssets,
   getCorporationAssets,
   getAssetNames,

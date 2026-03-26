@@ -30,6 +30,7 @@ const {
   getAssetNames,
   fetchCorporationStructures,
   getCharacterColonies,
+  getPlanetName,
   getColonyLayout,
   getSystemNames
 } = require('../services/esiClient');
@@ -1212,16 +1213,19 @@ exports.getCharacterPlanets = async (req, res) => {
         const accessToken = await getValidAccessToken(character);
         const colonies = await getCharacterColonies(character.character_id, accessToken);
 
-        // Resolve system names
+        // Resolve system names and planet names
         const colonyList = colonies || [];
         const systemIds = colonyList.map(c => c.solar_system_id).filter(Boolean);
         const systemNames = systemIds.length > 0 ? await getSystemNames(systemIds) : {};
 
-        colonyList.forEach(colony => {
+        for (const colony of colonyList) {
           if (colony.solar_system_id) {
             colony.system_name = systemNames[colony.solar_system_id] || `System ${colony.solar_system_id}`;
           }
-        });
+          if (colony.planet_id) {
+            colony.planet_name = await getPlanetName(colony.planet_id);
+          }
+        }
 
         result.push({
           character_id: character.character_id,

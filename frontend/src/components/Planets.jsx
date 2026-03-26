@@ -705,7 +705,7 @@ function CharacterColonies({ characterData, alertMode }) {
                         ) : (
                           <span className="planet-dot" style={{ backgroundColor: style.dot, width: 24, height: 24, borderRadius: '50%', display: 'inline-block', flexShrink: 0 }} />
                         )}
-                        <span>{colony.system_name || `System ${colony.solar_system_id}` || '—'}</span>
+                        <span>{colony.planet_name || colony.system_name || `Planet ${colony.planet_id}`}</span>
                       </div>
                     </td>
                     <td>
@@ -850,7 +850,7 @@ function ColonyCard({ colony, characterName, characterId }) {
 
       {/* Info */}
       <div className="colony-card-info">
-        <div className="colony-card-system">{colony.system_name || `System ${colony.solar_system_id}`}</div>
+        <div className="colony-card-system">{colony.planet_name || colony.system_name || `Planet ${colony.planet_id}`}</div>
         <div className="colony-card-type">
           <span className="colony-card-type-badge" style={{ color: style.dot }}>
             {(colony.planet_type || 'unknown').charAt(0).toUpperCase() + (colony.planet_type || '').slice(1)}
