@@ -318,6 +318,25 @@
   border: 1px solid rgba(102, 126, 234, 0.4);
 }
 
+/* Drag and drop */
+.character-item[draggable] {
+  cursor: grab;
+}
+
+.character-item[draggable]:active {
+  cursor: grabbing;
+}
+
+.character-item.drag-over {
+  border-top: 2px solid #667eea;
+  margin-top: -2px;
+}
+
+.collapsed-char-item.drag-over {
+  border-top: 2px solid #667eea;
+  margin-top: -2px;
+}
+
 .character-item.all-characters {
   margin-bottom: 4px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);

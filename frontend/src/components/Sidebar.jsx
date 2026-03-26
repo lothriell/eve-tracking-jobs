@@ -2,17 +2,39 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { getAllCharacters, initiateEveAuth, deleteCharacter } from '../services/api';
 import './Sidebar.css';
 
+// Apply saved character order from localStorage
+function applySavedOrder(chars) {
+  const saved = localStorage.getItem('characterOrder');
+  if (!saved) return chars;
+  try {
+    const order = JSON.parse(saved);
+    const ordered = [];
+    const remaining = [...chars];
+    for (const id of order) {
+      const idx = remaining.findIndex(c => c.character_id === id);
+      if (idx >= 0) {
+        ordered.push(remaining.splice(idx, 1)[0]);
+      }
+    }
+    return [...ordered, ...remaining]; // Append any new characters at the end
+  } catch {
+    return chars;
+  }
+}
+
 function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, currentView, onViewChange, onCharactersChange, collapsed, onCollapsedChange }) {
   const [characters, setCharacters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [linking, setLinking] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [dragIdx, setDragIdx] = useState(null);
+  const [dragOverIdx, setDragOverIdx] = useState(null);
 
   const loadCharacters = useCallback(async () => {
     try {
       const response = await getAllCharacters();
-      const chars = response.data.characters || [];
+      const chars = applySavedOrder(response.data.characters || []);
       setCharacters(chars);
       if (onCharactersChange) {
         onCharactersChange(chars);
@@ -27,6 +49,40 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
   useEffect(() => {
     loadCharacters();
   }, [loadCharacters]);
+
+  const handleDragStart = (e, idx) => {
+    setDragIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', idx);
+  };
+
+  const handleDragOver = (e, idx) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIdx(idx);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIdx(null);
+  };
+
+  const handleDrop = (e, dropIdx) => {
+    e.preventDefault();
+    setDragOverIdx(null);
+    if (dragIdx === null || dragIdx === dropIdx) { setDragIdx(null); return; }
+    const updated = [...characters];
+    const [moved] = updated.splice(dragIdx, 1);
+    updated.splice(dropIdx, 0, moved);
+    setCharacters(updated);
+    setDragIdx(null);
+    // Persist order
+    localStorage.setItem('characterOrder', JSON.stringify(updated.map(c => c.character_id)));
+  };
+
+  const handleDragEnd = () => {
+    setDragIdx(null);
+    setDragOverIdx(null);
+  };
 
   const handleAddCharacter = async () => {
     try {
@@ -113,12 +169,18 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
             >
               <div className="collapsed-all-icon">∀</div>
             </div>
-            {characters.map((char) => (
-              <div 
+            {characters.map((char, idx) => (
+              <div
                 key={char.character_id}
-                className={`collapsed-char-item ${selectedCharacter?.character_id === char.character_id ? 'active' : ''}`}
+                className={`collapsed-char-item ${selectedCharacter?.character_id === char.character_id ? 'active' : ''} ${dragOverIdx === idx ? 'drag-over' : ''}`}
                 onClick={() => handleSelectCharacter(char)}
                 title={char.name}
+                draggable
+                onDragStart={e => handleDragStart(e, idx)}
+                onDragOver={e => handleDragOver(e, idx)}
+                onDragLeave={handleDragLeave}
+                onDrop={e => handleDrop(e, idx)}
+                onDragEnd={handleDragEnd}
               >
                 <div className="portrait-wrapper">
                   <img
@@ -210,11 +272,17 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
                   <span className="character-count">{characters.length}</span>
                 </div>
 
-                {characters.map((char) => (
-                  <div 
+                {characters.map((char, idx) => (
+                  <div
                     key={char.character_id}
-                    className={`character-item ${selectedCharacter?.character_id === char.character_id ? 'active' : ''}`}
+                    className={`character-item ${selectedCharacter?.character_id === char.character_id ? 'active' : ''} ${dragOverIdx === idx ? 'drag-over' : ''}`}
                     onClick={() => handleSelectCharacter(char)}
+                    draggable
+                    onDragStart={e => handleDragStart(e, idx)}
+                    onDragOver={e => handleDragOver(e, idx)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={e => handleDrop(e, idx)}
+                    onDragEnd={handleDragEnd}
                   >
                     <div className="portrait-wrapper">
                       <img
