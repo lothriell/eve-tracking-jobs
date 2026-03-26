@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { getCharacterAssets, getCorporationAssets, getAllCharacters } from '../services/api';
+import { getCharacterAssets, getCorporationAssets, getAllCharacters, nameStructure } from '../services/api';
 import './Assets.css';
 
 function Assets({ selectedCharacter, onError }) {
@@ -14,6 +14,8 @@ function Assets({ selectedCharacter, onError }) {
   const [scopeError, setScopeError] = useState(false);
   const [corpAccessError, setCorpAccessError] = useState(null);
   const [expanded, setExpanded] = useState({});
+  const [renaming, setRenaming] = useState(null); // { key, structureId, currentName }
+  const [renameValue, setRenameValue] = useState('');
 
   const loadPersonalAssets = useCallback(async () => {
     setLoading(true);
@@ -84,6 +86,24 @@ function Assets({ selectedCharacter, onError }) {
     setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const startRename = (e, key, structureId, currentName) => {
+    e.stopPropagation();
+    setRenaming({ key, structureId });
+    setRenameValue(currentName.startsWith('Player Structure') ? '' : currentName);
+  };
+
+  const submitRename = async (e) => {
+    e.preventDefault();
+    if (!renaming || !renameValue.trim()) return;
+    try {
+      await nameStructure(renaming.structureId, renameValue.trim());
+      setRenaming(null);
+      loadPersonalAssets(); // Reload to show new name
+    } catch (err) {
+      console.error('Failed to rename structure:', err);
+    }
+  };
+
   // Build hierarchical tree: System → Station → Container → Items
   const buildTree = (assets) => {
     let filtered = assets;
@@ -106,8 +126,8 @@ function Assets({ selectedCharacter, onError }) {
     }
 
     // Group: system → station → container → items
-    // If system_name is missing, use location_name as the system-level label
     const tree = {};
+    const structureIds = {}; // map system/station label → structure location_id
     filtered.forEach(a => {
       const sys = a.system_name || a.location_name || 'Unknown Location';
       const station = a.system_name ? (a.location_name || 'Unknown Location') : null;
@@ -115,7 +135,11 @@ function Assets({ selectedCharacter, onError }) {
 
       if (!tree[sys]) tree[sys] = {};
 
-      // If station is null (no system resolved), items go directly under system level
+      // Track structure IDs for rename feature
+      if (a.location_name && a.location_name.startsWith('Player Structure') && a.root_location_id) {
+        structureIds[a.location_name] = a.root_location_id;
+      }
+
       const stationKey = station || '__direct__';
       if (!tree[sys][stationKey]) tree[sys][stationKey] = { direct: [], containers: {} };
 
@@ -130,7 +154,7 @@ function Assets({ selectedCharacter, onError }) {
       }
     });
 
-    return { tree, totalItems: filtered.length, totalUnits: filtered.reduce((s, a) => s + (a.quantity || 1), 0) };
+    return { tree, structureIds, totalItems: filtered.length, totalUnits: filtered.reduce((s, a) => s + (a.quantity || 1), 0) };
   };
 
   const assetCharacters = [...new Map(
@@ -140,7 +164,7 @@ function Assets({ selectedCharacter, onError }) {
   ).values()];
 
   const currentAssets = activeTab === 'personal' ? personalAssets : corpAssets;
-  const { tree, totalItems, totalUnits } = buildTree(currentAssets);
+  const { tree, structureIds, totalItems, totalUnits } = buildTree(currentAssets);
   const systemCount = Object.keys(tree).length;
   const showCharCol = !selectedCharacter && characterFilter === 'all';
 
@@ -248,9 +272,31 @@ function Assets({ selectedCharacter, onError }) {
                   <div className="asset-system-group" key={systemName}>
                     <div className="asset-system-header" onClick={() => toggle(sysKey)}>
                       <span className="asset-system-title">
-                        {sysExpanded ? '▾' : '▸'} {systemName}
+                        {sysExpanded ? '▾' : '▸'} {renaming?.key === `sys_${systemName}` ? (
+                          <form onSubmit={submitRename} style={{ display: 'inline' }} onClick={e => e.stopPropagation()}>
+                            <input
+                              className="rename-input"
+                              value={renameValue}
+                              onChange={e => setRenameValue(e.target.value)}
+                              placeholder="Enter structure name..."
+                              autoFocus
+                              onBlur={() => setRenaming(null)}
+                            />
+                          </form>
+                        ) : systemName}
                       </span>
-                      <span className="badge badge-blue">{sysItemCount} items</span>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        {systemName.startsWith('Player Structure') && structureIds[systemName] && !renaming && (
+                          <button
+                            className="rename-btn"
+                            onClick={e => startRename(e, `sys_${systemName}`, structureIds[systemName], systemName)}
+                            title="Click to name this structure"
+                          >
+                            Rename
+                          </button>
+                        )}
+                        <span className="badge badge-blue">{sysItemCount} items</span>
+                      </div>
                     </div>
 
                     {sysExpanded && Object.entries(stations)

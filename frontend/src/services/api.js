@@ -125,6 +125,11 @@ export const getColonyLayout = (characterId, planetId) => {
   return api.get(`/api/planets/layout?characterId=${characterId}&planetId=${planetId}`);
 };
 
+// Structure naming (manual)
+export const nameStructure = (structureId, name, systemId = null) => {
+  return api.post('/api/structures/name', { structureId, name, systemId });
+};
+
 export const getCustomsOffices = (characterId) => {
   return api.get(`/api/planets/customs?characterId=${characterId}`);
 };

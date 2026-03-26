@@ -5,7 +5,7 @@ const characterController = require('../controllers/characterController');
 // Version endpoint (for deployment verification)
 router.get('/version', (req, res) => {
   res.json({ 
-    version: '4.0.0',
+    version: '4.1.0',
     name: 'EVE Industry Tracker',
     buildDate: '2026-03-25'
   });
@@ -41,6 +41,17 @@ router.get('/corporation/roles/:characterId', requireAuth, characterController.g
 
 // Dashboard endpoint
 router.get('/dashboard/stats', requireAuth, characterController.getDashboardStats);
+
+// Manual structure naming endpoint
+router.post('/structures/name', requireAuth, (req, res) => {
+  const db = require('../database/db');
+  const { structureId, name, systemId } = req.body;
+  if (!structureId || !name) {
+    return res.status(400).json({ error: 'structureId and name are required' });
+  }
+  db.setCachedName(parseInt(structureId), 'structure', name, systemId ? String(systemId) : null);
+  res.json({ success: true, structureId, name });
+});
 
 // Cache status endpoint
 router.get('/cache/status', requireAuth, (req, res) => {

@@ -18,9 +18,6 @@ const REQUIRED_SCOPES = [
   'esi-assets.read_assets.v1',               // Required for personal asset inventory
   'esi-assets.read_corporation_assets.v1',   // Required for corporation asset inventory
   'esi-planets.manage_planets.v1',           // Required for planetary industry (colonies, layouts)
-  'esi-structures.read_character.v1',        // Read player structure names (character-level access)
-  'esi-structures.read_corporation.v1',     // Read player structure names (corporation-level access)
-  'esi-corporations.read_structures.v1'     // Read corporation-owned structures
 ];
 
 // PKCE helper functions
@@ -176,7 +173,7 @@ exports.handleEveCallback = async (req, res) => {
 
     const { CharacterID, CharacterName, Scopes } = verifyResponse.data;
 
-    console.log(`[AUTH] Character ${CharacterName} (${CharacterID}) authorized with scopes: ${Scopes}`);
+    console.log(`[AUTH] ${CharacterName} authorized (${CharacterID})`);
 
     // Calculate token expiry
     const tokenExpiry = new Date(Date.now() + expires_in * 1000).toISOString();

@@ -2,6 +2,29 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v4.1.0] - 2026-03-26
+
+### Added: Manual Structure Naming
+- **Rename button** on unresolved player structures in Assets view — click "Rename" to type the structure name
+- Names saved to SQLite `name_cache` — persists across restarts and shared across all characters
+- Once named, the structure appears with its custom name on all future loads
+- Backend endpoint: `POST /api/structures/name` accepts `structureId` and `name`
+
+### Confirmed: Structure Name Resolution — CCP Limitation
+After extensive testing with all available ESI scopes, confirmed that player structure names **cannot be resolved by new web applications**:
+- `GET /universe/structures/{id}/` requires `esi-universe.read_structures.v1` — **removed from SSO**, always returns 401
+- `GET /corporations/{id}/structures/` requires `esi-corporations.read_structures.v1` + **Director role** — too restrictive for regular users
+- New scopes `esi-structures.read_character.v1` and `esi-structures.read_corporation.v1` do NOT work with either endpoint
+- RIFT desktop app works because its scope was **grandfathered** before CCP removed it
+
+### Cleaned Up
+- Removed structure scopes from REQUIRED_SCOPES (they don't help)
+- Removed corp structures pre-fetch (requires Director, not usable for regular users)
+- Removed excessive debug logging
+- Stopped wasteful ESI calls to broken endpoints
+
+---
+
 ## [v4.0.0] - 2026-03-26
 
 ### Major: EVE SDE (Static Data Export) Integration

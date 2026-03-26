@@ -216,21 +216,10 @@ async function getLocationInfo(locationId, accessToken) {
       }
 
       case 'structure': {
-        // Try /universe/structures/{id}/ — may work with new scopes
-        try {
-          const url = `${ESI_BASE_URL}/universe/structures/${locationId}/`;
-          const data = await makeESIRequest(url, accessToken);
-          console.log(`[STRUCTURE] Resolved ${locationId} = "${data.name}"`);
-          info = {
-            name: data.name || `Structure ${locationId}`,
-            system_id: data.solar_system_id || null,
-            location_class: locType
-          };
-          db.setCachedName(locationId, 'structure', info.name, String(info.system_id || ''));
-        } catch (structError) {
-          return { name: null, system_id: null, location_class: locType, unresolved: true };
-        }
-        break;
+        // /universe/structures/{id}/ requires esi-universe.read_structures.v1
+        // which CCP removed from SSO — endpoint is broken for all new apps.
+        // User can manually name structures via the UI.
+        return { name: null, system_id: null, location_class: locType, unresolved: true };
       }
 
       default:

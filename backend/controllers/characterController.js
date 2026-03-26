@@ -839,28 +839,6 @@ exports.getCharacterAssets = async (req, res) => {
       }
     }
 
-    // ===== PRE-FETCH: Get corporation structures for all characters =====
-    // This populates the SQLite cache with structure names before asset resolution
-    const fetchedCorps = new Set();
-    const failedCorps = new Set();
-    for (const { character } of charTokens) {
-      try {
-        const tok = await getValidAccessToken(character);
-        const corpData = await getCharacterCorporation(character.character_id, tok);
-        const corpId = corpData.corporation_id;
-        if (!corpId || fetchedCorps.has(corpId)) continue;
-
-        console.log(`[STRUCTURE] Trying ${character.character_name} (${character.character_id}) for corp ${corpId}`);
-        const structures = await fetchCorporationStructures(corpId, tok);
-        if (structures.length > 0) {
-          fetchedCorps.add(corpId);
-        }
-        // If failed (returned []), another character with the scope might succeed
-      } catch (e) {
-        // Skip — try next character
-      }
-    }
-
     // ===== PASS 2: Process each character's assets =====
     // Shared location cache across all characters
     const resolvedLocations = {};
@@ -966,6 +944,7 @@ exports.getCharacterAssets = async (req, res) => {
 
         const locInfo = resolvedLocations[rootLocId] || { name: `Unknown Location`, system_id: null };
         a.location_name = locInfo.name;
+        a.root_location_id = rootLocId; // Full structure/station ID for rename feature
         a.system_id = locInfo.system_id;
         a.system_name = locInfo.system_id ? (systemNames[locInfo.system_id] || null) : null;
 
