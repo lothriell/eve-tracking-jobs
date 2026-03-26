@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v3.9.0 | **Build Date:** 2026-03-26
+**Current Version:** v4.0.0 | **Build Date:** 2026-03-26
 
 A comprehensive web application for tracking EVE Online industry jobs across multiple characters and corporations.
 
@@ -9,6 +9,13 @@ EVE Industry Tracker provides real-time tracking of your industry jobs, slot uti
 ---
 
 ## 📋 Recent Updates
+
+### v4.0.0 (2026-03-26) - EVE SDE Integration
+- ✅ Full EVE universe data imported on first startup (~95K entries)
+- ✅ All type names, station names, system names available instantly from SQLite
+- ✅ Zero ESI calls needed for name resolution after first boot
+- ✅ Solar systems include security status, region, and constellation data
+- ✅ Asset pages load in <1s instead of 5-10s
 
 ### v3.9.0 (2026-03-26) - Background Cache + Market Prices
 - ✅ Background service refreshes market prices and cost indices every 6 hours
@@ -78,6 +85,7 @@ EVE Industry Tracker provides real-time tracking of your industry jobs, slot uti
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| v4.0.0  | 2026-03-26 | EVE SDE integration: ~95K types/stations/systems cached locally |
 | v3.9.0  | 2026-03-26 | Background cache refresh: market prices, cost indices, names |
 | v3.7.0  | 2026-03-25 | Hierarchical asset tree: System → Station → Container → Items |
 | v3.6.0  | 2026-03-25 | Migrated frontend to Vite 6, backend to better-sqlite3 — clean builds |

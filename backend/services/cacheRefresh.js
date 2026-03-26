@@ -10,6 +10,7 @@
 
 const axios = require('axios');
 const db = require('../database/db');
+const { importSDE } = require('./sdeImport');
 
 const ESI_BASE = 'https://esi.evetech.net/latest';
 const DS = 'tranquility';
@@ -70,86 +71,6 @@ async function refreshCostIndices() {
   }
 }
 
-// ===== CONSTELLATION & REGION NAMES =====
-async function refreshConstellationNames() {
-  try {
-    // Check if we already have constellations cached
-    const existing = db.getCachedNames([20000001], 'constellation');
-    if (existing[20000001]) {
-      console.log('[CACHE] Constellation names already cached, skipping');
-      return 0;
-    }
-
-    console.log('[CACHE] Fetching constellation list...');
-    const listResp = await axios.get(`${ESI_BASE}/universe/constellations/`, {
-      params: { datasource: DS },
-      timeout: 15000
-    });
-    const constellationIds = listResp.data || [];
-
-    // Resolve names via POST /universe/names/ (batch 1000)
-    const entries = [];
-    for (let i = 0; i < constellationIds.length; i += 1000) {
-      const batch = constellationIds.slice(i, i + 1000);
-      try {
-        const resp = await axios.post(`${ESI_BASE}/universe/names/`, batch, {
-          headers: { 'Content-Type': 'application/json' },
-          params: { datasource: DS },
-          timeout: 15000
-        });
-        for (const item of resp.data) {
-          entries.push({ id: item.id, category: 'constellation', name: item.name });
-        }
-      } catch (e) { /* batch failed, continue */ }
-    }
-
-    if (entries.length > 0) {
-      db.setCachedNames(entries);
-      console.log(`[CACHE] Constellation names: ${entries.length} cached`);
-    }
-    return entries.length;
-  } catch (error) {
-    console.error('[CACHE] Failed to refresh constellation names:', error.message);
-    return 0;
-  }
-}
-
-async function refreshRegionNames() {
-  try {
-    const existing = db.getCachedNames([10000001], 'region');
-    if (existing[10000001]) {
-      console.log('[CACHE] Region names already cached, skipping');
-      return 0;
-    }
-
-    console.log('[CACHE] Fetching region list...');
-    const listResp = await axios.get(`${ESI_BASE}/universe/regions/`, {
-      params: { datasource: DS },
-      timeout: 15000
-    });
-    const regionIds = listResp.data || [];
-
-    const entries = [];
-    const resp = await axios.post(`${ESI_BASE}/universe/names/`, regionIds, {
-      headers: { 'Content-Type': 'application/json' },
-      params: { datasource: DS },
-      timeout: 15000
-    });
-    for (const item of resp.data) {
-      entries.push({ id: item.id, category: 'region', name: item.name });
-    }
-
-    if (entries.length > 0) {
-      db.setCachedNames(entries);
-      console.log(`[CACHE] Region names: ${entries.length} cached`);
-    }
-    return entries.length;
-  } catch (error) {
-    console.error('[CACHE] Failed to refresh region names:', error.message);
-    return 0;
-  }
-}
-
 // ===== FULL REFRESH =====
 async function runFullRefresh() {
   if (isRefreshing) {
@@ -162,9 +83,8 @@ async function runFullRefresh() {
   console.log('[CACHE] === Starting cache refresh ===');
 
   try {
-    // Static data (only fetched once)
-    await refreshRegionNames();
-    await refreshConstellationNames();
+    // SDE import — downloads full EVE universe data on first run
+    await importSDE();
 
     // Semi-static data (refreshed every cycle)
     await refreshMarketPrices();

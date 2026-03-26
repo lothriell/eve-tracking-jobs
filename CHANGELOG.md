@@ -2,6 +2,43 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v4.0.0] - 2026-03-26
+
+### Major: EVE SDE (Static Data Export) Integration
+
+The entire EVE universe database is now imported on first startup from Fuzzwork SDE dumps. This eliminates thousands of ESI API calls for name resolution and provides instant access to all item, station, and system names.
+
+#### SDE Data Imported
+| Data | Source | Count | Purpose |
+|------|--------|-------|---------|
+| Item types | `invTypes.csv` | ~80,000 | Item/ship/module names — never need ESI for type names again |
+| NPC stations | `staStations.csv` | ~5,000 | Station names + system IDs — instant station resolution |
+| Solar systems | `mapSolarSystems.csv` | ~8,000 | System names + security + region/constellation IDs |
+| Regions | `mapRegions.csv` | ~100 | Region names |
+| Constellations | `mapConstellations.csv` | ~1,100 | Constellation names |
+
+#### How It Works
+- On first startup (or after database reset), the SDE import service downloads CSV files from `fuzzwork.co.uk/dump/latest/`
+- Data is parsed and batch-imported into the `name_cache` SQLite table using transactions (5000 rows per batch)
+- Subsequent startups skip import if >50,000 types already cached
+- Solar systems include region/constellation IDs and security status as extra_data (JSON)
+- Total import takes ~15-30 seconds on first run
+
+#### Performance Impact
+| Operation | Before (ESI calls) | After (SQLite) |
+|-----------|-------------------|----------------|
+| Resolve 500 type names | 1-2 ESI POST calls | 0 calls (instant) |
+| Resolve station name | 1 ESI GET per station | 0 calls (instant) |
+| Resolve system name | 1 ESI GET per system | 0 calls (instant) |
+| First page load (assets) | 50+ ESI calls, 5-10s | 0 calls, <1s |
+| Container restarts | All names lost | All names preserved |
+
+#### Replaced
+- Old constellation/region name fetching via ESI removed (SDE handles it)
+- On-demand ESI type lookups now only needed for brand-new items not yet in SDE
+
+---
+
 ## [v3.9.0] - 2026-03-26
 
 ### Added: Background Cache Refresh Service
