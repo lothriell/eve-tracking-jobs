@@ -250,25 +250,23 @@
   table-layout: fixed;
 }
 
-/* Fixed column widths for consistent alignment across all tables */
+/* Column widths — generous spacing */
 .assets-table .col-item      { width: auto; }
-.assets-table .col-qty       { width: 90px; }
-.assets-table .col-flag      { width: 110px; }
-.assets-table .col-state     { width: 100px; }
-.assets-table .col-character { width: 130px; }
+.assets-table .col-qty       { width: 100px; }
+.assets-table .col-flag      { width: 140px; }
+.assets-table .col-state     { width: 120px; }
+.assets-table .col-character { width: 140px; }
 
 .assets-table th {
-  background: rgba(0, 0, 0, 0.4);
-  padding: 8px 12px;
+  padding: 6px 16px;
   text-align: left;
   font-weight: 600;
-  color: #a0aec0;
+  color: #4a5568;
   text-transform: uppercase;
-  font-size: 11px;
-  letter-spacing: 0.5px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   white-space: nowrap;
-  overflow: hidden;
 }
 
 .assets-table th.text-right,
@@ -277,9 +275,9 @@
 }
 
 .assets-table td {
-  padding: 6px 12px;
+  padding: 7px 16px;
   color: #e2e8f0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   vertical-align: middle;
   overflow: hidden;
   text-overflow: ellipsis;
