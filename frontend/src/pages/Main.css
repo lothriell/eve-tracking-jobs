@@ -9,22 +9,26 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  margin-left: 260px; /* Account for fixed sidebar */
+  margin-left: 260px;
   transition: margin-left 0.3s ease;
 }
 
 .main-content.sidebar-collapsed {
-  margin-left: 80px; /* Account for collapsed sidebar */
+  margin-left: 80px;
 }
 
 .main-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
   display: flex;
   justify-content: space-between;
   align-items: center;
   height: 54px;
   min-height: 54px;
   padding: 16px 24px;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(13, 17, 23, 0.95);
+  backdrop-filter: blur(8px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   box-sizing: border-box;
 }
