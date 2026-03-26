@@ -271,6 +271,7 @@
 .assets-table .col-qty       { width: 100px; }
 .assets-table .col-flag      { width: 140px; }
 .assets-table .col-state     { width: 120px; }
+.assets-table .col-isk       { width: 100px; }
 .assets-table .col-character { width: 140px; }
 
 .assets-table th {
@@ -358,6 +359,23 @@
 .assembled-badge {
   background: rgba(16, 185, 129, 0.12);
   color: #6ee7b7;
+}
+
+.badge-isk {
+  background: rgba(246, 201, 14, 0.12);
+  color: #f6c90e;
+}
+
+/* ISK values */
+.isk-value {
+  color: #f6c90e;
+  font-weight: 600;
+}
+
+.isk-cell {
+  color: #f6c90e;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
 }
 
 /* ============== NO ACCESS / SELECT CHAR ============== */

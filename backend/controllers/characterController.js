@@ -954,7 +954,25 @@ exports.getCharacterAssets = async (req, res) => {
       });
     }
 
-    res.json({ assets: allAssets, total: allAssets.length });
+    // Enrich with ISK values from cached market prices
+    const assetTypeIds = [...new Set(allAssets.map(a => a.type_id).filter(Boolean))];
+    const marketPrices = assetTypeIds.length > 0 ? db.getMarketPrices(assetTypeIds) : {};
+
+    let grandTotal = 0;
+    allAssets.forEach(a => {
+      const price = marketPrices[a.type_id];
+      if (price) {
+        const unitPrice = price.average_price || price.adjusted_price || 0;
+        a.unit_price = unitPrice;
+        a.total_price = unitPrice * (a.quantity || 1);
+        grandTotal += a.total_price;
+      } else {
+        a.unit_price = 0;
+        a.total_price = 0;
+      }
+    });
+
+    res.json({ assets: allAssets, total: allAssets.length, total_value: grandTotal });
   } catch (error) {
     console.error('Get character assets error:', error);
     res.status(500).json({ error: 'Failed to get character assets' });
@@ -1081,7 +1099,19 @@ exports.getCorporationAssets = async (req, res) => {
         a.system_name = locInfo.system_id ? (systemNames[locInfo.system_id] || null) : null;
       });
 
-      res.json({ assets, total: assets.length, has_access: true });
+      // Enrich with ISK values
+      const corpTypeIds = [...new Set(assets.map(a => a.type_id).filter(Boolean))];
+      const corpMarketPrices = corpTypeIds.length > 0 ? db.getMarketPrices(corpTypeIds) : {};
+      let corpGrandTotal = 0;
+      assets.forEach(a => {
+        const price = corpMarketPrices[a.type_id];
+        const unitPrice = price ? (price.average_price || price.adjusted_price || 0) : 0;
+        a.unit_price = unitPrice;
+        a.total_price = unitPrice * (a.quantity || 1);
+        corpGrandTotal += a.total_price;
+      });
+
+      res.json({ assets, total: assets.length, has_access: true, total_value: corpGrandTotal });
     } catch (error) {
       if (error.response?.status === 403) {
         return res.json({

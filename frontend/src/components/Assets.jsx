@@ -2,6 +2,15 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { getCharacterAssets, getCorporationAssets, getAllCharacters, nameStructure } from '../services/api';
 import './Assets.css';
 
+function formatISK(value) {
+  if (!value || value === 0) return '—';
+  if (value >= 1e12) return `${(value / 1e12).toFixed(2)}T`;
+  if (value >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
+  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
+  if (value >= 1e3) return `${(value / 1e3).toFixed(0)}K`;
+  return value.toFixed(0);
+}
+
 function Assets({ selectedCharacter, onError }) {
   const [activeTab, setActiveTab] = useState('personal');
   const [personalAssets, setPersonalAssets] = useState([]);
@@ -171,7 +180,8 @@ function Assets({ selectedCharacter, onError }) {
       }
     });
 
-    return { tree, structureIds, totalItems: filtered.length, totalUnits: filtered.reduce((s, a) => s + (a.quantity || 1), 0) };
+    const totalValue = filtered.reduce((s, a) => s + (a.total_price || 0), 0);
+    return { tree, structureIds, totalItems: filtered.length, totalUnits: filtered.reduce((s, a) => s + (a.quantity || 1), 0), totalValue };
   };
 
   const assetCharacters = [...new Map(
@@ -181,7 +191,7 @@ function Assets({ selectedCharacter, onError }) {
   ).values()];
 
   const currentAssets = activeTab === 'personal' ? personalAssets : corpAssets;
-  const { tree, structureIds, totalItems, totalUnits } = buildTree(currentAssets);
+  const { tree, structureIds, totalItems, totalUnits, totalValue } = buildTree(currentAssets);
   const systemCount = Object.keys(tree).length;
   const allCollapsed = systemCount > 0 && Object.keys(tree).every(sys => expanded[`sys_${sys}`] === false);
   const showCharCol = !selectedCharacter;
@@ -194,6 +204,7 @@ function Assets({ selectedCharacter, onError }) {
           <tr>
             <th className="col-item">Item</th>
             <th className="col-qty text-right">Qty</th>
+            <th className="col-isk text-right">Value</th>
             <th className="col-flag">Flag</th>
             <th className="col-state">State</th>
             {showCharCol && <th className="col-character">Character</th>}
@@ -204,6 +215,7 @@ function Assets({ selectedCharacter, onError }) {
             <tr key={asset.item_id || idx}>
               <td className="item-name">{asset.type_name || `Type ${asset.type_id}`}</td>
               <td className="text-right qty-value">{(asset.quantity || 1).toLocaleString()}</td>
+              <td className="text-right isk-cell">{asset.total_price > 0 ? formatISK(asset.total_price) : '—'}</td>
               <td><span className="badge badge-blue">{asset.location_flag || '—'}</span></td>
               <td>
                 {asset.is_singleton
@@ -271,6 +283,7 @@ function Assets({ selectedCharacter, onError }) {
           />
           <span className="assets-stats">
             {totalItems} items &bull; {totalUnits.toLocaleString()} units &bull; {systemCount} systems
+            {totalValue > 0 && <> &bull; <span className="isk-value">{formatISK(totalValue)} ISK</span></>}
           </span>
         </div>
       </div>
@@ -292,6 +305,9 @@ function Assets({ selectedCharacter, onError }) {
                 const sysExpanded = expanded[sysKey] !== false; // default open
                 const sysItemCount = Object.values(stations).reduce((s, st) =>
                   s + st.direct.length + Object.values(st.containers).reduce((cs, c) => cs + c.items.length, 0), 0);
+                const sysValue = Object.values(stations).reduce((s, st) =>
+                  s + st.direct.reduce((ds, a) => ds + (a.total_price || 0), 0) +
+                  Object.values(st.containers).reduce((cs, c) => cs + c.items.reduce((is, a) => is + (a.total_price || 0), 0), 0), 0);
 
                 return (
                   <div className="asset-system-group" key={systemName}>
@@ -321,6 +337,7 @@ function Assets({ selectedCharacter, onError }) {
                           </button>
                         )}
                         <span className="badge badge-blue">{sysItemCount} items</span>
+                        {sysValue > 0 && <span className="badge badge-isk">{formatISK(sysValue)}</span>}
                       </div>
                     </div>
 
@@ -332,6 +349,8 @@ function Assets({ selectedCharacter, onError }) {
                         const staExpanded = expanded[staKey] !== false;
                         const staItemCount = stationData.direct.length +
                           Object.values(stationData.containers).reduce((s, c) => s + c.items.length, 0);
+                        const staValue = stationData.direct.reduce((s, a) => s + (a.total_price || 0), 0) +
+                          Object.values(stationData.containers).reduce((s, c) => s + c.items.reduce((is, a) => is + (a.total_price || 0), 0), 0);
                         const containerEntries = Object.entries(stationData.containers);
 
                         // If no station level (unresolved system), render items directly under system
@@ -367,6 +386,7 @@ function Assets({ selectedCharacter, onError }) {
                                 {containerEntries.length > 0 && (
                                   <span className="badge badge-gray">{containerEntries.length} containers</span>
                                 )}
+                                {staValue > 0 && <span className="badge badge-isk">{formatISK(staValue)}</span>}
                               </div>
                             </div>
 

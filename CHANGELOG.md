@@ -2,6 +2,22 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v4.4.0] - 2026-03-26
+
+### Added: ISK Valuation on Assets
+- **Every asset shows its ISK value** using cached market prices (~14K types)
+- **Per-item value column** — "Value" column in the table showing total ISK per line item
+- **Per-station totals** — gold ISK badge on each station header (e.g., "1.2B")
+- **Per-system totals** — gold ISK badge on each system header (e.g., "3.7B")
+- **Grand total in toolbar** — "52,940 units • 3 systems • **4.2B ISK**"
+- **Gold color theme** for ISK values (#f6c90e) — matches EVE's ISK color
+- Uses `average_price` from ESI (falls back to `adjusted_price`)
+- **Smart formatting**: 1.2T, 3.45B, 450.2M, 12K
+- Both personal and corporation assets include ISK valuation
+- Zero-cost items (no market data) show "—"
+
+---
+
 ## [v4.3.0] - 2026-03-26
 
 ### Added: Server Status Indicators
