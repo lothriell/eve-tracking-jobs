@@ -91,9 +91,9 @@ function Assets({ selectedCharacter, onError }) {
     setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const collapseAll = () => {
+  const collapseAll = (treeData) => {
     const collapsed = {};
-    Object.keys(tree).forEach(sys => {
+    Object.keys(treeData).forEach(sys => {
       collapsed[`sys_${sys}`] = false;
     });
     setExpanded(collapsed);
@@ -102,8 +102,6 @@ function Assets({ selectedCharacter, onError }) {
   const expandAll = () => {
     setExpanded({});
   };
-
-  const allCollapsed = Object.keys(tree).every(sys => expanded[`sys_${sys}`] === false);
 
   const startRename = (e, key, structureId, currentName) => {
     e.stopPropagation();
@@ -185,6 +183,7 @@ function Assets({ selectedCharacter, onError }) {
   const currentAssets = activeTab === 'personal' ? personalAssets : corpAssets;
   const { tree, structureIds, totalItems, totalUnits } = buildTree(currentAssets);
   const systemCount = Object.keys(tree).length;
+  const allCollapsed = systemCount > 0 && Object.keys(tree).every(sys => expanded[`sys_${sys}`] === false);
   const showCharCol = !selectedCharacter && characterFilter === 'all';
 
   const renderItemsTable = (items) => {
@@ -259,7 +258,7 @@ function Assets({ selectedCharacter, onError }) {
         </div>
         <div className="assets-toolbar-right">
           {systemCount > 0 && (
-            <button className="assets-collapse-btn" onClick={allCollapsed ? expandAll : collapseAll} title={allCollapsed ? 'Expand All' : 'Collapse All'}>
+            <button className="assets-collapse-btn" onClick={allCollapsed ? expandAll : () => collapseAll(tree)} title={allCollapsed ? 'Expand All' : 'Collapse All'}>
               {allCollapsed ? '▸ Expand' : '▾ Collapse'}
             </button>
           )}
