@@ -75,7 +75,7 @@ esi-assets.read_corporation_assets.v1
 esi-planets.manage_planets.v1
 ```
 
-**NEVER add** `esi-universe.read_structures.v1` — CCP removed it from SSO. Authorization fails with "invalid_scope". The `/universe/structures/{id}/` endpoint is effectively dead for all third-party apps.
+**`esi-universe.read_structures.v1`** — MUST be added to the EVE Developer Application at developers.eveonline.com. "invalid_scope" error means the app config is missing it, not that CCP removed it.
 
 **ID ranges** (for classifying location_id values):
 - 500K-2M: Factions/NPC corps
