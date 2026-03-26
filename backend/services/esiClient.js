@@ -692,7 +692,8 @@ async function fetchCorporationStructures(corporationId, accessToken) {
 
     return allStructures;
   } catch (error) {
-    console.warn(`[STRUCTURE] Failed to fetch corp structures for ${corporationId}: ${error.response?.status || error.message}`);
+    const errBody = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+    console.warn(`[STRUCTURE] Failed to fetch corp structures for ${corporationId}: HTTP ${error.response?.status} - ${errBody}`);
     return [];
   }
 }
