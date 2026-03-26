@@ -91,6 +91,20 @@ function Assets({ selectedCharacter, onError }) {
     setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const collapseAll = () => {
+    const collapsed = {};
+    Object.keys(tree).forEach(sys => {
+      collapsed[`sys_${sys}`] = false;
+    });
+    setExpanded(collapsed);
+  };
+
+  const expandAll = () => {
+    setExpanded({});
+  };
+
+  const allCollapsed = Object.keys(tree).every(sys => expanded[`sys_${sys}`] === false);
+
   const startRename = (e, key, structureId, currentName) => {
     e.stopPropagation();
     setRenaming({ key, structureId });
@@ -244,6 +258,11 @@ function Assets({ selectedCharacter, onError }) {
           )}
         </div>
         <div className="assets-toolbar-right">
+          {systemCount > 0 && (
+            <button className="assets-collapse-btn" onClick={allCollapsed ? expandAll : collapseAll} title={allCollapsed ? 'Expand All' : 'Collapse All'}>
+              {allCollapsed ? '▸ Expand' : '▾ Collapse'}
+            </button>
+          )}
           <input
             type="text"
             className="assets-filter-input"

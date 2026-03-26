@@ -135,6 +135,23 @@
   border-color: #667eea;
 }
 
+.assets-collapse-btn {
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #a0aec0;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.assets-collapse-btn:hover {
+  border-color: rgba(102, 126, 234, 0.4);
+  color: #e2e8f0;
+}
+
 .assets-stats {
   color: #718096;
   font-size: 12px;
