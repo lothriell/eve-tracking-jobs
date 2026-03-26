@@ -167,13 +167,20 @@ function classifyLocationId(locationId) {
 async function getLocationInfo(locationId, accessToken) {
   const locType = classifyLocationId(locationId);
 
-  // Structures are broken (CCP removed the scope) — return immediately
-  if (locType === 'structure') {
-    return { name: null, system_id: null, location_class: locType, unresolved: true };
-  }
-
   if (locType === 'asset_safety') {
     return { name: 'Asset Safety', system_id: null, location_class: locType };
+  }
+
+  // Check SQLite cache for structures
+  if (locType === 'structure') {
+    const cached = db.getCachedName(locationId, 'structure');
+    if (cached) {
+      return {
+        name: cached.name,
+        system_id: cached.extra_data ? parseInt(cached.extra_data) : null,
+        location_class: locType
+      };
+    }
   }
 
   // Check SQLite cache for stations
@@ -204,8 +211,27 @@ async function getLocationInfo(locationId, accessToken) {
           system_id: data.system_id || null,
           location_class: locType
         };
-        // Store station in SQLite with system_id as extra_data
         db.setCachedName(locationId, 'station', info.name, String(info.system_id || ''));
+        break;
+      }
+
+      case 'structure': {
+        try {
+          const url = `${ESI_BASE_URL}/universe/structures/${locationId}/`;
+          const data = await makeESIRequest(url, accessToken);
+          console.log(`[STRUCTURE] Resolved ${locationId} = "${data.name}", system=${data.solar_system_id}`);
+          info = {
+            name: data.name || `Structure ${locationId}`,
+            system_id: data.solar_system_id || null,
+            location_class: locType
+          };
+          db.setCachedName(locationId, 'structure', info.name, String(info.system_id || ''));
+        } catch (structError) {
+          const status = structError.response?.status;
+          const errMsg = structError.response?.data?.error || structError.message;
+          console.warn(`[STRUCTURE] Failed ${locationId}: HTTP ${status} - ${errMsg}`);
+          return { name: null, system_id: null, location_class: locType, unresolved: true };
+        }
         break;
       }
 
