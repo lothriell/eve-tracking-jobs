@@ -2,6 +2,32 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v4.6.0] - 2026-03-26
+
+### Added: PI Grid View
+- **Colony cards** in a responsive CSS grid — visual overview of all colonies across all characters
+- **Planet icon** with planet type color and first letter (T=Temperate, B=Barren, etc.)
+- **Circular fill gauge** (SVG) around planet icon — blue (<60%), amber (60-80%), red (>80%)
+- **Status-based card borders** — green (extracting), blue (producing), red (needs attention)
+- **Red attention pulse** animation on colonies needing attention
+- **Live countdown** per card showing time until earliest extractor expires
+- **Extraction rate** displayed per card
+- **Character name** at bottom of each card
+- **View toggle** in toolbar: ☰ List / ⊞ Grid
+
+### Added: Extraction Prediction Bar Graph
+- **Canvas-based bar chart** in colony detail showing predicted output per extraction cycle
+- **EVE decay formula** — same algorithm as RIFT/eve-pi with cosine oscillations
+- **Color gradient** — bars colored blue→green→yellow→red based on output level relative to max
+- **Current time indicator** — white vertical line showing current cycle position
+- **Hover interaction** — move mouse over bars to see cycle number, units, and accumulated total
+- **Per-extractor graphs** — each extractor in a colony gets its own chart with product name and u/h rate
+
+### Fixed
+- **Storage fill calculation** — now identifies storage pins by type name (Launchpad/Storage/Command Center) instead of hardcoded type IDs that didn't match ESI data
+
+---
+
 ## [v4.5.0] - 2026-03-26
 
 ### Added: Jita Market Prices + Price Mode Toggle

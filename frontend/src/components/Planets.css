@@ -52,7 +52,34 @@
   justify-content: space-between;
   padding: 12px 0;
   margin-bottom: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pi-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pi-view-btn {
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #a0aec0;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pi-view-btn:hover {
+  border-color: rgba(102, 126, 234, 0.4);
+  color: #e2e8f0;
+}
+
+.pi-view-btn.active {
+  background: rgba(102, 126, 234, 0.15);
+  border-color: rgba(102, 126, 234, 0.5);
+  color: #a3bffa;
 }
 
 .alert-mode-btn {
@@ -563,6 +590,200 @@
   color: #a0aec0;
   font-size: 18px;
   margin-bottom: 8px;
+}
+
+/* ============== EXTRACTION GRAPH ============== */
+
+.extraction-graphs {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  flex-wrap: wrap;
+}
+
+.extraction-graph-wrapper {
+  flex: 1;
+  min-width: 300px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.extraction-graph-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #a0aec0;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.extraction-graph-container {
+  position: relative;
+}
+
+.extraction-graph-canvas {
+  width: 100%;
+  height: 120px;
+  border-radius: 4px;
+  cursor: crosshair;
+}
+
+.extraction-graph-tooltip {
+  font-size: 11px;
+  color: #a0aec0;
+  margin-top: 6px;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.extraction-graph-tooltip strong {
+  color: #e2e8f0;
+}
+
+/* ============== GRID VIEW ============== */
+
+.pi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.colony-card {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.colony-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.colony-card.status-attention {
+  border-color: rgba(171, 50, 74, 0.4);
+}
+
+.colony-card.status-extracting {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.colony-card.status-producing {
+  border-color: rgba(74, 158, 255, 0.3);
+}
+
+/* Planet icon with SVG gauge */
+.colony-card-planet {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.colony-card-gauge {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+}
+
+.colony-card-planet-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.colony-card-planet-letter {
+  font-size: 22px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Attention pulse */
+.colony-card-attention-pulse {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 2px solid #AB324A;
+  animation: attentionPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes attentionPulse {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+/* Card info */
+.colony-card-info {
+  text-align: center;
+  width: 100%;
+}
+
+.colony-card-system {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.colony-card-type {
+  margin-top: 2px;
+}
+
+.colony-card-type-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Status bar */
+.colony-card-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.colony-card-expiry {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.colony-card-rate {
+  font-size: 10px;
+  color: #68d391;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+/* Character name */
+.colony-card-character {
+  font-size: 10px;
+  color: #4a5568;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-align: center;
 }
 
 /* ============== RESPONSIVE ============== */

@@ -173,6 +173,177 @@ function hasAnyAlert(alerts) {
   return alerts.expired || alerts.hasLowExtraction || alerts.hasOffBalance || alerts.hasLowStorage;
 }
 
+// ============== EXTRACTION PREDICTION ==============
+
+function getProgramOutput(baseValue, cycleTime, cycleNum) {
+  const SEC = 1;
+  const decayFactor = 0.012;
+  const noiseFactor = 0.8;
+  const barWidth = cycleTime / SEC / 900.0;
+  const t = (cycleNum + 0.5) * barWidth;
+  const phaseShift = Math.pow(baseValue, 0.7);
+
+  const decayValue = baseValue / (1 + t * decayFactor);
+  const sinA = Math.cos(phaseShift + t / 12);
+  const sinB = Math.cos(phaseShift / 2 + t / 5);
+  const sinC = Math.cos(t / 2);
+  const sinStuff = Math.max(0, (sinA + sinB + sinC) / 3);
+  const barHeight = decayValue * (1 + noiseFactor * sinStuff);
+  return Math.max(0, Math.floor(barWidth * barHeight));
+}
+
+function getExtractionPrediction(extractor) {
+  if (!extractor?.extractor_details) return null;
+  const { qty_per_cycle, cycle_time, heads } = extractor.extractor_details;
+  if (!qty_per_cycle || !cycle_time) return null;
+
+  const installTime = extractor.install_time ? new Date(extractor.install_time).getTime() : null;
+  const expiryTime = extractor.expiry_time ? new Date(extractor.expiry_time).getTime() : null;
+  if (!installTime || !expiryTime) return null;
+
+  const totalDuration = expiryTime - installTime;
+  const totalCycles = Math.floor(totalDuration / (cycle_time * 1000));
+  if (totalCycles <= 0) return null;
+
+  const outputs = [];
+  for (let i = 0; i < totalCycles; i++) {
+    outputs.push(getProgramOutput(qty_per_cycle, cycle_time, i));
+  }
+
+  const now = Date.now();
+  const elapsed = now - installTime;
+  const currentCycle = Math.floor(elapsed / (cycle_time * 1000));
+
+  return { outputs, totalCycles, currentCycle, cycle_time, installTime, expiryTime };
+}
+
+// ============== EXTRACTION BAR GRAPH ==============
+
+const BAR_COLORS = [
+  '#3D90CC', '#3DB6CC', '#3DCCBE', '#3DCC8E', '#3DCC5C',
+  '#4FCC3D', '#82CC3D', '#B6CC3D', '#CCA83D', '#CC7E3D', '#CC3D3D'
+];
+
+function getBarColor(value, maxValue) {
+  if (maxValue <= 0) return BAR_COLORS[0];
+  const pct = Math.min(1, value / maxValue);
+  const idx = Math.floor(pct * (BAR_COLORS.length - 1));
+  return BAR_COLORS[idx];
+}
+
+function ExtractionGraph({ extractor }) {
+  const canvasRef = useRef(null);
+  const [hover, setHover] = useState(null);
+  const prediction = getExtractionPrediction(extractor);
+
+  useEffect(() => {
+    if (!prediction || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const { outputs, totalCycles, currentCycle } = prediction;
+    const maxVal = Math.max(...outputs, 1);
+
+    const w = canvas.width;
+    const h = canvas.height;
+    const leftPad = 50;
+    const bottomPad = 4;
+    const graphW = w - leftPad;
+    const graphH = h - bottomPad;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Background
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillRect(leftPad, 0, graphW, graphH);
+
+    // Grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i <= 4; i++) {
+      const y = graphH * (1 - i / 4);
+      ctx.beginPath();
+      ctx.moveTo(leftPad, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+
+    // Y-axis labels
+    ctx.fillStyle = '#4a5568';
+    ctx.font = '10px Consolas, monospace';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+      const val = Math.round(maxVal * i / 4);
+      const y = graphH * (1 - i / 4);
+      ctx.fillText(val >= 1000 ? `${(val/1000).toFixed(0)}K` : val, leftPad - 6, y + 4);
+    }
+
+    // Bars
+    const barGap = 1;
+    const barW = Math.max(2, (graphW - totalCycles * barGap) / totalCycles);
+    for (let i = 0; i < totalCycles; i++) {
+      const x = leftPad + i * (barW + barGap);
+      const barH = (outputs[i] / maxVal) * graphH;
+      const y = graphH - barH;
+      ctx.fillStyle = getBarColor(outputs[i], maxVal);
+      ctx.globalAlpha = i === hover ? 1 : 0.85;
+      ctx.fillRect(x, y, barW, barH);
+    }
+    ctx.globalAlpha = 1;
+
+    // Current time indicator
+    if (currentCycle >= 0 && currentCycle < totalCycles) {
+      const x = leftPad + currentCycle * (barW + barGap) + barW / 2;
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, graphH);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  }, [prediction, hover]);
+
+  if (!prediction) return null;
+
+  const handleMouseMove = (e) => {
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const leftPad = 50;
+    const graphW = canvasRef.current.width - leftPad;
+    const barW = graphW / prediction.totalCycles;
+    const idx = Math.floor((x - leftPad) / barW);
+    if (idx >= 0 && idx < prediction.totalCycles) {
+      setHover(idx);
+    } else {
+      setHover(null);
+    }
+  };
+
+  const accumulated = hover !== null
+    ? prediction.outputs.slice(0, hover + 1).reduce((s, v) => s + v, 0)
+    : 0;
+
+  return (
+    <div className="extraction-graph-container">
+      <canvas
+        ref={canvasRef}
+        width={400}
+        height={120}
+        className="extraction-graph-canvas"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setHover(null)}
+      />
+      {hover !== null && (
+        <div className="extraction-graph-tooltip">
+          Cycle {hover + 1}: <strong>{prediction.outputs[hover]?.toLocaleString()}</strong> units
+          &bull; Total: {accumulated.toLocaleString()}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ============== LIVE COUNTDOWN COMPONENT ==============
 
 function LiveCountdown({ expiryTime }) {
@@ -347,6 +518,20 @@ function ColonyDetail({ characterId, planetId, planetType, onClose }) {
               {storage ? <StorageBar storage={storage} /> : <div className="colony-stat-value" style={{ color: '#718096' }}>—</div>}
             </div>
           </div>
+
+          {/* Extraction prediction graphs */}
+          {extractorPins.length > 0 && (
+            <div className="extraction-graphs">
+              {extractorPins.map((pin, idx) => (
+                <div key={pin.pin_id || idx} className="extraction-graph-wrapper">
+                  <div className="extraction-graph-label">
+                    {pin.extractor_details?.product_name || pin.type_name || 'Extractor'} — {calcExtractorUPH(pin).toLocaleString()} u/h
+                  </div>
+                  <ExtractionGraph extractor={pin} />
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Pins table with live countdowns and extraction rates */}
           {pins.length > 0 && (
@@ -581,12 +766,114 @@ function CharacterColonies({ characterData, alertMode }) {
   );
 }
 
+// ============== COLONY CARD (Grid View) ==============
+
+function ColonyCard({ colony, characterName, characterId }) {
+  const [layout, setLayout] = useState(null);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const response = await getColonyLayout(characterId, colony.planet_id);
+        setLayout(response.data);
+      } catch (e) { /* silent */ }
+    })();
+  }, [characterId, colony.planet_id]);
+
+  const style = getPlanetStyle(colony.planet_type);
+  const pins = layout?.pins || [];
+  const extractorPins = pins.filter(p => p.extractor_details);
+  const factoryPins = pins.filter(p => p.factory_details);
+  const storage = pins.length > 0 ? calcStorageFill(pins) : null;
+  const totalUPH = extractorPins.reduce((s, p) => s + calcExtractorUPH(p), 0);
+
+  // Find earliest extractor expiry
+  const extractorExpiries = extractorPins.map(p => p.expiry_time).filter(Boolean);
+  const earliestExpiry = extractorExpiries.length > 0 ? extractorExpiries.sort()[0] : null;
+  const expiryDiff = earliestExpiry ? new Date(earliestExpiry).getTime() - now : null;
+  const expiryColor = expiryDiff !== null ? getExpiryColor(expiryDiff) : '#4a5568';
+
+  // Determine colony status
+  const hasExpired = extractorPins.some(p => !p.expiry_time || new Date(p.expiry_time).getTime() - now <= 0);
+  const isExtracting = extractorPins.some(p => p.expiry_time && new Date(p.expiry_time).getTime() - now > 0);
+  const isProducing = factoryPins.length > 0;
+  const needsAttention = hasExpired || (storage && storage.pct > 80);
+
+  let statusLabel = 'Idle';
+  let statusClass = 'status-idle';
+  if (needsAttention) { statusLabel = 'Attention'; statusClass = 'status-attention'; }
+  else if (isExtracting) { statusLabel = 'Extracting'; statusClass = 'status-extracting'; }
+  else if (isProducing) { statusLabel = 'Producing'; statusClass = 'status-producing'; }
+
+  // Fill gauge SVG
+  const fillPct = storage ? storage.pct : 0;
+  const radius = 32;
+  const circumference = 2 * Math.PI * radius;
+  const fillArc = (fillPct / 100) * circumference;
+
+  return (
+    <div className={`colony-card ${statusClass}`} title={`${characterName} — ${colony.system_name || ''} — ${(colony.planet_type || '').charAt(0).toUpperCase() + (colony.planet_type || '').slice(1)}`}>
+      {/* Planet icon with fill gauge */}
+      <div className="colony-card-planet">
+        <svg className="colony-card-gauge" viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
+          {fillPct > 0 && (
+            <circle cx="40" cy="40" r={radius} fill="none"
+              stroke={fillPct > 80 ? '#AB324A' : fillPct > 60 ? '#fbd38d' : '#4a9eff'}
+              strokeWidth="4"
+              strokeDasharray={`${fillArc} ${circumference - fillArc}`}
+              strokeDashoffset={circumference * 0.25}
+              strokeLinecap="round"
+            />
+          )}
+        </svg>
+        <div className="colony-card-planet-icon" style={{ backgroundColor: style.dot }}>
+          <span className="colony-card-planet-letter">
+            {(colony.planet_type || '?').charAt(0).toUpperCase()}
+          </span>
+        </div>
+        {needsAttention && <div className="colony-card-attention-pulse" />}
+      </div>
+
+      {/* Info */}
+      <div className="colony-card-info">
+        <div className="colony-card-system">{colony.system_name || `System ${colony.solar_system_id}`}</div>
+        <div className="colony-card-type">
+          <span className="colony-card-type-badge" style={{ color: style.dot }}>
+            {(colony.planet_type || 'unknown').charAt(0).toUpperCase() + (colony.planet_type || '').slice(1)}
+          </span>
+        </div>
+      </div>
+
+      {/* Status bar */}
+      <div className="colony-card-status">
+        <div className="colony-card-expiry" style={{ color: expiryColor }}>
+          {expiryDiff !== null ? formatCountdown(expiryDiff) : 'STOPPED'}
+        </div>
+        {totalUPH > 0 && (
+          <div className="colony-card-rate">{totalUPH.toLocaleString()} u/h</div>
+        )}
+      </div>
+
+      {/* Character */}
+      <div className="colony-card-character">{characterName}</div>
+    </div>
+  );
+}
+
 // ============== MAIN PLANETS COMPONENT ==============
 
 function Planets({ selectedCharacter, onError }) {
   const [planetData, setPlanetData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [alertMode, setAlertMode] = useState(false);
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
 
   const loadPlanets = useCallback(async () => {
     setLoading(true);
@@ -630,14 +917,26 @@ function Planets({ selectedCharacter, onError }) {
       {/* Alert mode toggle */}
       {!allEmpty && (
         <div className="pi-toolbar">
-          <button
-            className={`alert-mode-btn ${alertMode ? 'active' : ''}`}
-            onClick={() => setAlertMode(!alertMode)}
-            title={alertMode ? 'Show all planets' : 'Show only planets needing attention'}
-          >
-            <span className="alert-mode-icon">⚠️</span>
-            <span>{alertMode ? 'Showing Alerts Only' : 'Alert Mode'}</span>
-          </button>
+          <div className="pi-toolbar-left">
+            <button
+              className={`pi-view-btn ${viewMode === 'list' ? 'active' : ''}`}
+              onClick={() => setViewMode('list')}
+              title="List view"
+            >☰ List</button>
+            <button
+              className={`pi-view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+              onClick={() => setViewMode('grid')}
+              title="Grid view"
+            >⊞ Grid</button>
+            <button
+              className={`alert-mode-btn ${alertMode ? 'active' : ''}`}
+              onClick={() => setAlertMode(!alertMode)}
+              title={alertMode ? 'Show all planets' : 'Show only planets needing attention'}
+            >
+              <span className="alert-mode-icon">⚠️</span>
+              <span>{alertMode ? 'Alerts Only' : 'Alerts'}</span>
+            </button>
+          </div>
           <div className="pi-toolbar-info">
             <span className="pi-legend-item"><span className="pi-legend-dot" style={{ background: '#AB324A' }}></span> Expired</span>
             <span className="pi-legend-item"><span className="pi-legend-dot" style={{ background: '#765B21' }}></span> &lt;4h</span>
@@ -651,6 +950,19 @@ function Planets({ selectedCharacter, onError }) {
         <div className="planets-empty">No characters found.</div>
       ) : allEmpty ? (
         <div className="planets-empty">No planet colonies found.</div>
+      ) : viewMode === 'grid' ? (
+        <div className="pi-grid">
+          {planetData.flatMap(charData =>
+            (charData.colonies || []).map(colony => (
+              <ColonyCard
+                key={`${charData.character_id}_${colony.planet_id}`}
+                colony={colony}
+                characterName={charData.character_name}
+                characterId={charData.character_id}
+              />
+            ))
+          )}
+        </div>
       ) : (
         planetData.map(charData => (
           <CharacterColonies key={charData.character_id} characterData={charData} alertMode={alertMode} />
