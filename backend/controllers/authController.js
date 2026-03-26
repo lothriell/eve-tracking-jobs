@@ -174,6 +174,8 @@ exports.handleEveCallback = async (req, res) => {
 
     const { CharacterID, CharacterName, Scopes } = verifyResponse.data;
 
+    console.log(`[AUTH] Character ${CharacterName} (${CharacterID}) authorized with scopes: ${Scopes}`);
+
     // Calculate token expiry
     const tokenExpiry = new Date(Date.now() + expires_in * 1000).toISOString();
 
