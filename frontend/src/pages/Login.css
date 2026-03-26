@@ -19,7 +19,7 @@
 .stars-layer {
   position: fixed;
   inset: -40px;
-  background-image: url('https://cdn.esawebb.org/archives/images/publicationjpg/carinanebula3.jpg');
+  background-image: url('https://images.ctfassets.net/7lhcm73ukv5p/746QIZmBewo58LgzzRgzim/3df6d8bfd2281aa6ee82dce7ce75f1bb/products_header_1920x1080.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -30,8 +30,7 @@
 .nebula-layer {
   position: fixed;
   inset: 0;
-  /* Darken overlay so text is readable over the nebula */
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.3);
   z-index: 2;
   transition: transform 0.3s ease-out;
 }
