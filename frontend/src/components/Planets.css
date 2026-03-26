@@ -263,6 +263,20 @@
   border: 1px solid;
 }
 
+.planet-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.planet-list-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
 .planet-dot {
   width: 8px;
   height: 8px;
@@ -666,9 +680,9 @@
 }
 
 .pi-grid-colonies {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 10px;
-  flex-wrap: wrap;
 }
 
 .colony-card {

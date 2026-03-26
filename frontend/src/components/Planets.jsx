@@ -699,8 +699,14 @@ function CharacterColonies({ characterData, alertMode }) {
                 <React.Fragment key={colony.planet_id}>
                   <tr className={hasAnyAlert(alerts) ? 'colony-row-alert' : ''}>
                     <td>
-                      <span className="planet-dot" style={{ backgroundColor: style.dot, width: 8, height: 8, borderRadius: '50%', display: 'inline-block', marginRight: 6, verticalAlign: 'middle' }} />
-                      {colony.system_name || `System ${colony.solar_system_id}` || '—'}
+                      <div className="planet-cell">
+                        {getPlanetImageUrl(colony.planet_type) ? (
+                          <img src={getPlanetImageUrl(colony.planet_type)} alt="" className="planet-list-img" />
+                        ) : (
+                          <span className="planet-dot" style={{ backgroundColor: style.dot, width: 24, height: 24, borderRadius: '50%', display: 'inline-block', flexShrink: 0 }} />
+                        )}
+                        <span>{colony.system_name || `System ${colony.solar_system_id}` || '—'}</span>
+                      </div>
                     </td>
                     <td>
                       <span className="planet-type-badge" style={{ backgroundColor: style.bg, borderColor: style.border, color: style.dot }}>
