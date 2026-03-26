@@ -116,6 +116,8 @@ function Login({ onLogin }) {
           <span>Powered by EVE Online ESI</span>
           <span className="footer-dot">&bull;</span>
           <span>Not affiliated with CCP Games</span>
+          <span className="footer-dot">&bull;</span>
+          <span className="footer-credit">Background: "Carina Nebula Jets" — NASA, ESA, CSA, and STScI, J. DePasquale (STScI)</span>
         </footer>
       </div>
 
