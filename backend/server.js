@@ -5,6 +5,7 @@ const cors = require('cors');
 const db = require('./database/db');
 const authRoutes = require('./routes/auth');
 const apiRoutes = require('./routes/api');
+const { startCacheRefresh, stopCacheRefresh } = require('./services/cacheRefresh');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -48,6 +49,7 @@ app.use((err, req, res, next) => {
 async function start() {
   try {
     await db.init();
+    startCacheRefresh();
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`EVE ESI Backend running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -61,12 +63,14 @@ async function start() {
 // Handle shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, closing server...');
+  stopCacheRefresh();
   db.close();
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   console.log('SIGINT received, closing server...');
+  stopCacheRefresh();
   db.close();
   process.exit(0);
 });

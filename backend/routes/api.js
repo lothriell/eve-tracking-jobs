@@ -5,7 +5,7 @@ const characterController = require('../controllers/characterController');
 // Version endpoint (for deployment verification)
 router.get('/version', (req, res) => {
   res.json({ 
-    version: '3.8.0',
+    version: '3.9.0',
     name: 'EVE Industry Tracker',
     buildDate: '2026-03-25'
   });
@@ -41,6 +41,15 @@ router.get('/corporation/roles/:characterId', requireAuth, characterController.g
 
 // Dashboard endpoint
 router.get('/dashboard/stats', requireAuth, characterController.getDashboardStats);
+
+// Cache status endpoint
+router.get('/cache/status', requireAuth, (req, res) => {
+  const db = require('../database/db');
+  const stats = db.getCacheStats();
+  const marketAge = db.getMarketPriceAge();
+  const costAge = db.getCostIndexAge();
+  res.json({ name_cache: stats, market_prices: marketAge, cost_indices: costAge });
+});
 
 // Asset endpoints
 router.get('/assets', requireAuth, characterController.getCharacterAssets);

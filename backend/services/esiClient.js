@@ -405,31 +405,51 @@ async function getCharacterPublicInfo(characterId) {
   }
 }
 
-// Get installer names
+// Get character/entity names — SQLite cache first, then ESI
 async function getCharacterNames(characterIds) {
   const uniqueIds = [...new Set(characterIds)].filter(id => id);
   if (uniqueIds.length === 0) return {};
 
-  try {
-    await waitForRateLimit();
-    const response = await axios.post(
-      `${ESI_BASE_URL}/universe/names/`,
-      uniqueIds,
-      {
-        headers: { 'Content-Type': 'application/json' },
-        params: { datasource: ESI_DATASOURCE }
-      }
-    );
+  const names = {};
+  const idsToFetch = [];
 
-    const names = {};
-    response.data.forEach(item => {
-      names[item.id] = item.name;
-    });
-    return names;
-  } catch (error) {
-    console.error('Failed to get character names:', error.message);
-    return {};
+  // Check SQLite cache
+  const cached = db.getCachedNames(uniqueIds, 'character');
+  for (const id of uniqueIds) {
+    if (cached[id]) {
+      names[id] = cached[id].name;
+    } else {
+      idsToFetch.push(id);
+    }
   }
+
+  // Fetch remaining from ESI
+  if (idsToFetch.length > 0) {
+    try {
+      await waitForRateLimit();
+      const response = await axios.post(
+        `${ESI_BASE_URL}/universe/names/`,
+        idsToFetch,
+        {
+          headers: { 'Content-Type': 'application/json' },
+          params: { datasource: ESI_DATASOURCE }
+        }
+      );
+
+      const cacheEntries = [];
+      response.data.forEach(item => {
+        names[item.id] = item.name;
+        cacheEntries.push({ id: item.id, category: 'character', name: item.name });
+      });
+      if (cacheEntries.length > 0) {
+        db.setCachedNames(cacheEntries);
+      }
+    } catch (error) {
+      console.error('Failed to get character names:', error.message);
+    }
+  }
+
+  return names;
 }
 
 /**

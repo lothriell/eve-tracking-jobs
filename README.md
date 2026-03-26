@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v3.8.0 | **Build Date:** 2026-03-26
+**Current Version:** v3.9.0 | **Build Date:** 2026-03-26
 
 A comprehensive web application for tracking EVE Online industry jobs across multiple characters and corporations.
 
@@ -9,6 +9,12 @@ EVE Industry Tracker provides real-time tracking of your industry jobs, slot uti
 ---
 
 ## 📋 Recent Updates
+
+### v3.9.0 (2026-03-26) - Background Cache + Market Prices
+- ✅ Background service refreshes market prices and cost indices every 6 hours
+- ✅ Region and constellation names cached on startup
+- ✅ Character names cached in SQLite (job pages load faster)
+- ✅ ~14,000 market prices + ~5,000 cost indices ready for ISK valuation
 
 ### v3.7.0 (2026-03-25) - Hierarchical Asset Tree
 - ✅ Tree view: System → Station → Container → Items
@@ -72,6 +78,7 @@ EVE Industry Tracker provides real-time tracking of your industry jobs, slot uti
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| v3.9.0  | 2026-03-26 | Background cache refresh: market prices, cost indices, names |
 | v3.7.0  | 2026-03-25 | Hierarchical asset tree: System → Station → Container → Items |
 | v3.6.0  | 2026-03-25 | Migrated frontend to Vite 6, backend to better-sqlite3 — clean builds |
 | v3.5.0  | 2026-03-25 | Enhanced PI: live countdowns, extraction rates, storage tracking, alert system |

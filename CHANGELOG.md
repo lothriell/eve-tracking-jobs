@@ -2,6 +2,36 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v3.9.0] - 2026-03-26
+
+### Added: Background Cache Refresh Service
+- **`cacheRefresh.js`**: New background service that automatically refreshes semi-static ESI data
+- **Schedule**: Runs 5 seconds after startup, then every 6 hours (4x/day)
+- **Graceful shutdown**: Stops refresh timer on SIGTERM/SIGINT
+
+### Cached Data
+
+| Data | Table | Refresh | Source |
+|------|-------|---------|--------|
+| Market prices (adjusted + average) | `market_prices` | Every 6h | `GET /markets/prices/` |
+| System cost indices | `cost_indices` | Every 6h | `GET /industry/systems/` |
+| Region names | `name_cache` | Once (startup) | `POST /universe/names/` |
+| Constellation names | `name_cache` | Once (startup) | `POST /universe/names/` |
+| Character names | `name_cache` | On demand | `POST /universe/names/` |
+
+### Improved
+- **Character/installer names**: Now cached in SQLite — job pages load faster, names survive restarts
+- **Cache status endpoint**: `GET /api/cache/status` shows cache counts, oldest/newest entries per category
+- **Market prices foundation**: ~14,000 type prices cached, ready for ISK valuation features (assets, jobs, PI)
+- **Cost indices foundation**: ~5,000 system cost indices cached, ready for manufacturing cost display
+
+### Database Schema
+- New `market_prices` table: `type_id`, `adjusted_price`, `average_price`
+- New `cost_indices` table: `system_id`, `activity`, `cost_index`
+- Both tables auto-maintained by background refresh service
+
+---
+
 ## [v3.8.0] - 2026-03-26
 
 ### Added: Persistent SQLite Name Cache

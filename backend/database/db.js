@@ -161,6 +161,74 @@ class DB {
     return result.changes;
   }
 
+  // ===== MARKET PRICES =====
+
+  getMarketPrice(typeId) {
+    return this.db.prepare('SELECT adjusted_price, average_price FROM market_prices WHERE type_id = ?').get(typeId);
+  }
+
+  getMarketPrices(typeIds) {
+    if (!typeIds || typeIds.length === 0) return {};
+    const placeholders = typeIds.map(() => '?').join(',');
+    const rows = this.db.prepare(
+      `SELECT type_id, adjusted_price, average_price FROM market_prices WHERE type_id IN (${placeholders})`
+    ).all(...typeIds);
+    const result = {};
+    for (const row of rows) {
+      result[row.type_id] = { adjusted_price: row.adjusted_price, average_price: row.average_price };
+    }
+    return result;
+  }
+
+  setMarketPrices(prices) {
+    const stmt = this.db.prepare(
+      `INSERT OR REPLACE INTO market_prices (type_id, adjusted_price, average_price, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)`
+    );
+    const batch = this.db.transaction((items) => {
+      for (const item of items) {
+        stmt.run(item.type_id, item.adjusted_price || 0, item.average_price || 0);
+      }
+    });
+    batch(prices);
+    return prices.length;
+  }
+
+  getMarketPriceAge() {
+    return this.db.prepare('SELECT MIN(updated_at) as oldest, MAX(updated_at) as newest, COUNT(*) as count FROM market_prices').get();
+  }
+
+  // ===== COST INDICES =====
+
+  getCostIndex(systemId, activity) {
+    return this.db.prepare('SELECT cost_index FROM cost_indices WHERE system_id = ? AND activity = ?').get(systemId, activity);
+  }
+
+  getCostIndices(systemId) {
+    const rows = this.db.prepare('SELECT activity, cost_index FROM cost_indices WHERE system_id = ?').all(systemId);
+    const result = {};
+    for (const row of rows) {
+      result[row.activity] = row.cost_index;
+    }
+    return result;
+  }
+
+  setCostIndices(indices) {
+    const stmt = this.db.prepare(
+      `INSERT OR REPLACE INTO cost_indices (system_id, activity, cost_index, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)`
+    );
+    const batch = this.db.transaction((items) => {
+      for (const item of items) {
+        stmt.run(item.system_id, item.activity, item.cost_index);
+      }
+    });
+    batch(indices);
+    return indices.length;
+  }
+
+  getCostIndexAge() {
+    return this.db.prepare('SELECT MIN(updated_at) as oldest, MAX(updated_at) as newest, COUNT(*) as count FROM cost_indices').get();
+  }
+
   close() {
     if (this.db) {
       this.db.close();
