@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { logout, getEveStatus, getWealth } from '../services/api';
 import Sidebar from '../components/Sidebar';
 import Dashboard from '../components/Dashboard';
@@ -97,7 +96,6 @@ function WealthIndicator() {
 }
 
 function Main({ onLogout }) {
-  const navigate = useNavigate();
   const [error, setError] = useState('');
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
@@ -126,7 +124,6 @@ function Main({ onLogout }) {
     try {
       await logout();
       onLogout();
-      navigate('/login');
     } catch (err) {
       console.error('Logout failed:', err);
     }
