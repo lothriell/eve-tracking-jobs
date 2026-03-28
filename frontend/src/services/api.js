@@ -12,10 +12,6 @@ const api = axios.create({
 });
 
 // Auth endpoints
-export const login = (username, password) => {
-  return api.post('/auth/login', { username, password });
-};
-
 export const logout = () => {
   return api.post('/auth/logout');
 };

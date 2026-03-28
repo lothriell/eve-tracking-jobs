@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Main from './pages/Main';
 import { checkAuth } from './services/api';
@@ -34,20 +33,11 @@ function App() {
     );
   }
 
-  return (
-    <Router>
-      <Routes>
-        <Route 
-          path="/login" 
-          element={authenticated ? <Navigate to="/" /> : <Login onLogin={() => setAuthenticated(true)} />} 
-        />
-        <Route 
-          path="/" 
-          element={authenticated ? <Main onLogout={() => setAuthenticated(false)} /> : <Navigate to="/login" />} 
-        />
-      </Routes>
-    </Router>
-  );
+  if (!authenticated) {
+    return <Login />;
+  }
+
+  return <Main onLogout={() => setAuthenticated(false)} />;
 }
 
 export default App;

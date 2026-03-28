@@ -59,7 +59,7 @@ Browser → Nginx (port 9000) → /auth/*, /api/* proxied to Backend (port 3001)
 
 **Asset container chain**: ESI reports items in player structures as `location_type: "item"` (not "station"). The structure itself isn't in the character's asset list. Code follows `item_id` → `location_id` chains to find the root station/structure.
 
-**Auth flow**: Local login (bcrypt) → session → EVE SSO (OAuth2 PKCE) to link characters. PKCE state stored in session, verified on callback. Tokens in `characters` table.
+**Auth flow**: EVE SSO only (OAuth2 PKCE). First login creates user from CharacterID/CharacterName. Subsequent SSO while logged in links alt characters. PKCE state stored in session, verified on callback. Tokens in `characters` table.
 
 ## ESI Constraints
 
@@ -88,7 +88,7 @@ esi-planets.manage_planets.v1
 
 ## Database Schema
 
-- `users`: id, username, password_hash
+- `users`: id, primary_character_id, primary_character_name
 - `characters`: id, user_id, character_id, character_name, access_token, refresh_token, token_expiry, scopes
 - `name_cache`: (id, category) PK — category: type/station/system/character/region/constellation. `extra_data` stores system_id for stations, JSON {regionId, constellationId, security} for systems
 - `market_prices`: type_id PK, adjusted_price, average_price
@@ -96,7 +96,7 @@ esi-planets.manage_planets.v1
 
 ## Environment
 
-Configured via `.env` (see `.env.example`). Key vars: `EVE_CLIENT_ID`, `EVE_CLIENT_SECRET`, `EVE_REDIRECT_URI`, `APP_USERNAME`, `APP_PASSWORD`, `SESSION_SECRET`, `PORT` (default 9000), `SERVER_IP`.
+Configured via `.env` (see `.env.example`). Key vars: `EVE_CLIENT_ID`, `EVE_CLIENT_SECRET`, `EVE_REDIRECT_URI`, `SESSION_SECRET`. Deployed on K3s behind Cloudflare tunnel at `https://eve.sai.sk`.
 
 ## Version
 

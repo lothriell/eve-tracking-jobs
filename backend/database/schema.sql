@@ -1,8 +1,8 @@
--- Users table for simple username/password authentication
+-- Users table for EVE SSO authentication
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
+    primary_character_id INTEGER,
+    primary_character_name TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

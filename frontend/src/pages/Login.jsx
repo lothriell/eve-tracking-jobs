@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { login } from '../services/api';
+import { initiateEveAuth } from '../services/api';
 import './Login.css';
 
 const FEATURES = [
@@ -9,12 +9,19 @@ const FEATURES = [
   { icon: '🏢', title: 'Corporation', desc: 'Corporation jobs and assets with role-based access' },
 ];
 
-function Login({ onLogin }) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+function Login() {
   const [loading, setLoading] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
+  const [error, setError] = useState('');
+
+  // Check for error in URL params (from callback redirect)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const err = params.get('error');
+    if (err) {
+      setError(err === 'eve_auth_failed' ? 'EVE authentication failed. Please try again.' : err);
+      window.history.replaceState({}, '', '/');
+    }
+  }, []);
 
   // Parallax star effect
   useEffect(() => {
@@ -32,16 +39,14 @@ function Login({ onLogin }) {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleEveLogin = async () => {
     setError('');
     setLoading(true);
     try {
-      await login(username, password);
-      onLogin();
+      const response = await initiateEveAuth();
+      window.location.href = response.data.authUrl;
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed');
-    } finally {
+      setError('Failed to start EVE authentication');
       setLoading(false);
     }
   };
@@ -73,9 +78,11 @@ function Login({ onLogin }) {
             across all your characters — in one unified dashboard.
           </p>
 
+          {error && <div className="login-error" style={{ marginBottom: '1rem' }}>{error}</div>}
+
           <div className="hero-actions">
-            <button className="btn-primary" onClick={() => setShowLogin(true)}>
-              Access Dashboard
+            <button className="btn-primary" onClick={handleEveLogin} disabled={loading}>
+              {loading ? 'Redirecting...' : 'Login with EVE Online'}
             </button>
             <a className="btn-ghost" href="#features">
               Explore Features
@@ -118,56 +125,6 @@ function Login({ onLogin }) {
           <span>Not affiliated with CCP Games</span>
         </footer>
       </div>
-
-      {/* Login Modal */}
-      {showLogin && (
-        <div className="login-overlay" onClick={() => setShowLogin(false)}>
-          <div className="login-modal" onClick={e => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowLogin(false)}>×</button>
-
-            <div className="login-header">
-              <div className="login-logo-small">
-                <div className="logo-diamond small" />
-              </div>
-              <h2>Welcome Back</h2>
-              <p>Sign in to your Industry Tracker</p>
-            </div>
-
-            {error && <div className="login-error">{error}</div>}
-
-            <form onSubmit={handleSubmit} className="login-form">
-              <div className="form-group">
-                <input
-                  type="text"
-                  id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Username"
-                  required
-                  disabled={loading}
-                  autoFocus
-                />
-              </div>
-
-              <div className="form-group">
-                <input
-                  type="password"
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password"
-                  required
-                  disabled={loading}
-                />
-              </div>
-
-              <button type="submit" className="btn-login" disabled={loading}>
-                {loading ? 'Authenticating...' : 'Sign In'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

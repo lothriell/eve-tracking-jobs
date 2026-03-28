@@ -1,7 +1,6 @@
 const Database = require('better-sqlite3');
 const fs = require('fs');
 const path = require('path');
-const bcrypt = require('bcrypt');
 
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'eve_esi.db');
 const SCHEMA_PATH = path.join(__dirname, 'schema.sql');
@@ -18,7 +17,6 @@ class DB {
     console.log('Connected to SQLite database');
 
     this.initializeSchema();
-    await this.createDefaultUser();
   }
 
   initializeSchema() {
@@ -27,30 +25,19 @@ class DB {
     console.log('Database schema initialized');
   }
 
-  async createDefaultUser() {
-    const username = process.env.APP_USERNAME;
-    const password = process.env.APP_PASSWORD;
-
-    if (!username || !password) {
-      console.warn('APP_USERNAME or APP_PASSWORD not set in .env, skipping default user creation');
-      return;
-    }
-
-    const row = this.db.prepare('SELECT id FROM users WHERE username = ?').get(username);
-
-    if (row) {
-      console.log('Default user already exists');
-      return;
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-    this.db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run(username, passwordHash);
-    console.log('Default user created successfully');
+  // User operations
+  getUserByCharacterId(characterId) {
+    return this.db.prepare(
+      'SELECT user_id FROM characters WHERE character_id = ?'
+    ).get(characterId);
   }
 
-  // User operations
-  getUserByUsername(username) {
-    return this.db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+  createUserFromCharacter(characterId, characterName) {
+    const insertUser = this.db.prepare(
+      'INSERT INTO users (primary_character_id, primary_character_name) VALUES (?, ?)'
+    );
+    const result = insertUser.run(characterId, characterName);
+    return result.lastInsertRowid;
   }
 
   // Character operations - Multiple character support
