@@ -2,6 +2,30 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.0.0] - 2026-03-29
+
+### Breaking: EVE SSO-Only Authentication
+- **Removed local username/password login** — EVE SSO is now the sole authentication method
+- **"Login with EVE Online" button** replaces the username/password form on the landing page
+- **First SSO login creates your account** — no registration needed, CharacterID becomes your identity
+- **Alt character linking** — SSO while already logged in links additional characters to your account
+- **Removed `bcrypt` dependency** — no more password hashing
+- **New `users` table schema** — `primary_character_id` and `primary_character_name` replace `username`/`password_hash`
+- **Removed `APP_USERNAME` / `APP_PASSWORD`** from `.env`, `docker-compose.yml`, and all backend references
+- **Removed `POST /auth/login` route** — only SSO endpoints remain
+- **Simplified `App.jsx`** — removed react-router login/redirect, auth check drives rendering directly
+
+### Migration
+- **Database must be recreated** — drop the SQLite volume and rebuild. SDE import and cache refresh repopulate automatically, re-authenticate via EVE SSO.
+
+```bash
+docker-compose down
+docker volume rm eve-esi-app_eve-esi-data
+docker-compose up -d --build
+```
+
+---
+
 ## [v4.6.0] - 2026-03-26
 
 ### Added: PI Grid View

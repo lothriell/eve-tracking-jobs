@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v4.6.0 | **Build Date:** 2026-03-26
+**Current Version:** v5.0.0 | **Build Date:** 2026-03-29
 
 A comprehensive web application for tracking EVE Online industry jobs across multiple characters and corporations.
 
@@ -9,6 +9,13 @@ EVE Industry Tracker provides real-time tracking of your industry jobs, slot uti
 ---
 
 ## 📋 Recent Updates
+
+### v5.0.0 (2026-03-29) - EVE SSO-Only Authentication
+- ✅ Replaced local username/password login with "Login with EVE Online" button
+- ✅ First SSO login creates account from CharacterID — no registration needed
+- ✅ Alt character linking via SSO while already logged in
+- ✅ Removed bcrypt dependency and APP_USERNAME/APP_PASSWORD config
+- ✅ **Breaking:** Database must be recreated (drop volume and rebuild)
 
 ### v4.0.0 (2026-03-26) - EVE SDE Integration
 - ✅ Full EVE universe data imported on first startup (~95K entries)
@@ -327,13 +334,6 @@ EVE_CLIENT_SECRET=YOUR_EVE_CLIENT_SECRET
 EVE_REDIRECT_URI=http://YOUR_SERVER_ADDRESS:9000/auth/callback
 
 # ============================================================================
-# Application Credentials
-# ============================================================================
-# Your login credentials for the web application
-APP_USERNAME=YOUR_USERNAME
-APP_PASSWORD=YOUR_PASSWORD
-
-# ============================================================================
 # Session Security
 # ============================================================================
 # Generate with: openssl rand -base64 32
@@ -418,10 +418,10 @@ curl http://localhost:3001/health
 ### Step 6: Access the Application
 
 1. Open your browser: `http://YOUR_SERVER_ADDRESS:9000`
-2. Log in with your `APP_USERNAME` and `APP_PASSWORD`
-3. Click **"Add Character"** in the sidebar
-4. Authorize with EVE SSO
-5. Your industry jobs will load automatically
+2. Click **"Login with EVE Online"**
+3. Authorize with EVE SSO — your account is created automatically
+4. Your industry jobs will load automatically
+5. To add alt characters, click **"Add Character"** in the sidebar
 
 ---
 
@@ -494,10 +494,6 @@ EVE_CLIENT_ID=your_client_id_1
 EVE_CLIENT_SECRET=your_client_secret_1
 EVE_REDIRECT_URI=http://YOUR_SERVER_ADDRESS:9000/auth/callback
 
-# Application Login
-APP_USERNAME=user1
-APP_PASSWORD=password1
-
 # Session Secret (generate with: openssl rand -base64 32)
 SESSION_SECRET=random_secret_1
 ```
@@ -522,10 +518,6 @@ PROJECT_NAME=eve-esi-user2       # ← Different project name!
 EVE_CLIENT_ID=your_client_id_2
 EVE_CLIENT_SECRET=your_client_secret_2
 EVE_REDIRECT_URI=http://YOUR_SERVER_ADDRESS:9001/auth/callback  # ← Matching port!
-
-# Application Login
-APP_USERNAME=user2
-APP_PASSWORD=password2
 
 # Session Secret (generate with: openssl rand -base64 32)
 SESSION_SECRET=random_secret_2
@@ -720,7 +712,7 @@ docker-compose down && git pull origin main && docker-compose up -d --build
 - **Frontend**: React 18, React Router, Axios, CSS3
 - **Backend**: Node.js, Express, SQLite
 - **Infrastructure**: Docker Compose, Nginx
-- **Authentication**: EVE SSO OAuth2 + Simple Login
+- **Authentication**: EVE SSO OAuth2 (PKCE)
 - **Real-time Updates**: Auto-refresh with configurable intervals
 
 ---
@@ -728,11 +720,10 @@ docker-compose down && git pull origin main && docker-compose up -d --build
 ## API Endpoints
 
 ### Authentication
-- `POST /auth/login` - User login
+- `GET /auth/eve/authorize` - Initiate EVE SSO (login or add alt)
+- `GET /auth/callback` - EVE SSO callback
 - `POST /auth/logout` - User logout
 - `GET /auth/check` - Check authentication status
-- `GET /auth/eve/authorize` - Initiate EVE SSO
-- `GET /auth/callback` - EVE SSO callback
 
 ### Characters
 - `GET /api/characters` - Get all linked characters
@@ -782,8 +773,6 @@ npm start
 | `EVE_CLIENT_ID` | EVE SSO Client ID | (required) |
 | `EVE_CLIENT_SECRET` | EVE SSO Secret Key | (required) |
 | `EVE_REDIRECT_URI` | OAuth callback URL | (required) |
-| `APP_USERNAME` | Application login username | (required) |
-| `APP_PASSWORD` | Application login password | (required) |
 | `SESSION_SECRET` | Express session secret | (required) |
 | `FRONTEND_URL` | Frontend URL for CORS | (required) |
 | `ALLOWED_ORIGINS` | CORS allowed origins | (required) |
