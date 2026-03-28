@@ -84,7 +84,15 @@ exports.initiateEveAuth = (req, res) => {
     });
 
     const authUrl = `${EVE_SSO_AUTH_URL}?${params.toString()}`;
-    res.json({ authUrl });
+
+    // Force session save before responding (critical for new sessions with saveUninitialized: false)
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.status(500).json({ error: 'Failed to initiate EVE authentication' });
+      }
+      res.json({ authUrl });
+    });
   } catch (error) {
     console.error('EVE auth initiation error:', error);
     res.status(500).json({ error: 'Failed to initiate EVE authentication' });
@@ -178,8 +186,11 @@ exports.handleEveCallback = async (req, res) => {
       req.session.characterName = CharacterName;
     }
 
-    // Redirect to main page
-    res.redirect('/');
+    // Force session save before redirect to ensure cookie is set
+    req.session.save((err) => {
+      if (err) console.error('Session save error on callback:', err);
+      res.redirect('/');
+    });
   } catch (error) {
     console.error('EVE callback error:', error.response?.data || error.message);
     res.redirect('/?error=eve_auth_failed');
