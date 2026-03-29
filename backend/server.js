@@ -9,6 +9,12 @@ const { startCacheRefresh, stopCacheRefresh } = require('./services/cacheRefresh
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Trust proxy when behind Cloudflare/nginx/ingress
+if (isProduction) {
+  app.set('trust proxy', 1);
+}
 
 // Middleware
 app.use(cors({
@@ -24,8 +30,9 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false,
+    secure: isProduction,
     httpOnly: true,
+    sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));

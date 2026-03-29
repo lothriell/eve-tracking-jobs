@@ -5,9 +5,17 @@ REGISTRY="gitea.homielab.omg"
 REPO="sann/eve-tracking-jobs"
 TAG=$(git rev-parse --short HEAD)
 
-echo "=== EVE Industry Tracker — K8s Deploy ==="
+# Determine environment
+ENV="prod"
+EXTRA_TAG="latest"
+if [[ "$1" == "--dev" ]]; then
+  ENV="dev"
+  EXTRA_TAG="dev"
+fi
+
+echo "=== EVE Industry Tracker — K8s Deploy ($ENV) ==="
 echo "Registry: $REGISTRY"
-echo "Tag:      $TAG"
+echo "Tag:      $TAG + $EXTRA_TAG"
 echo ""
 
 # Check podman is available
@@ -30,26 +38,26 @@ fi
 echo "--- Building backend ---"
 podman build \
   -t "$REGISTRY/$REPO-backend:$TAG" \
-  -t "$REGISTRY/$REPO-backend:latest" \
+  -t "$REGISTRY/$REPO-backend:$EXTRA_TAG" \
   ./backend
 
 # Build frontend
 echo "--- Building frontend ---"
 podman build \
   -t "$REGISTRY/$REPO-frontend:$TAG" \
-  -t "$REGISTRY/$REPO-frontend:latest" \
+  -t "$REGISTRY/$REPO-frontend:$EXTRA_TAG" \
   ./frontend
 
 # Push all tags
 echo "--- Pushing images ---"
 podman push --tls-verify=false "$REGISTRY/$REPO-backend:$TAG"
-podman push --tls-verify=false "$REGISTRY/$REPO-backend:latest"
+podman push --tls-verify=false "$REGISTRY/$REPO-backend:$EXTRA_TAG"
 podman push --tls-verify=false "$REGISTRY/$REPO-frontend:$TAG"
-podman push --tls-verify=false "$REGISTRY/$REPO-frontend:latest"
+podman push --tls-verify=false "$REGISTRY/$REPO-frontend:$EXTRA_TAG"
 
 echo ""
-echo "=== Done ==="
+echo "=== Done ($ENV) ==="
 echo "  $REGISTRY/$REPO-backend:$TAG"
-echo "  $REGISTRY/$REPO-backend:latest"
+echo "  $REGISTRY/$REPO-backend:$EXTRA_TAG"
 echo "  $REGISTRY/$REPO-frontend:$TAG"
-echo "  $REGISTRY/$REPO-frontend:latest"
+echo "  $REGISTRY/$REPO-frontend:$EXTRA_TAG"
