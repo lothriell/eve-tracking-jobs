@@ -2,6 +2,14 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.1.2] - 2026-03-30
+
+### Fix: Planets detail button clipped on right side
+- **Widened action column** from 6% to 8% and added right margin to detail button
+- Matches left-side planet icon offset for visual balance
+
+---
+
 ## [v5.1.1] - 2026-03-30
 
 ### Fix: Docker Compose test environment SSO login
