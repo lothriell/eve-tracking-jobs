@@ -400,7 +400,6 @@ exports.getDashboardStats = async (req, res) => {
         let skillTraining = null;
         try {
           const sqResult = await getCharacterSkillQueue(character.character_id, accessToken);
-          console.log(`[SKILL] ${character.character_name}: hasScope=${sqResult.hasScope}, queueLen=${sqResult.queue.length}`);
           if (sqResult.hasScope && sqResult.queue.length > 0) {
             const now = new Date();
             // Find the currently training skill (has start_date in the past and finish_date in the future)
@@ -416,7 +415,6 @@ exports.getDashboardStats = async (req, res) => {
                 finish_date: active.finish_date,
                 queue_length: sqResult.queue.filter(s => s.finish_date && new Date(s.finish_date) > now).length
               };
-              console.log(`[SKILL] ${character.character_name}: training ${skillName} to ${active.finished_level}`);
             } else {
               // Queue exists but nothing actively training (paused or all finished)
               const future = sqResult.queue.find(s => s.finish_date && new Date(s.finish_date) > now);
@@ -425,11 +423,9 @@ exports.getDashboardStats = async (req, res) => {
               } else {
                 skillTraining = { status: 'paused' };
               }
-              console.log(`[SKILL] ${character.character_name}: ${skillTraining.status}`);
             }
           } else if (sqResult.hasScope) {
             skillTraining = { status: 'not_training' };
-            console.log(`[SKILL] ${character.character_name}: empty queue`);
           }
         } catch (sqError) {
           console.error(`[SKILL] ${character.character_name} error:`, sqError.message);

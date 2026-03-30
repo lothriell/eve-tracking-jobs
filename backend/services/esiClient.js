@@ -311,12 +311,11 @@ async function getCharacterSkills(characterId, accessToken) {
     const data = await makeESIRequest(url, accessToken);
     return { skills: data.skills || [], hasScope: true };
   } catch (error) {
-    // Check if it's a 403 forbidden (missing scope)
-    const isForbidden = error.response?.status === 403;
-    if (isForbidden) {
-      console.warn(`Missing skills scope for character ${characterId} - returning defaults`);
+    const status = error.response?.status;
+    if (status === 401 || status === 403) {
+      // Token missing skills scope — needs re-auth, not an error
     } else {
-      console.error('Get character skills error:', error);
+      console.error(`Get character skills error (${characterId}):`, error.message);
     }
     return { skills: [], hasScope: false };
   }
@@ -329,11 +328,11 @@ async function getCharacterSkillQueue(characterId, accessToken) {
     const data = await makeESIRequest(url, accessToken);
     return { queue: data || [], hasScope: true };
   } catch (error) {
-    const isForbidden = error.response?.status === 403;
-    if (isForbidden) {
-      console.warn(`Missing skillqueue scope for character ${characterId}`);
+    const status = error.response?.status;
+    if (status === 401 || status === 403) {
+      // Token missing skillqueue scope — needs re-auth, not an error
     } else {
-      console.error('Get character skill queue error:', error);
+      console.error(`Get character skill queue error (${characterId}):`, error.message);
     }
     return { queue: [], hasScope: false };
   }
