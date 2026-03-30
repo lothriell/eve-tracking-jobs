@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.1.2 | **Build Date:** 2026-03-30
+**Current Version:** v5.2.0 | **Build Date:** 2026-03-30
 
 A comprehensive web application for tracking EVE Online industry jobs across multiple characters and corporations.
 
@@ -9,6 +9,12 @@ EVE Industry Tracker provides real-time tracking of your industry jobs, slot uti
 ---
 
 ## 📋 Recent Updates
+
+### v5.2.0 (2026-03-30) - Skill Training Status
+- ✅ Live skill training countdown on Dashboard character cards
+- ✅ Red flashing "No Skill in Training" alert when queue empty
+- ✅ Queue depth indicator (+N remaining skills)
+- ✅ New scope: `esi-skills.read_skillqueue.v1`
 
 ### v5.1.1 (2026-03-30) - Docker Compose SSO Fix
 - ✅ Fixed `invalid_state` error on HTTP test environment

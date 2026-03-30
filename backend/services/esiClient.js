@@ -322,6 +322,23 @@ async function getCharacterSkills(characterId, accessToken) {
   }
 }
 
+// Get character skill queue
+async function getCharacterSkillQueue(characterId, accessToken) {
+  try {
+    const url = `${ESI_BASE_URL}/characters/${characterId}/skillqueue/`;
+    const data = await makeESIRequest(url, accessToken);
+    return { queue: data || [], hasScope: true };
+  } catch (error) {
+    const isForbidden = error.response?.status === 403;
+    if (isForbidden) {
+      console.warn(`Missing skillqueue scope for character ${characterId}`);
+    } else {
+      console.error('Get character skill queue error:', error);
+    }
+    return { queue: [], hasScope: false };
+  }
+}
+
 // Calculate job slots based on skills
 function calculateJobSlots(skills) {
   // Skill IDs for industry slots
@@ -788,6 +805,7 @@ module.exports = {
   getCharacterPublicInfo,
   getJobSlotUsage,
   getCharacterSkills,
+  getCharacterSkillQueue,
   getTypeName,
   getTypeNames,
   getLocationName,

@@ -1,6 +1,47 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { getDashboardStats, getCorporationJobs, getCorporations } from '../services/api';
 import './Dashboard.css';
+
+const ROMAN = ['0', 'I', 'II', 'III', 'IV', 'V'];
+
+function SkillTrainingLine({ training }) {
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    if (!training?.finish_date) return;
+    const timer = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(timer);
+  }, [training?.finish_date]);
+
+  if (!training) return null;
+
+  if (training.status === 'not_training') {
+    return <span className="skill-training-alert flashing">No Skill in Training</span>;
+  }
+  if (training.status === 'paused') {
+    return <span className="skill-training-alert flashing">Training Paused</span>;
+  }
+
+  const now = new Date();
+  const finish = new Date(training.finish_date);
+  const remaining = Math.max(0, finish - now);
+
+  if (remaining === 0) {
+    return <span className="skill-training-alert flashing">No Skill in Training</span>;
+  }
+
+  const hours = Math.floor(remaining / 3600000);
+  const mins = Math.floor((remaining % 3600000) / 60000);
+  const secs = Math.floor((remaining % 60000) / 1000);
+  const timeStr = hours > 0 ? `${hours}h ${mins}m ${secs}s` : `${mins}m ${secs}s`;
+
+  return (
+    <span className="skill-training-active">
+      {training.skill_name} {ROMAN[training.finished_level]} — {timeStr}
+      {training.queue_length > 1 && <span className="skill-queue-count"> (+{training.queue_length - 1})</span>}
+    </span>
+  );
+}
 
 function Dashboard({ onError }) {
   const [stats, setStats] = useState(null);
@@ -326,6 +367,7 @@ function Dashboard({ onError }) {
                         R: {char.slots?.reactions?.current || 0}/{char.slots?.reactions?.max || 0}
                       </span>
                     </div>
+                    <SkillTrainingLine training={char.skill_training} />
                   </>
                 )}
               </div>

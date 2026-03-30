@@ -2,6 +2,17 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.2.0] - 2026-03-30
+
+### Skill Training Status on Dashboard
+- **Skill queue on character cards** — shows currently training skill, level (roman numerals), and live countdown
+- **Queue depth indicator** — shows (+N) for remaining queued skills
+- **Red flashing alerts** — "No Skill in Training" when queue is empty or finished, "Training Paused" when paused
+- **New ESI scope** — `esi-skills.read_skillqueue.v1` (must be enabled on all 3 EVE Developer Applications)
+- Characters need re-authorization to grant the new skillqueue scope
+
+---
+
 ## [v5.1.2] - 2026-03-30
 
 ### Fix: Planets detail button clipped on right side

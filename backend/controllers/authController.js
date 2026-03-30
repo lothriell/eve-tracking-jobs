@@ -11,6 +11,7 @@ const EVE_SSO_VERIFY_URL = 'https://login.eveonline.com/oauth/verify';
 const REQUIRED_SCOPES = [
   'esi-industry.read_character_jobs.v1',      // Required for viewing personal industry jobs
   'esi-skills.read_skills.v1',                // Required for calculating max job slots
+  'esi-skills.read_skillqueue.v1',            // Required for skill training queue
   'esi-industry.read_corporation_jobs.v1',    // Required for corporation industry jobs
   'esi-corporations.read_corporation_membership.v1',  // Required for corp membership
   'esi-characters.read_corporation_roles.v1', // Required for reading character corp roles (Director/Factory_Manager check)

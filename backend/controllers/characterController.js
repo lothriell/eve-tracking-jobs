@@ -32,7 +32,8 @@ const {
   getCharacterColonies,
   getPlanetName,
   getColonyLayout,
-  getSystemNames
+  getSystemNames,
+  getCharacterSkillQueue
 } = require('../services/esiClient');
 const {
   getCharacterCorporation,
@@ -394,7 +395,45 @@ exports.getDashboardStats = async (req, res) => {
         const accessToken = await getValidAccessToken(character);
         const jobs = await getCharacterIndustryJobs(character.character_id, accessToken);
         const slots = await getJobSlotUsage(character.character_id, accessToken);
-        
+
+        // Fetch skill queue for training status
+        let skillTraining = null;
+        try {
+          const sqResult = await getCharacterSkillQueue(character.character_id, accessToken);
+          if (sqResult.hasScope && sqResult.queue.length > 0) {
+            const now = new Date();
+            // Find the currently training skill (has start_date in the past and finish_date in the future)
+            const active = sqResult.queue.find(s =>
+              s.finish_date && new Date(s.finish_date) > now &&
+              s.start_date && new Date(s.start_date) <= now
+            );
+            if (active) {
+              const skillName = await getTypeName(active.skill_id);
+              skillTraining = {
+                skill_name: skillName,
+                finished_level: active.finished_level,
+                finish_date: active.finish_date,
+                queue_length: sqResult.queue.filter(s => s.finish_date && new Date(s.finish_date) > now).length
+              };
+            } else {
+              // Queue exists but nothing actively training (paused or all finished)
+              const future = sqResult.queue.find(s => s.finish_date && new Date(s.finish_date) > now);
+              if (!future) {
+                // All skills finished or queue empty — not training
+                skillTraining = { status: 'not_training' };
+              } else {
+                // Queue has future items but no start_date — paused
+                skillTraining = { status: 'paused' };
+              }
+            }
+          } else if (sqResult.hasScope) {
+            // Has scope but empty queue
+            skillTraining = { status: 'not_training' };
+          }
+        } catch (sqError) {
+          // Silently fail — skill queue is non-critical
+        }
+
         const activeJobs = jobs.filter(j => j.status === 'active');
         totalPersonalJobs += activeJobs.length;
         
@@ -471,6 +510,7 @@ exports.getDashboardStats = async (req, res) => {
           corp_jobs: corpJobsCount,
           total_jobs: activeJobs.length + corpJobsCount,
           slots: combinedSlots,
+          skill_training: skillTraining,
           // Activity breakdown for this character
           activity_breakdown: {
             manufacturing: personalByCategory.manufacturing + corpByCategory.manufacturing,
