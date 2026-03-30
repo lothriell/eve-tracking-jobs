@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.0.0 | **Build Date:** 2026-03-29
+**Current Version:** v5.1.0 | **Build Date:** 2026-03-30
 
 A comprehensive web application for tracking EVE Online industry jobs across multiple characters and corporations.
 
@@ -9,6 +9,10 @@ EVE Industry Tracker provides real-time tracking of your industry jobs, slot uti
 ---
 
 ## 📋 Recent Updates
+
+### v5.1.0 (2026-03-30) - Planets Auto-Refresh
+- ✅ Auto-refresh for Planets view (Off / 5m / 10m / 15m) — matches Dashboard design
+- ✅ Setting persists in localStorage across sessions
 
 ### v5.0.0 (2026-03-29) - EVE SSO-Only Authentication
 - ✅ Replaced local username/password login with "Login with EVE Online" button

@@ -2,6 +2,15 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.1.0] - 2026-03-30
+
+### Planets Auto-Refresh
+- **Auto-refresh for Planets view** — same design as Dashboard: Off / 5m / 10m / 15m dropdown
+- Setting persists in localStorage (separate key from Dashboard)
+- Spinning refresh icon indicates active auto-refresh
+
+---
+
 ## [v5.0.0] - 2026-03-29
 
 ### Breaking: EVE SSO-Only Authentication

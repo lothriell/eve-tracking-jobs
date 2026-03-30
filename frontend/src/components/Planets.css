@@ -112,6 +112,12 @@
   font-size: 14px;
 }
 
+.pi-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .pi-toolbar-info {
   display: flex;
   gap: 14px;
@@ -131,6 +137,83 @@
   height: 8px;
   border-radius: 50%;
   display: inline-block;
+}
+
+/* Auto Refresh (Planets) */
+.planets-container .auto-refresh-container {
+  position: relative;
+}
+
+.planets-container .auto-refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #a0aec0;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.planets-container .auto-refresh-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(102, 126, 234, 0.4);
+  color: #e2e8f0;
+}
+
+.planets-container .auto-refresh-btn.active {
+  background: rgba(102, 126, 234, 0.15);
+  border-color: rgba(102, 126, 234, 0.5);
+  color: #a3bffa;
+}
+
+.planets-container .refresh-icon {
+  font-size: 14px;
+  display: inline-block;
+}
+
+.planets-container .refresh-icon.spinning {
+  animation: pi-spin 2s linear infinite;
+}
+
+@keyframes pi-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.planets-container .auto-refresh-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: #1a1f2e;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 100;
+  min-width: 120px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.planets-container .dropdown-item {
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #a0aec0;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.planets-container .dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+}
+
+.planets-container .dropdown-item.active {
+  background: rgba(102, 126, 234, 0.15);
+  color: #a3bffa;
 }
 
 /* ============== REAUTH BANNER ============== */
