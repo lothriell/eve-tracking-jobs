@@ -24,6 +24,7 @@ const {
   getLocationName,
   getLocationInfo,
   transformCorporationJobs,
+  getTypeName,
   getTypeNames,
   getCharacterAssets,
   getCorporationAssets,
