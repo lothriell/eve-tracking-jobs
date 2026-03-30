@@ -326,6 +326,19 @@
   opacity: 0.4;
 }
 
+.character-card[draggable] {
+  cursor: grab;
+}
+
+.character-card[draggable]:active {
+  cursor: grabbing;
+}
+
+.character-card.drag-over {
+  border-color: rgba(102, 126, 234, 0.6);
+  background: rgba(102, 126, 234, 0.1);
+}
+
 .character-avatar {
   width: 48px;
   height: 48px;

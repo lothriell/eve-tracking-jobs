@@ -43,6 +43,26 @@ function SkillTrainingLine({ training }) {
   );
 }
 
+// Apply saved character order from localStorage (shared with Sidebar)
+function applySavedOrder(chars) {
+  const saved = localStorage.getItem('characterOrder');
+  if (!saved) return chars;
+  try {
+    const order = JSON.parse(saved);
+    const ordered = [];
+    const remaining = [...chars];
+    for (const id of order) {
+      const idx = remaining.findIndex(c => c.character_id === id);
+      if (idx >= 0) {
+        ordered.push(remaining.splice(idx, 1)[0]);
+      }
+    }
+    return [...ordered, ...remaining];
+  } catch {
+    return chars;
+  }
+}
+
 function Dashboard({ onError }) {
   const [stats, setStats] = useState(null);
   const [corpStats, setCorpStats] = useState(null);
@@ -50,6 +70,9 @@ function Dashboard({ onError }) {
   const [autoRefreshInterval, setAutoRefreshInterval] = useState(null);
   const [autoRefreshDropdown, setAutoRefreshDropdown] = useState(false);
   const [hoveredJobType, setHoveredJobType] = useState(null);
+  const [dragIdx, setDragIdx] = useState(null);
+  const [dragOverIdx, setDragOverIdx] = useState(null);
+  const [orderedCharacters, setOrderedCharacters] = useState([]);
 
   const loadStats = useCallback(async () => {
     try {
@@ -114,6 +137,41 @@ function Dashboard({ onError }) {
     
     return () => clearInterval(interval);
   }, [autoRefreshInterval, loadStats]);
+
+  // Apply saved order when stats load
+  useEffect(() => {
+    if (stats?.jobs_by_character) {
+      setOrderedCharacters(applySavedOrder(stats.jobs_by_character));
+    }
+  }, [stats]);
+
+  const handleDragStart = (e, idx) => {
+    setDragIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, idx) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIdx(idx);
+  };
+
+  const handleDrop = (e, dropIdx) => {
+    e.preventDefault();
+    setDragOverIdx(null);
+    if (dragIdx === null || dragIdx === dropIdx) { setDragIdx(null); return; }
+    const updated = [...orderedCharacters];
+    const [moved] = updated.splice(dragIdx, 1);
+    updated.splice(dropIdx, 0, moved);
+    setOrderedCharacters(updated);
+    setDragIdx(null);
+    localStorage.setItem('characterOrder', JSON.stringify(updated.map(c => c.character_id)));
+  };
+
+  const handleDragEnd = () => {
+    setDragIdx(null);
+    setDragOverIdx(null);
+  };
 
   const handleAutoRefreshChange = (minutes) => {
     setAutoRefreshInterval(minutes);
@@ -329,10 +387,16 @@ function Dashboard({ onError }) {
           </div>
         </div>
         <div className="characters-grid">
-          {stats.jobs_by_character.map((char) => (
-            <div 
-              key={char.character_id} 
-              className={`character-card ${char.slots?.needsReauthorization ? 'needs-reauth' : ''} ${hoveredJobType && isCharacterSlotFull(char, hoveredJobType) ? 'dimmed' : ''}`}
+          {orderedCharacters.map((char, idx) => (
+            <div
+              key={char.character_id}
+              className={`character-card ${char.slots?.needsReauthorization ? 'needs-reauth' : ''} ${hoveredJobType && isCharacterSlotFull(char, hoveredJobType) ? 'dimmed' : ''} ${dragOverIdx === idx ? 'drag-over' : ''}`}
+              draggable
+              onDragStart={(e) => handleDragStart(e, idx)}
+              onDragOver={(e) => handleDragOver(e, idx)}
+              onDragLeave={() => setDragOverIdx(null)}
+              onDrop={(e) => handleDrop(e, idx)}
+              onDragEnd={handleDragEnd}
             >
               <img 
                 src={char.portrait_url} 
