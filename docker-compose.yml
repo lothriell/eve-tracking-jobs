@@ -32,7 +32,7 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=${NODE_ENV:-development}
       - PORT=3001
       - DB_PATH=/app/database/data/eve_esi.db
       - EVE_CLIENT_ID=${EVE_CLIENT_ID}

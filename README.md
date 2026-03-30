@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.1.0 | **Build Date:** 2026-03-30
+**Current Version:** v5.1.1 | **Build Date:** 2026-03-30
 
 A comprehensive web application for tracking EVE Online industry jobs across multiple characters and corporations.
 
@@ -9,6 +9,10 @@ EVE Industry Tracker provides real-time tracking of your industry jobs, slot uti
 ---
 
 ## 📋 Recent Updates
+
+### v5.1.1 (2026-03-30) - Docker Compose SSO Fix
+- ✅ Fixed `invalid_state` error on HTTP test environment
+- ✅ `NODE_ENV` defaults to `development` in docker-compose.yml (K8s unaffected)
 
 ### v5.1.0 (2026-03-30) - Planets Auto-Refresh
 - ✅ Auto-refresh for Planets view (Off / 5m / 10m / 15m) — matches Dashboard design

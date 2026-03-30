@@ -2,6 +2,16 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.1.1] - 2026-03-30
+
+### Fix: Docker Compose test environment SSO login
+- **Fixed `invalid_state` error** on Docker Compose (HTTP) test environment
+- `NODE_ENV` no longer hardcoded to `production` in docker-compose.yml — defaults to `development`
+- Production mode (`secure` cookies, `trust proxy`) only applies in K8s via K8s Secrets
+- Root cause: `secure: true` cookies prevented session round-trip on plain HTTP
+
+---
+
 ## [v5.1.0] - 2026-03-30
 
 ### Planets Auto-Refresh
