@@ -134,8 +134,8 @@ function Assets({ onError }) {
   const buildTree = (assets) => {
     let filtered = assets;
 
-    // Character filter
-    if (characterFilter !== 'all') {
+    // Character filter (only for personal assets — corp assets are corp-wide)
+    if (activeTab === 'personal' && characterFilter !== 'all') {
       filtered = filtered.filter(a => String(a.character_id) === characterFilter);
     }
 
@@ -233,7 +233,7 @@ function Assets({ onError }) {
 
   const getFilteredFlat = (assets) => {
     let filtered = assets;
-    if (characterFilter !== 'all') {
+    if (activeTab === 'personal' && characterFilter !== 'all') {
       filtered = filtered.filter(a => String(a.character_id) === characterFilter);
     }
     const f = filter.toLowerCase();
