@@ -49,11 +49,40 @@
   font-weight: 600;
 }
 
-.charpage-corp {
-  font-size: 13px;
+.charpage-affiliation {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.charpage-affiliation-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.charpage-affiliation-logo {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.charpage-affiliation-ticker {
+  font-family: 'Consolas', monospace;
+  font-weight: 700;
   color: #4da6ff;
-  margin-top: 4px;
-  display: block;
+  font-size: 13px;
+}
+
+.charpage-affiliation-row.alliance .charpage-affiliation-ticker {
+  color: #a3bffa;
+}
+
+.charpage-affiliation-name {
+  font-size: 13px;
+  color: #a0aec0;
 }
 
 /* Sections */

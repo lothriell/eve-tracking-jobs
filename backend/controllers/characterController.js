@@ -1444,13 +1444,29 @@ exports.getCharacterSummary = async (req, res) => {
     });
     personalJobs.sort((a, b) => (a.time_remaining_ms || 0) - (b.time_remaining_ms || 0));
 
+    // --- Corp Info + Alliance ---
+    let corpInfo = null;
+    let allianceInfo = null;
+    if (corpResult) {
+      corpInfo = await getCorporationInfo(corpResult.corporation_id, accessToken);
+      if (corpResult.alliance_id) {
+        try {
+          const allianceResp = await require('axios').get(
+            `https://esi.evetech.net/latest/alliances/${corpResult.alliance_id}/`,
+            { params: { datasource: 'tranquility' } }
+          );
+          allianceInfo = {
+            id: corpResult.alliance_id,
+            name: allianceResp.data.name,
+            ticker: allianceResp.data.ticker
+          };
+        } catch { /* no alliance info */ }
+      }
+    }
+
     // --- Corp Jobs (where this character is installer) ---
     let corpJobs = [];
-    let corpName = null;
-    let corpTicker = null;
     if (corpResult) {
-      corpName = corpResult.corporation_name;
-      corpTicker = corpResult.ticker;
       try {
         const roles = await getCharacterRoles(character.character_id, accessToken);
         if (hasIndustryRole(roles) && !roles.needsReauthorization) {
@@ -1559,7 +1575,8 @@ exports.getCharacterSummary = async (req, res) => {
       character_id: character.character_id,
       character_name: character.character_name,
       portrait_url: `https://images.evetech.net/characters/${character.character_id}/portrait?size=128`,
-      corporation: corpResult ? { name: corpName, ticker: corpTicker, id: corpResult.corporation_id } : null,
+      corporation: corpInfo ? { name: corpInfo.name, ticker: corpInfo.ticker, id: corpResult.corporation_id } : null,
+      alliance: allianceInfo,
       skill_queue: {
         status: skillStatus,
         queue: skillQueue

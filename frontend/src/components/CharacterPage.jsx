@@ -108,9 +108,30 @@ function CharacterPage({ characterId, onError }) {
         <img src={data.portrait_url} alt={data.character_name} className="charpage-portrait" />
         <div className="charpage-header-info">
           <h2>{data.character_name}</h2>
-          {data.corporation && (
-            <span className="charpage-corp">[{data.corporation.ticker}] {data.corporation.name}</span>
-          )}
+          <div className="charpage-affiliation">
+            {data.corporation && (
+              <div className="charpage-affiliation-row">
+                <img
+                  src={`https://images.evetech.net/corporations/${data.corporation.id}/logo?size=32`}
+                  alt=""
+                  className="charpage-affiliation-logo"
+                />
+                <span className="charpage-affiliation-ticker">[{data.corporation.ticker}]</span>
+                <span className="charpage-affiliation-name">{data.corporation.name}</span>
+              </div>
+            )}
+            {data.alliance && (
+              <div className="charpage-affiliation-row alliance">
+                <img
+                  src={`https://images.evetech.net/alliances/${data.alliance.id}/logo?size=32`}
+                  alt=""
+                  className="charpage-affiliation-logo"
+                />
+                <span className="charpage-affiliation-ticker">[{data.alliance.ticker}]</span>
+                <span className="charpage-affiliation-name">{data.alliance.name}</span>
+              </div>
+            )}
+          </div>
         </div>
         <button className="refresh-btn" onClick={loadData}>&#x21bb; Refresh</button>
       </div>
