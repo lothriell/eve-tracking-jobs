@@ -167,16 +167,18 @@ function CorporationJobs({ onError }) {
 
   if (loading) {
     return (
-      <div className="corp-jobs-container loading">
-        <div className="spinner"></div>
-        <p>Loading corporation jobs...</p>
+      <div className="industry-jobs-container">
+        <div className="jobs-loading">
+          <div className="spinner"></div>
+          <p>Loading corporation jobs...</p>
+        </div>
       </div>
     );
   }
 
   if (!hasAccess) {
     return (
-      <div className="corp-jobs-container">
+      <div className="industry-jobs-container">
         <div className="corp-jobs-header">
           <h2>🏢 Corporation Industry Jobs</h2>
         </div>
@@ -194,7 +196,7 @@ function CorporationJobs({ onError }) {
   }
 
   return (
-    <div className="corp-jobs-container">
+    <div className="industry-jobs-container">
       <div className="corp-jobs-header">
         <h2>🏢 Corporation Industry Jobs</h2>
         <div className="corp-stats">
@@ -247,122 +249,122 @@ function CorporationJobs({ onError }) {
         </div>
       )}
 
-      {/* Filters Toolbar */}
-      <div className="corp-jobs-toolbar">
-        <div className="filter-group">
-          <label>Character</label>
-          <select value={characterFilter} onChange={e => setCharacterFilter(e.target.value)}>
-            <option value="all">All Characters</option>
-            {characters.map(char => (
-              <option key={char.id} value={char.id}>
-                {char.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="filter-group">
-          <label>Corporation</label>
-          <select value={selectedCorp} onChange={e => setSelectedCorp(e.target.value)}>
-            <option value="all">All Corporations</option>
-            {corporations.filter(c => c.has_industry_access).map(corp => (
-              <option key={corp.corporation_id} value={corp.corporation_id}>
-                [{corp.ticker}] {corp.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="filter-group">
-          <label>Activity</label>
-          <select value={activityFilter} onChange={e => setActivityFilter(e.target.value)}>
-            <option value="all">All Activities</option>
-            <option value="manufacturing">Manufacturing</option>
-            <option value="science">Science</option>
-            <option value="reactions">Reactions</option>
-          </select>
-        </div>
-        <div className="filter-group">
-          <label>Status</label>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-            <option value="all">All</option>
-            <option value="active">Active</option>
-            <option value="ready">Ready</option>
-            <option value="delivered">Delivered</option>
-          </select>
+      {/* Filters Toolbar — uses shared IndustryJobs styles */}
+      <div className="jobs-toolbar">
+        <div className="toolbar-filters">
+          <div className="filter-group">
+            <label>Character</label>
+            <select value={characterFilter} onChange={e => setCharacterFilter(e.target.value)}>
+              <option value="all">All Characters</option>
+              {characters.map(char => (
+                <option key={char.id} value={char.id}>{char.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-group">
+            <label>Corporation</label>
+            <select value={selectedCorp} onChange={e => setSelectedCorp(e.target.value)}>
+              <option value="all">All Corporations</option>
+              {corporations.filter(c => c.has_industry_access).map(corp => (
+                <option key={corp.corporation_id} value={corp.corporation_id}>
+                  [{corp.ticker}] {corp.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-group">
+            <label>Activity</label>
+            <select value={activityFilter} onChange={e => setActivityFilter(e.target.value)}>
+              <option value="all">All activities</option>
+              <option value="manufacturing">Manufacturing</option>
+              <option value="science">Science</option>
+              <option value="reactions">Reactions</option>
+            </select>
+          </div>
+          <div className="filter-group">
+            <label>Status</label>
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+              <option value="all">All jobs</option>
+              <option value="active">Active</option>
+              <option value="ready">Ready</option>
+              <option value="delivered">Delivered</option>
+            </select>
+          </div>
         </div>
         <div className="toolbar-actions">
           <button className="refresh-btn" onClick={handleRefresh}>
             ↻ Refresh
           </button>
-          <span className="job-count">{filteredJobs.length} jobs</span>
+          <span className="jobs-count-badge">{filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''}</span>
         </div>
       </div>
 
-      {/* Jobs Table */}
+      {/* Jobs Table — uses shared IndustryJobs table styles */}
       {filteredJobs.length === 0 ? (
-        <div className="no-jobs-message">
-          <p>No corporation industry jobs found matching your filters.</p>
+        <div className="empty-state">
+          <p>No corporation industry jobs found matching your filters</p>
         </div>
       ) : (
-        <div className="corp-jobs-table-wrapper">
-          <table className="corp-jobs-table">
+        <div className="jobs-table-wrapper">
+          <table className="jobs-table">
             <thead>
               <tr>
-                <th>Status</th>
-                <th>Runs</th>
-                <th>Activity</th>
-                <th>Blueprint</th>
+                <th className="col-status">Status</th>
+                <th className="col-runs">Runs</th>
+                <th className="col-activity">Activity</th>
+                <th className="col-blueprint">Blueprint</th>
                 <th>Corporation</th>
-                <th>Installer</th>
-                <th>Progress</th>
-                <th>End Date</th>
+                <th className="col-installer">Installer</th>
+                <th className="col-progress">Progress</th>
+                <th className="col-date">End Date</th>
               </tr>
             </thead>
             <tbody>
               {filteredJobs.map(job => (
                 <tr key={job.job_id} className={`job-row ${job.status}`}>
-                  <td className="status-cell">
-                    <span className={`time-remaining ${job.time_remaining_ms <= 0 ? 'ready' : ''}`}>
-                      {formatTimeRemaining(job.time_remaining_ms)}
-                    </span>
-                    <div className="progress-bar-container">
-                      <div 
-                        className={`progress-bar-fill ${job.progress >= 100 ? 'complete' : ''}`}
-                        style={{ width: `${Math.min(100, job.progress)}%` }}
-                      />
+                  <td className="col-status">
+                    <div className="status-cell">
+                      <span className="time-remaining">{formatTimeRemaining(job.time_remaining_ms)}</span>
+                      <div className="progress-bar-container">
+                        <div
+                          className={`progress-bar-fill ${job.progress >= 100 ? 'complete' : job.status === 'active' ? 'active' : 'paused'}`}
+                          style={{ width: `${Math.min(100, job.progress)}%` }}
+                        />
+                      </div>
                     </div>
                   </td>
-                  <td className="runs-cell">
+                  <td className="col-runs">
                     <span className="runs-badge">x {job.runs}</span>
                   </td>
-                  <td className="activity-cell">
+                  <td className="col-activity">
                     <span className={`activity-badge ${job.activity_category}`}>
                       {job.activity}
                     </span>
                   </td>
-                  <td className="blueprint-cell">
-                    <img 
-                      src={`https://images.evetech.net/types/${job.blueprint_type_id}/bp?size=32`}
-                      alt=""
-                      className="blueprint-icon"
-                      onError={(e) => { e.target.src = `https://images.evetech.net/types/${job.blueprint_type_id}/icon?size=32`; }}
-                    />
-                    <span className="blueprint-name">{job.blueprint_name}</span>
+                  <td className="col-blueprint">
+                    <div className="blueprint-cell">
+                      <img
+                        src={`https://images.evetech.net/types/${job.blueprint_type_id}/bp?size=32`}
+                        alt=""
+                        className="blueprint-icon"
+                        onError={(e) => { e.target.src = `https://images.evetech.net/types/${job.blueprint_type_id}/icon?size=32`; }}
+                      />
+                      <span className="blueprint-name">{job.blueprint_name}</span>
+                    </div>
                   </td>
-                  <td className="corp-cell">
+                  <td>
                     <span className="corp-ticker-badge">[{job.corporation_ticker}]</span>
                     <span className="corp-name-text">{job.corporation_name}</span>
                   </td>
-                  <td className="installer-cell">
-                    {job.installer_name}
+                  <td className="col-installer">
+                    <span className="installer-name">{job.installer_name}</span>
                   </td>
-                  <td className="progress-cell">
-                    <span className={`status-badge ${job.status}`}>
+                  <td className="col-progress">
+                    <span className={`status-badge status-${job.status}`}>
                       {job.status}
                     </span>
                   </td>
-                  <td className="date-cell">
-                    {formatDate(job.end_date)}
-                  </td>
+                  <td className="col-date">{formatDate(job.end_date)}</td>
                 </tr>
               ))}
             </tbody>
