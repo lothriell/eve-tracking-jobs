@@ -289,7 +289,16 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
+  table-layout: fixed;
 }
+
+/* Fixed column widths for consistent alignment between tables */
+.charpage-jobs-table .col-blueprint { width: 35%; }
+.charpage-jobs-table .col-activity { width: 12%; }
+.charpage-jobs-table .col-status { width: 10%; }
+.charpage-jobs-table .col-progress { width: 13%; }
+.charpage-jobs-table .col-remaining { width: 12%; }
+.charpage-jobs-table .col-location { width: 18%; }
 
 .charpage-jobs-table thead th {
   position: sticky;
@@ -324,7 +333,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  min-width: 200px;
+  overflow: hidden;
+}
+
+.job-bp span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .job-bp-icon {
@@ -344,7 +359,6 @@
 .job-location {
   color: #718096;
   font-size: 11px;
-  max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

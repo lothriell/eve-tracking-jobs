@@ -199,12 +199,12 @@ function CharacterPage({ characterId, onError }) {
             <table className="charpage-jobs-table">
               <thead>
                 <tr>
-                  <th>Blueprint</th>
-                  <th>Activity</th>
-                  <th>Status</th>
-                  <th>Progress</th>
-                  <th>Remaining</th>
-                  <th>Location</th>
+                  <th className="col-blueprint">Blueprint</th>
+                  <th className="col-activity">Activity</th>
+                  <th className="col-status">Status</th>
+                  <th className="col-progress">Progress</th>
+                  <th className="col-remaining">Remaining</th>
+                  <th className="col-location">Location</th>
                 </tr>
               </thead>
               <tbody>
@@ -225,7 +225,7 @@ function CharacterPage({ characterId, onError }) {
                         <span className="progress-text">{Math.round(progress)}%</span>
                       </td>
                       <td className="job-time">{job.status === 'active' ? formatTimeRemaining(job.end_date) : '—'}</td>
-                      <td className="job-location">{job.station_name || job.location_name || '—'}</td>
+                      <td className="job-location">{job.location_name || '—'}</td>
                     </tr>
                   );
                 })}
@@ -247,12 +247,12 @@ function CharacterPage({ characterId, onError }) {
             <table className="charpage-jobs-table">
               <thead>
                 <tr>
-                  <th>Blueprint</th>
-                  <th>Activity</th>
-                  <th>Status</th>
-                  <th>Progress</th>
-                  <th>Remaining</th>
-                  <th>Location</th>
+                  <th className="col-blueprint">Blueprint</th>
+                  <th className="col-activity">Activity</th>
+                  <th className="col-status">Status</th>
+                  <th className="col-progress">Progress</th>
+                  <th className="col-remaining">Remaining</th>
+                  <th className="col-location">Location</th>
                 </tr>
               </thead>
               <tbody>
@@ -273,7 +273,7 @@ function CharacterPage({ characterId, onError }) {
                         <span className="progress-text">{Math.round(progress)}%</span>
                       </td>
                       <td className="job-time">{job.status === 'active' ? formatTimeRemaining(job.end_date) : '—'}</td>
-                      <td className="job-location">{job.station_name || job.location_name || '—'}</td>
+                      <td className="job-location">{job.location_name || '—'}</td>
                     </tr>
                   );
                 })}
