@@ -42,6 +42,9 @@ router.get('/corporation/roles/:characterId', requireAuth, characterController.g
 // Dashboard endpoint
 router.get('/dashboard/stats', requireAuth, characterController.getDashboardStats);
 
+// Character summary page
+router.get('/character/:characterId/summary', requireAuth, characterController.getCharacterSummary);
+
 // Total asset value (quick summary from cached prices)
 router.get('/wealth', requireAuth, async (req, res) => {
   const db = require('../database/db');

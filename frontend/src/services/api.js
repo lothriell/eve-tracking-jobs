@@ -75,6 +75,11 @@ export const getDashboardStats = () => {
   return api.get('/api/dashboard/stats');
 };
 
+// Character summary page
+export const getCharacterSummary = (characterId) => {
+  return api.get(`/api/character/${characterId}/summary`);
+};
+
 // Corporation endpoints
 export const getCorporations = () => {
   return api.get('/api/corporations');

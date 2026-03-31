@@ -1,0 +1,528 @@
+.charpage-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.charpage-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #a0aec0;
+}
+
+.charpage-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #718096;
+}
+
+/* Header */
+.charpage-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.charpage-portrait {
+  width: 80px;
+  height: 80px;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+.charpage-header-info {
+  flex: 1;
+}
+
+.charpage-header-info h2 {
+  margin: 0;
+  color: #e2e8f0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.charpage-corp {
+  font-size: 13px;
+  color: #4da6ff;
+  margin-top: 4px;
+  display: block;
+}
+
+/* Sections */
+.charpage-section {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.charpage-section h3 {
+  margin: 0 0 14px;
+  color: #a0aec0;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-count {
+  font-size: 12px;
+  color: #63b3ed;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.charpage-empty-section {
+  color: #4a5568;
+  font-size: 13px;
+  padding: 12px 0;
+}
+
+/* Alerts */
+.charpage-alert {
+  padding: 10px 14px;
+  background: rgba(252, 129, 129, 0.1);
+  border: 1px solid rgba(252, 129, 129, 0.3);
+  border-radius: 8px;
+  color: #fc8181;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  animation: flash-red 1.5s ease-in-out infinite;
+}
+
+.charpage-alert.warning {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+  animation: none;
+}
+
+@keyframes flash-red {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* Currently training */
+.charpage-training-active {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(74, 158, 255, 0.08);
+  border: 1px solid rgba(74, 158, 255, 0.2);
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.training-label {
+  font-size: 12px;
+  color: #718096;
+}
+
+.training-skill {
+  font-size: 14px;
+  color: #63b3ed;
+  font-weight: 600;
+}
+
+.training-time {
+  margin-left: auto;
+  font-size: 14px;
+  font-family: 'Consolas', monospace;
+  color: #a3bffa;
+}
+
+/* Queue toggle */
+.charpage-queue-toggle {
+  font-size: 12px;
+  color: #718096;
+  cursor: pointer;
+  padding: 6px 0;
+  user-select: none;
+}
+
+.charpage-queue-toggle:hover {
+  color: #a0aec0;
+}
+
+/* Queue table */
+.charpage-queue-table-wrap {
+  max-height: 400px;
+  overflow-y: auto;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 6px;
+}
+
+.charpage-queue-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.charpage-queue-table thead th {
+  position: sticky;
+  top: 0;
+  background: rgba(20, 25, 40, 0.95);
+  color: #718096;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  padding: 6px 10px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.charpage-queue-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.charpage-queue-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.charpage-queue-table tbody tr.queue-active {
+  background: rgba(74, 158, 255, 0.08);
+}
+
+.charpage-queue-table tbody tr.queue-active .queue-name {
+  color: #63b3ed;
+  font-weight: 600;
+}
+
+.charpage-queue-table td {
+  padding: 5px 10px;
+  color: #a0aec0;
+}
+
+.queue-pos {
+  color: #4a5568;
+  width: 30px;
+  text-align: center;
+}
+
+.queue-level {
+  width: 40px;
+  text-align: center;
+  font-family: 'Consolas', monospace;
+}
+
+.queue-date {
+  font-family: 'Consolas', monospace;
+  color: #718096;
+  font-size: 11px;
+}
+
+.queue-time {
+  text-align: right;
+  font-family: 'Consolas', monospace;
+  color: #a3bffa;
+}
+
+/* Slot row */
+.charpage-slots-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.charpage-slot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  border-radius: 10px;
+  border: 1px solid;
+}
+
+.charpage-slot .slot-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.charpage-slot .slot-value {
+  font-size: 22px;
+  font-weight: 700;
+  font-family: 'Consolas', monospace;
+}
+
+.charpage-slot.manufacturing {
+  background: rgba(255, 107, 53, 0.1);
+  border-color: rgba(255, 107, 53, 0.4);
+  color: #ff6b35;
+}
+
+.charpage-slot.science {
+  background: rgba(74, 158, 255, 0.1);
+  border-color: rgba(74, 158, 255, 0.4);
+  color: #4a9eff;
+}
+
+.charpage-slot.reactions {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #10b981;
+}
+
+/* Jobs table */
+.charpage-jobs-table-wrap {
+  overflow-x: auto;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.charpage-jobs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.charpage-jobs-table thead th {
+  position: sticky;
+  top: 0;
+  background: rgba(20, 25, 40, 0.95);
+  color: #718096;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+}
+
+.charpage-jobs-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.charpage-jobs-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.charpage-jobs-table td {
+  padding: 8px 10px;
+  color: #a0aec0;
+  vertical-align: middle;
+}
+
+.job-bp {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 200px;
+}
+
+.job-bp-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.job-time {
+  font-family: 'Consolas', monospace;
+  white-space: nowrap;
+  color: #a3bffa;
+}
+
+.job-location {
+  color: #718096;
+  font-size: 11px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Activity tags */
+.activity-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.activity-tag.manufacturing {
+  background: rgba(255, 107, 53, 0.15);
+  color: #ff6b35;
+  border: 1px solid rgba(255, 107, 53, 0.3);
+}
+
+.activity-tag.science {
+  background: rgba(74, 158, 255, 0.15);
+  color: #4a9eff;
+  border: 1px solid rgba(74, 158, 255, 0.3);
+}
+
+.activity-tag.reactions {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* Status badges */
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.status-badge.status-active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.status-badge.status-ready {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.status-badge.status-delivered {
+  background: rgba(107, 114, 128, 0.15);
+  color: #9ca3af;
+}
+
+/* Progress bar */
+.progress-bar-mini {
+  width: 60px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  transition: width 0.3s;
+}
+
+.progress-fill.complete {
+  background: #10b981;
+}
+
+.progress-text {
+  font-size: 11px;
+  color: #718096;
+  font-family: 'Consolas', monospace;
+}
+
+/* Planets grid */
+.charpage-planets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.charpage-planet-card {
+  padding: 12px 14px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 3px solid;
+}
+
+.charpage-planet-card.attention {
+  border-color: rgba(252, 129, 129, 0.5);
+  background: rgba(252, 129, 129, 0.05);
+}
+
+.planet-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.planet-type-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.planet-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.planet-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.planet-system {
+  font-size: 11px;
+  color: #718096;
+}
+
+.planet-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: #4a5568;
+}
+
+.planet-type-label {
+  text-transform: capitalize;
+}
+
+.planet-pins {
+  color: #718096;
+}
+
+.planet-updated {
+  color: #718096;
+}
+
+.planet-updated.stale {
+  color: #fc8181;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .charpage-slots-row {
+    grid-template-columns: 1fr;
+  }
+
+  .charpage-planets-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .charpage-header {
+    flex-direction: column;
+    text-align: center;
+  }
+}

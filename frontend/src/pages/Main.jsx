@@ -6,6 +6,7 @@ import IndustryJobs from '../components/IndustryJobs';
 import CorporationJobs from '../components/CorporationJobs';
 import Assets from '../components/Assets';
 import Planets from '../components/Planets';
+import CharacterPage from '../components/CharacterPage';
 import './Main.css';
 
 function ServerStatus() {
@@ -131,10 +132,14 @@ function Main({ onLogout }) {
 
   const handleSelectCharacter = (character) => {
     setSelectedCharacter(character);
+    setCurrentView('character');
   };
 
   const handleShowAllCharacters = () => {
     setSelectedCharacter(null);
+    if (currentView === 'character') {
+      setCurrentView('dashboard');
+    }
   };
 
   const handleViewChange = (view) => {
@@ -143,6 +148,12 @@ function Main({ onLogout }) {
 
   const renderContent = () => {
     switch (currentView) {
+      case 'character':
+        return selectedCharacter ? (
+          <CharacterPage characterId={selectedCharacter.character_id} onError={setError} />
+        ) : (
+          <Dashboard onError={setError} />
+        );
       case 'jobs':
         return <IndustryJobs selectedCharacter={selectedCharacter} onError={setError} />;
       case 'corp-jobs':
@@ -173,9 +184,9 @@ function Main({ onLogout }) {
         <div className="main-header">
           <div className="header-title">
             <h1>EVE Industry Tracker</h1>
-            {selectedCharacter && (
+            {selectedCharacter && currentView === 'character' && (
               <span className="selected-character">
-                Viewing: {selectedCharacter.name}
+                {selectedCharacter.name}
               </span>
             )}
           </div>

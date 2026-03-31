@@ -1370,6 +1370,128 @@ exports.getColonyLayout = async (req, res) => {
   }
 };
 
+// Get character summary page data (skill queue, jobs, planets)
+exports.getCharacterSummary = async (req, res) => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const characterId = parseInt(req.params.characterId);
+    const character = await db.getCharacterById(characterId);
+    if (!character || character.user_id !== req.session.userId) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
+
+    const accessToken = await getValidAccessToken(character);
+
+    // Fetch all data in parallel
+    const [jobsResult, slotsResult, sqResult, coloniesResult, corpResult] = await Promise.all([
+      getCharacterIndustryJobs(character.character_id, accessToken).catch(() => []),
+      getJobSlotUsage(character.character_id, accessToken).catch(() => ({ manufacturing: { current: 0, max: 0 }, science: { current: 0, max: 0 }, reactions: { current: 0, max: 0 } })),
+      getCharacterSkillQueue(character.character_id, accessToken).catch(() => ({ queue: [], hasScope: false })),
+      getCharacterColonies(character.character_id, accessToken).catch(() => []),
+      getCharacterCorporation(character.character_id, accessToken).catch(() => null)
+    ]);
+
+    // --- Skill Queue ---
+    let skillQueue = [];
+    let skillStatus = 'unknown';
+    if (sqResult.hasScope && sqResult.queue.length > 0) {
+      const now = new Date();
+      const futureQueue = sqResult.queue.filter(s => s.finish_date && new Date(s.finish_date) > now);
+      const skillIds = futureQueue.map(s => s.skill_id);
+      const skillNames = await getTypeNames(skillIds);
+      const active = sqResult.queue.find(s =>
+        s.finish_date && new Date(s.finish_date) > now &&
+        s.start_date && new Date(s.start_date) <= now
+      );
+      skillQueue = futureQueue.map(s => ({
+        skill_name: skillNames[s.skill_id] || `Unknown (${s.skill_id})`,
+        finished_level: s.finished_level,
+        start_date: s.start_date,
+        finish_date: s.finish_date,
+        queue_position: s.queue_position
+      }));
+      skillStatus = active ? 'training' : (futureQueue.length > 0 ? 'paused' : 'not_training');
+    } else if (sqResult.hasScope) {
+      skillStatus = 'not_training';
+    }
+
+    // --- Personal Jobs ---
+    const personalJobs = jobsResult || [];
+    const activePersonalJobs = personalJobs.filter(j => j.status === 'active');
+    // Resolve installer names
+    const installerIds = new Set(personalJobs.map(j => j.installer_id).filter(Boolean));
+    const installerNames = installerIds.size > 0 ? await getCharacterNames([...installerIds]) : {};
+    personalJobs.forEach(job => {
+      job.installer_name = installerNames[job.installer_id] || `Character ${job.installer_id}`;
+    });
+    personalJobs.sort((a, b) => (a.time_remaining_ms || 0) - (b.time_remaining_ms || 0));
+
+    // --- Corp Jobs (where this character is installer) ---
+    let corpJobs = [];
+    let corpName = null;
+    let corpTicker = null;
+    if (corpResult) {
+      corpName = corpResult.corporation_name;
+      corpTicker = corpResult.ticker;
+      try {
+        const roles = await getCharacterRoles(character.character_id, accessToken);
+        if (hasIndustryRole(roles) && !roles.needsReauthorization) {
+          const rawCorpJobs = await getCorporationJobs(corpResult.corporation_id, accessToken);
+          if (Array.isArray(rawCorpJobs)) {
+            corpJobs = rawCorpJobs.filter(j => j.installer_id === character.character_id);
+            // Resolve type names for corp jobs
+            const corpTypeIds = [...new Set(corpJobs.map(j => j.blueprint_type_id || j.product_type_id).filter(Boolean))];
+            const corpTypeNames = corpTypeIds.length > 0 ? await getTypeNames(corpTypeIds) : {};
+            const corpInstallerIds = new Set(corpJobs.map(j => j.installer_id).filter(Boolean));
+            const corpInstallerNames = corpInstallerIds.size > 0 ? await getCharacterNames([...corpInstallerIds]) : {};
+            corpJobs = await transformCorporationJobs(corpJobs);
+            corpJobs.forEach(job => {
+              job.installer_name = corpInstallerNames[job.installer_id] || character.character_name;
+            });
+            corpJobs.sort((a, b) => (a.time_remaining_ms || 0) - (b.time_remaining_ms || 0));
+          }
+        }
+      } catch (e) {
+        // No corp access
+      }
+    }
+
+    // --- Planets ---
+    const colonies = coloniesResult || [];
+    const systemIds = colonies.map(c => c.solar_system_id).filter(Boolean);
+    const systemNames = systemIds.length > 0 ? await getSystemNames(systemIds) : {};
+    for (const colony of colonies) {
+      if (colony.solar_system_id) {
+        colony.system_name = systemNames[colony.solar_system_id] || `System ${colony.solar_system_id}`;
+      }
+      if (colony.planet_id) {
+        colony.planet_name = await getPlanetName(colony.planet_id);
+      }
+    }
+
+    res.json({
+      character_id: character.character_id,
+      character_name: character.character_name,
+      portrait_url: `https://images.evetech.net/characters/${character.character_id}/portrait?size=128`,
+      corporation: corpResult ? { name: corpName, ticker: corpTicker, id: corpResult.corporation_id } : null,
+      skill_queue: {
+        status: skillStatus,
+        queue: skillQueue
+      },
+      slots: slotsResult,
+      personal_jobs: personalJobs,
+      corp_jobs: corpJobs,
+      planets: colonies
+    });
+  } catch (error) {
+    console.error('Get character summary error:', error);
+    res.status(500).json({ error: 'Failed to get character summary' });
+  }
+};
+
 // Get corporation customs offices
 exports.getCustomsOffices = async (req, res) => {
   try {
