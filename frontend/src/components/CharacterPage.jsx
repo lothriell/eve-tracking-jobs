@@ -214,7 +214,7 @@ function CharacterPage({ characterId, onError }) {
                     <tr key={job.job_id}>
                       <td className="job-bp">
                         <img src={`https://images.evetech.net/types/${job.blueprint_type_id}/${job.runs === -1 ? 'bp' : 'bpc'}?size=32`} alt="" className="job-bp-icon" />
-                        <span>{job.blueprint_type_name || `Type ${job.blueprint_type_id}`}</span>
+                        <span>{job.blueprint_name || `Type ${job.blueprint_type_id}`}</span>
                       </td>
                       <td><span className={`activity-tag ${ACTIVITY_CATEGORIES[job.activity_id] || ''}`}>{ACTIVITY_LABELS[job.activity_id] || job.activity_id}</span></td>
                       <td><span className={`status-badge status-${job.status}`}>{job.status}</span></td>
@@ -262,7 +262,7 @@ function CharacterPage({ characterId, onError }) {
                     <tr key={job.job_id}>
                       <td className="job-bp">
                         <img src={`https://images.evetech.net/types/${job.blueprint_type_id}/${job.runs === -1 ? 'bp' : 'bpc'}?size=32`} alt="" className="job-bp-icon" />
-                        <span>{job.blueprint_type_name || `Type ${job.blueprint_type_id}`}</span>
+                        <span>{job.blueprint_name || `Type ${job.blueprint_type_id}`}</span>
                       </td>
                       <td><span className={`activity-tag ${ACTIVITY_CATEGORIES[job.activity_id] || ''}`}>{ACTIVITY_LABELS[job.activity_id] || job.activity_id}</span></td>
                       <td><span className={`status-badge status-${job.status}`}>{job.status}</span></td>
