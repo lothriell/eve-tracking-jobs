@@ -1424,8 +1424,23 @@ exports.getCharacterSummary = async (req, res) => {
     // Resolve installer names
     const installerIds = new Set(personalJobs.map(j => j.installer_id).filter(Boolean));
     const installerNames = installerIds.size > 0 ? await getCharacterNames([...installerIds]) : {};
+    // Resolve location names for jobs
+    const locationIds = new Set();
+    personalJobs.forEach(job => {
+      if (job.facility_id) locationIds.add(job.facility_id);
+      if (job.station_id) locationIds.add(job.station_id);
+    });
+    const locationNames = {};
+    for (const locId of locationIds) {
+      try {
+        locationNames[locId] = await getLocationName(locId, accessToken);
+      } catch {
+        // Skip unresolvable locations
+      }
+    }
     personalJobs.forEach(job => {
       job.installer_name = installerNames[job.installer_id] || `Character ${job.installer_id}`;
+      job.location_name = locationNames[job.facility_id] || locationNames[job.station_id] || null;
     });
     personalJobs.sort((a, b) => (a.time_remaining_ms || 0) - (b.time_remaining_ms || 0));
 
@@ -1448,8 +1463,17 @@ exports.getCharacterSummary = async (req, res) => {
             const corpInstallerIds = new Set(corpJobs.map(j => j.installer_id).filter(Boolean));
             const corpInstallerNames = corpInstallerIds.size > 0 ? await getCharacterNames([...corpInstallerIds]) : {};
             corpJobs = await transformCorporationJobs(corpJobs);
+            // Resolve corp job locations
+            const corpLocIds = new Set();
+            corpJobs.forEach(j => { if (j.facility_id) corpLocIds.add(j.facility_id); if (j.station_id) corpLocIds.add(j.station_id); });
+            for (const locId of corpLocIds) {
+              if (!locationNames[locId]) {
+                try { locationNames[locId] = await getLocationName(locId, accessToken); } catch {}
+              }
+            }
             corpJobs.forEach(job => {
               job.installer_name = corpInstallerNames[job.installer_id] || character.character_name;
+              job.location_name = locationNames[job.facility_id] || locationNames[job.station_id] || null;
             });
             corpJobs.sort((a, b) => (a.time_remaining_ms || 0) - (b.time_remaining_ms || 0));
           }
