@@ -437,6 +437,87 @@
   50% { opacity: 0.3; }
 }
 
+/* Skill Queue Expandable Table */
+.skill-training-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.queue-expand-arrow {
+  color: #718096;
+  font-size: 10px;
+}
+
+.skill-queue-table-wrap {
+  margin-top: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.skill-queue-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.skill-queue-table thead th {
+  position: sticky;
+  top: 0;
+  background: rgba(20, 25, 40, 0.95);
+  color: #718096;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  padding: 4px 6px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.skill-queue-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.skill-queue-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.skill-queue-table tbody tr.queue-active {
+  background: rgba(74, 158, 255, 0.08);
+}
+
+.skill-queue-table tbody tr.queue-active .queue-name {
+  color: #63b3ed;
+  font-weight: 600;
+}
+
+.skill-queue-table td {
+  padding: 3px 6px;
+  color: #a0aec0;
+}
+
+.queue-pos {
+  color: #4a5568;
+  width: 20px;
+  text-align: center;
+}
+
+.queue-level {
+  width: 28px;
+  text-align: center;
+  font-family: 'Consolas', monospace;
+}
+
+.queue-time {
+  width: 60px;
+  text-align: right;
+  font-family: 'Consolas', monospace;
+  color: #718096;
+}
+
 /* Activity Section */
 .activity-section {
   background: rgba(0, 0, 0, 0.2);

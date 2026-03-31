@@ -4,14 +4,71 @@ import './Dashboard.css';
 
 const ROMAN = ['0', 'I', 'II', 'III', 'IV', 'V'];
 
-function SkillTrainingLine({ training }) {
+function formatQueueTime(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = d - now;
+  if (diff <= 0) return 'Done';
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const mins = Math.floor((diff % 3600000) / 60000);
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${mins}m`;
+  return `${mins}m`;
+}
+
+function SkillQueueTable({ queue }) {
+  if (!queue || queue.length === 0) return null;
+
+  return (
+    <div className="skill-queue-table-wrap">
+      <table className="skill-queue-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Skill</th>
+            <th>Lvl</th>
+            <th>Finishes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {queue.map((s, i) => {
+            const now = new Date();
+            const start = s.start_date ? new Date(s.start_date) : null;
+            const isActive = start && start <= now && new Date(s.finish_date) > now;
+            return (
+              <tr key={i} className={isActive ? 'queue-active' : ''}>
+                <td className="queue-pos">{i + 1}</td>
+                <td className="queue-name">{s.skill_name}</td>
+                <td className="queue-level">{ROMAN[s.finished_level]}</td>
+                <td className="queue-time">{formatQueueTime(s.finish_date)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SkillTrainingLine({ training, expanded, onToggle }) {
   if (!training) return null;
 
   if (training.status === 'not_training') {
     return <span className="skill-training-alert flashing">No Skill in Training</span>;
   }
   if (training.status === 'paused') {
-    return <span className="skill-training-alert flashing">Training Paused</span>;
+    return (
+      <div className="skill-training-section">
+        <span className="skill-training-alert flashing" style={{ cursor: training.queue?.length ? 'pointer' : 'default' }} onClick={training.queue?.length ? onToggle : undefined}>
+          Training Paused
+          {training.queue_length > 0 && <span className="skill-queue-count"> ({training.queue_length} queued)</span>}
+          {training.queue?.length > 0 && <span className="queue-expand-arrow">{expanded ? ' ▾' : ' ▸'}</span>}
+        </span>
+        {expanded && <SkillQueueTable queue={training.queue} />}
+      </div>
+    );
   }
 
   const now = new Date();
@@ -20,11 +77,17 @@ function SkillTrainingLine({ training }) {
     return <span className="skill-training-alert flashing">No Skill in Training</span>;
   }
 
+  const hasQueue = training.queue?.length > 1;
+
   return (
-    <span className="skill-training-active">
-      {training.skill_name} {ROMAN[training.finished_level]}
-      {training.queue_length > 1 && <span className="skill-queue-count"> (+{training.queue_length - 1})</span>}
-    </span>
+    <div className="skill-training-section">
+      <span className="skill-training-active" style={{ cursor: hasQueue ? 'pointer' : 'default' }} onClick={hasQueue ? onToggle : undefined}>
+        {training.skill_name} {ROMAN[training.finished_level]}
+        {training.queue_length > 1 && <span className="skill-queue-count"> (+{training.queue_length - 1})</span>}
+        {hasQueue && <span className="queue-expand-arrow">{expanded ? ' ▾' : ' ▸'}</span>}
+      </span>
+      {expanded && <SkillQueueTable queue={training.queue} />}
+    </div>
   );
 }
 
@@ -58,6 +121,7 @@ function Dashboard({ onError }) {
   const [dragIdx, setDragIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
   const [orderedCharacters, setOrderedCharacters] = useState([]);
+  const [expandedQueues, setExpandedQueues] = useState({});
 
   const loadStats = useCallback(async () => {
     try {
@@ -416,7 +480,11 @@ function Dashboard({ onError }) {
                         R: {char.slots?.reactions?.current || 0}/{char.slots?.reactions?.max || 0}
                       </span>
                     </div>
-                    <SkillTrainingLine training={char.skill_training} />
+                    <SkillTrainingLine
+                      training={char.skill_training}
+                      expanded={!!expandedQueues[char.character_id]}
+                      onToggle={() => setExpandedQueues(prev => ({ ...prev, [char.character_id]: !prev[char.character_id] }))}
+                    />
                   </>
                 )}
               </div>
