@@ -209,7 +209,7 @@ function CharacterPage({ characterId, onError }) {
               </thead>
               <tbody>
                 {activePersonalJobs.map(job => {
-                  const progress = job.progress_percent || 0;
+                  const progress = job.progress || 0;
                   return (
                     <tr key={job.job_id}>
                       <td className="job-bp">
@@ -257,7 +257,7 @@ function CharacterPage({ characterId, onError }) {
               </thead>
               <tbody>
                 {activeCorpJobs.map(job => {
-                  const progress = job.progress_percent || 0;
+                  const progress = job.progress || 0;
                   return (
                     <tr key={job.job_id}>
                       <td className="job-bp">
