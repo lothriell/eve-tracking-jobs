@@ -1483,7 +1483,7 @@ exports.getCharacterSummary = async (req, res) => {
       }
     }
 
-    // --- Planets ---
+    // --- Planets (with layout details for expiry + storage) ---
     const colonies = coloniesResult || [];
     const systemIds = colonies.map(c => c.solar_system_id).filter(Boolean);
     const systemNames = systemIds.length > 0 ? await getSystemNames(systemIds) : {};
@@ -1493,6 +1493,65 @@ exports.getCharacterSummary = async (req, res) => {
       }
       if (colony.planet_id) {
         colony.planet_name = await getPlanetName(colony.planet_id);
+      }
+      // Fetch layout to get extractor expiry and storage fill
+      try {
+        const layout = await getColonyLayout(character.character_id, colony.planet_id, accessToken);
+        const pins = layout.pins || [];
+
+        // Resolve type names and volumes for storage calculation
+        const pTypeIds = new Set();
+        pins.forEach(p => {
+          if (p.type_id) pTypeIds.add(p.type_id);
+          if (p.contents) p.contents.forEach(i => { if (i.type_id) pTypeIds.add(i.type_id); });
+        });
+        const pTypeNames = pTypeIds.size > 0 ? await getTypeNames([...pTypeIds]) : {};
+        const pTypeVolumes = {};
+        if (pTypeIds.size > 0) {
+          const cached = db.getCachedNames([...pTypeIds], 'type');
+          for (const [id, data] of Object.entries(cached)) {
+            if (data.extra_data) pTypeVolumes[id] = parseFloat(data.extra_data) || 0;
+          }
+        }
+        pins.forEach(p => { p.type_name = pTypeNames[p.type_id] || ''; });
+
+        // Find earliest extractor expiry
+        let earliestExpiry = null;
+        pins.forEach(p => {
+          if (p.expiry_time) {
+            const exp = new Date(p.expiry_time);
+            if (!earliestExpiry || exp < earliestExpiry) earliestExpiry = exp;
+          }
+        });
+        colony.extractor_expiry = earliestExpiry ? earliestExpiry.toISOString() : null;
+
+        // Calculate launchpad storage fill
+        let storageUsed = 0;
+        let storageCapacity = 0;
+        pins.forEach(p => {
+          const name = (p.type_name || '').toLowerCase();
+          let cap = 0;
+          if (name.includes('launchpad')) cap = 10000;
+          else if (name.includes('storage')) cap = 12000;
+          if (cap > 0) {
+            storageCapacity += cap;
+            if (p.contents) {
+              p.contents.forEach(item => {
+                const vol = pTypeVolumes[item.type_id] || 0.01;
+                storageUsed += vol * item.amount;
+              });
+            }
+          }
+        });
+        colony.storage = storageCapacity > 0 ? {
+          used: Math.round(storageUsed),
+          capacity: storageCapacity,
+          pct: Math.min(100, Math.round((storageUsed / storageCapacity) * 100))
+        } : null;
+      } catch (layoutErr) {
+        // Layout fetch failed — skip details
+        colony.extractor_expiry = null;
+        colony.storage = null;
       }
     }
 

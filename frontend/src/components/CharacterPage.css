@@ -501,28 +501,95 @@
   color: #718096;
 }
 
-.planet-meta {
+/* Extractor expiry row */
+.planet-expiry-row {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  font-size: 11px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.planet-expiry-label {
   color: #4a5568;
 }
 
-.planet-type-label {
-  text-transform: capitalize;
+.planet-expiry-value {
+  font-family: 'Consolas', monospace;
+  font-weight: 600;
+  color: #63b3ed;
 }
 
-.planet-pins {
-  color: #718096;
-}
-
-.planet-updated {
-  color: #718096;
-}
-
-.planet-updated.stale {
+.planet-expiry-value.expired {
   color: #fc8181;
+  animation: flash-red 1.5s ease-in-out infinite;
+}
+
+.planet-expiry-value.urgent {
+  color: #fc8181;
+}
+
+.planet-expiry-value.warning {
+  color: #f6ad55;
+}
+
+.planet-expiry-value.idle {
+  color: #4a5568;
+  font-weight: 400;
+  font-family: inherit;
+}
+
+/* Storage fill bar */
+.planet-storage-row {
+  margin-top: 6px;
+}
+
+.planet-storage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.planet-storage-label {
+  color: #4a5568;
+}
+
+.planet-storage-pct {
+  font-family: 'Consolas', monospace;
+  font-weight: 600;
+  color: #63b3ed;
+}
+
+.planet-storage-pct.warning {
+  color: #f6ad55;
+}
+
+.planet-storage-pct.critical {
+  color: #fc8181;
+}
+
+.planet-storage-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.planet-storage-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: #63b3ed;
+  transition: width 0.3s;
+}
+
+.planet-storage-fill.warning {
+  background: #f6ad55;
+}
+
+.planet-storage-fill.critical {
+  background: #fc8181;
 }
 
 /* Responsive */

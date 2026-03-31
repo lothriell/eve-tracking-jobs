@@ -293,9 +293,13 @@ function CharacterPage({ characterId, onError }) {
             {data.planets.map(colony => {
               const pType = (colony.planet_type || '').replace('planet_type_', '').toLowerCase();
               const color = PLANET_COLORS[pType] || '#5a6a7a';
-              const lastUpdate = colony.last_update ? new Date(colony.last_update) : null;
-              const age = lastUpdate ? now - lastUpdate : null;
-              const needsAttention = age && age > 86400000; // >24h since update
+              const expiry = colony.extractor_expiry ? new Date(colony.extractor_expiry) : null;
+              const expiryDiff = expiry ? expiry - now : null;
+              const isExpired = expiryDiff !== null && expiryDiff <= 0;
+              const storage = colony.storage;
+              const storageCritical = storage && storage.pct >= 80;
+              const storageWarning = storage && storage.pct >= 60 && storage.pct < 80;
+              const needsAttention = isExpired || storageCritical;
               return (
                 <div key={colony.planet_id} className={`charpage-planet-card ${needsAttention ? 'attention' : ''}`} style={{ borderLeftColor: color }}>
                   <div className="planet-header">
@@ -305,15 +309,32 @@ function CharacterPage({ characterId, onError }) {
                       <span className="planet-system">{colony.system_name}</span>
                     </div>
                   </div>
-                  <div className="planet-meta">
-                    <span className="planet-type-label">{pType}</span>
-                    {colony.num_pins > 0 && <span className="planet-pins">{colony.num_pins} pins</span>}
-                    {lastUpdate && (
-                      <span className={`planet-updated ${needsAttention ? 'stale' : ''}`}>
-                        Updated: {formatCountdown(age)} ago
+                  {/* Extractor expiry */}
+                  <div className="planet-expiry-row">
+                    <span className="planet-expiry-label">Extractor:</span>
+                    {expiry ? (
+                      <span className={`planet-expiry-value ${isExpired ? 'expired' : expiryDiff < 7200000 ? 'urgent' : expiryDiff < 86400000 ? 'warning' : ''}`}>
+                        {isExpired ? 'EXPIRED' : formatCountdown(expiryDiff)}
                       </span>
+                    ) : (
+                      <span className="planet-expiry-value idle">No extractors</span>
                     )}
                   </div>
+                  {/* Storage fill bar */}
+                  {storage && (
+                    <div className="planet-storage-row">
+                      <div className="planet-storage-header">
+                        <span className="planet-storage-label">Storage:</span>
+                        <span className={`planet-storage-pct ${storageCritical ? 'critical' : storageWarning ? 'warning' : ''}`}>{storage.pct}%</span>
+                      </div>
+                      <div className="planet-storage-bar">
+                        <div
+                          className={`planet-storage-fill ${storageCritical ? 'critical' : storageWarning ? 'warning' : ''}`}
+                          style={{ width: `${storage.pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
