@@ -408,34 +408,21 @@ exports.getDashboardStats = async (req, res) => {
               s.finish_date && new Date(s.finish_date) > now &&
               s.start_date && new Date(s.start_date) <= now
             );
-
-            // Resolve all skill names in the queue at once (batch)
-            const futureQueue = sqResult.queue.filter(s => s.finish_date && new Date(s.finish_date) > now);
-            const skillIds = futureQueue.map(s => s.skill_id);
-            const skillNames = await getTypeNames(skillIds);
-
-            const queue = futureQueue.map(s => ({
-              skill_name: skillNames[s.skill_id] || `Unknown (${s.skill_id})`,
-              finished_level: s.finished_level,
-              start_date: s.start_date,
-              finish_date: s.finish_date,
-              queue_position: s.queue_position
-            }));
-
             if (active) {
+              const skillName = await getTypeName(active.skill_id);
               skillTraining = {
-                skill_name: skillNames[active.skill_id] || await getTypeName(active.skill_id),
+                skill_name: skillName,
                 finished_level: active.finished_level,
                 finish_date: active.finish_date,
-                queue_length: futureQueue.length,
-                queue
+                queue_length: sqResult.queue.filter(s => s.finish_date && new Date(s.finish_date) > now).length
               };
             } else {
               // Queue exists but nothing actively training (paused or all finished)
-              if (futureQueue.length === 0) {
+              const future = sqResult.queue.find(s => s.finish_date && new Date(s.finish_date) > now);
+              if (!future) {
                 skillTraining = { status: 'not_training' };
               } else {
-                skillTraining = { status: 'paused', queue_length: futureQueue.length, queue };
+                skillTraining = { status: 'paused' };
               }
             }
           } else if (sqResult.hasScope) {
