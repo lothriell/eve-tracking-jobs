@@ -2,9 +2,10 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { getIndustryJobs, getJobSlots, getAllCharacters, getCorporationJobs } from '../services/api';
 import './IndustryJobs.css';
 
-function IndustryJobs({ selectedCharacter, onError }) {
+function IndustryJobs({ onError }) {
   const [jobs, setJobs] = useState([]);
   const [corpJobs, setCorpJobs] = useState([]);
+  const [characters, setCharacters] = useState([]);
   const [slots, setSlots] = useState({ manufacturing: { current: 0, max: 0 }, science: { current: 0, max: 0 }, reactions: { current: 0, max: 0 } });
   const [slotBreakdown, setSlotBreakdown] = useState({
     manufacturing: { personal: 0, corp: 0 },
@@ -19,6 +20,7 @@ function IndustryJobs({ selectedCharacter, onError }) {
   const timerRef = useRef(null);
 
   // Filters
+  const [characterFilter, setCharacterFilter] = useState('all');
   const [activityFilter, setActivityFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('active');
 
@@ -29,9 +31,10 @@ function IndustryJobs({ selectedCharacter, onError }) {
 
       // Check if any characters exist
       const charResponse = await getAllCharacters();
-      const characters = charResponse.data.characters || [];
-      
-      if (characters.length === 0) {
+      const charsList = charResponse.data.characters || [];
+      setCharacters(charsList);
+
+      if (charsList.length === 0) {
         setHasCharacters(false);
         setLoading(false);
         setSlotsLoading(false);
@@ -40,63 +43,52 @@ function IndustryJobs({ selectedCharacter, onError }) {
 
       setHasCharacters(true);
 
-      const isAll = !selectedCharacter;
-      const characterId = selectedCharacter?.character_id;
-
-      // Load jobs, slots, and corp jobs in parallel
+      // Always fetch all data — filter client-side
       const [jobsResponse, slotsResponse] = await Promise.all([
-        getIndustryJobs(characterId, isAll),
-        getJobSlots(characterId, isAll)
+        getIndustryJobs(null, true),
+        getJobSlots(null, true)
       ]);
 
       const personalJobs = jobsResponse.data.jobs || [];
       setJobs(personalJobs);
       setSlots(slotsResponse.data.slots || { manufacturing: { current: 0, max: 0 }, science: { current: 0, max: 0 }, reactions: { current: 0, max: 0 } });
-      
+
       // Load corporation jobs and calculate breakdown
       let corpJobsList = [];
       try {
-        const corpJobsResponse = await getCorporationJobs(characterId);
+        const corpJobsResponse = await getCorporationJobs();
         corpJobsList = corpJobsResponse.data.jobs || [];
-        
-        // Get all authorized character IDs from the user's linked characters
-        const authorizedCharacterIds = characters.map(char => char.character_id);
-        
+
         // Filter corp jobs to show only those where the installer is one of user's authorized characters
-        if (selectedCharacter) {
-          // If a specific character is selected, show only their jobs
-          corpJobsList = corpJobsList.filter(job => job.installer_id === selectedCharacter.character_id);
-        } else {
-          // If "All Characters" is selected, show jobs from all authorized characters
-          corpJobsList = corpJobsList.filter(job => authorizedCharacterIds.includes(job.installer_id));
-        }
+        const authorizedCharacterIds = charsList.map(char => char.character_id);
+        corpJobsList = corpJobsList.filter(job => authorizedCharacterIds.includes(job.installer_id));
         setCorpJobs(corpJobsList);
       } catch (corpError) {
         console.log('No corporation job access:', corpError.message);
         setCorpJobs([]);
       }
-      
+
       // Calculate slot breakdown (personal vs corp) for active jobs only
       const breakdown = {
         manufacturing: { personal: 0, corp: 0 },
         science: { personal: 0, corp: 0 },
         reactions: { personal: 0, corp: 0 }
       };
-      
+
       // Count active personal jobs by category
       personalJobs.filter(j => j.status === 'active').forEach(job => {
         const cat = job.activity_category;
         if (breakdown[cat]) breakdown[cat].personal++;
       });
-      
+
       // Count active corp jobs by category
       corpJobsList.filter(j => j.status === 'active').forEach(job => {
         const cat = job.activity_category;
         if (breakdown[cat]) breakdown[cat].corp++;
       });
-      
+
       setSlotBreakdown(breakdown);
-      
+
       // Update slots to show total (personal + corp) as current value
       setSlots(prevSlots => ({
         manufacturing: {
@@ -112,7 +104,7 @@ function IndustryJobs({ selectedCharacter, onError }) {
           current: breakdown.reactions.personal + breakdown.reactions.corp
         }
       }));
-      
+
       setScopeError(false);
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -128,7 +120,7 @@ function IndustryJobs({ selectedCharacter, onError }) {
       setLoading(false);
       setSlotsLoading(false);
     }
-  }, [selectedCharacter, onError]);
+  }, [onError]);
 
   useEffect(() => {
     loadData();
@@ -219,6 +211,12 @@ function IndustryJobs({ selectedCharacter, onError }) {
   // Filter jobs
   const filterJobs = (jobsList) => {
     return jobsList.filter(job => {
+      // Character filter
+      if (characterFilter !== 'all') {
+        const charId = parseInt(characterFilter);
+        if (job.character_id !== charId && job.installer_id !== charId) return false;
+      }
+
       // Activity filter
       if (activityFilter !== 'all') {
         if (activityFilter === 'manufacturing' && job.activity_category !== 'manufacturing') return false;
@@ -390,9 +388,19 @@ function IndustryJobs({ selectedCharacter, onError }) {
       <div className="jobs-toolbar">
         <div className="toolbar-filters">
           <div className="filter-group">
+            <label>Character</label>
+            <select value={characterFilter} onChange={e => setCharacterFilter(e.target.value)}>
+              <option value="all">All Characters</option>
+              {characters.map(char => (
+                <option key={char.character_id} value={char.character_id}>{char.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-group">
             <label>Activity</label>
-            <select 
-              value={activityFilter} 
+            <select
+              value={activityFilter}
               onChange={(e) => setActivityFilter(e.target.value)}
             >
               <option value="all">All activities</option>
@@ -404,8 +412,8 @@ function IndustryJobs({ selectedCharacter, onError }) {
 
           <div className="filter-group">
             <label>Status</label>
-            <select 
-              value={statusFilter} 
+            <select
+              value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="all">All jobs</option>
@@ -432,7 +440,7 @@ function IndustryJobs({ selectedCharacter, onError }) {
           <h3>👤 Personal Jobs</h3>
           <span className="section-count">{filteredJobs.length}</span>
         </div>
-        {renderJobsTable(filteredJobs, !selectedCharacter, 'Personal Jobs')}
+        {renderJobsTable(filteredJobs, characterFilter === 'all', 'Personal Jobs')}
       </div>
 
       {/* Corporation Jobs Section */}

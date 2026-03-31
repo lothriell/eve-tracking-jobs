@@ -60,6 +60,16 @@
   gap: 8px;
 }
 
+.pi-char-filter {
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 12px;
+  cursor: pointer;
+}
+
 .pi-view-btn {
   padding: 6px 12px;
   background: rgba(0, 0, 0, 0.3);

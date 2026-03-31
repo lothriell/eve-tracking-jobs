@@ -155,13 +155,13 @@ function Main({ onLogout }) {
           <Dashboard onError={setError} />
         );
       case 'jobs':
-        return <IndustryJobs selectedCharacter={selectedCharacter} onError={setError} />;
+        return <IndustryJobs onError={setError} />;
       case 'corp-jobs':
-        return <CorporationJobs selectedCharacter={selectedCharacter} onError={setError} />;
+        return <CorporationJobs onError={setError} />;
       case 'assets':
-        return <Assets selectedCharacter={selectedCharacter} onError={setError} />;
+        return <Assets onError={setError} />;
       case 'planets':
-        return <Planets selectedCharacter={selectedCharacter} onError={setError} />;
+        return <Planets onError={setError} />;
       case 'dashboard':
       default:
         return <Dashboard onError={setError} />;

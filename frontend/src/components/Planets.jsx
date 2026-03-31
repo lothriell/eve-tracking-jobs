@@ -876,9 +876,11 @@ function ColonyCard({ colony, characterName, characterId }) {
 
 // ============== MAIN PLANETS COMPONENT ==============
 
-function Planets({ selectedCharacter, onError }) {
+function Planets({ onError }) {
   const [planetData, setPlanetData] = useState([]);
+  const [characters, setCharacters] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [characterFilter, setCharacterFilter] = useState('all');
   const [alertMode, setAlertMode] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
   const [autoRefreshInterval, setAutoRefreshInterval] = useState(null);
@@ -887,10 +889,12 @@ function Planets({ selectedCharacter, onError }) {
   const loadPlanets = useCallback(async () => {
     setLoading(true);
     try {
-      const charId = selectedCharacter?.character_id || null;
-      const all = !selectedCharacter;
-      const response = await getCharacterPlanets(charId, all);
-      setPlanetData(response.data.characters || []);
+      // Always fetch all — filter client-side
+      const response = await getCharacterPlanets(null, true);
+      const charData = response.data.characters || [];
+      setPlanetData(charData);
+      // Build characters list from planet data
+      setCharacters(charData.map(c => ({ character_id: c.character_id, character_name: c.character_name })));
     } catch (err) {
       console.error('Failed to load planets:', err);
       const status = err.response?.status;
@@ -902,7 +906,7 @@ function Planets({ selectedCharacter, onError }) {
     } finally {
       setLoading(false);
     }
-  }, [selectedCharacter, onError]);
+  }, [onError]);
 
   useEffect(() => {
     loadPlanets();
@@ -948,7 +952,12 @@ function Planets({ selectedCharacter, onError }) {
     );
   }
 
-  const allEmpty = planetData.every(c => !c.colonies || c.colonies.length === 0);
+  // Apply character filter
+  const filteredPlanetData = characterFilter === 'all'
+    ? planetData
+    : planetData.filter(c => String(c.character_id) === characterFilter);
+
+  const allEmpty = filteredPlanetData.every(c => !c.colonies || c.colonies.length === 0);
 
   return (
     <div className="planets-container">
@@ -956,6 +965,12 @@ function Planets({ selectedCharacter, onError }) {
       {!allEmpty && (
         <div className="pi-toolbar">
           <div className="pi-toolbar-left">
+            {characters.length > 1 && (
+              <select className="pi-char-filter" value={characterFilter} onChange={e => setCharacterFilter(e.target.value)}>
+                <option value="all">All Characters</option>
+                {characters.map(c => <option key={c.character_id} value={c.character_id}>{c.character_name}</option>)}
+              </select>
+            )}
             <button
               className={`pi-view-btn ${viewMode === 'list' ? 'active' : ''}`}
               onClick={() => setViewMode('list')}
@@ -1023,13 +1038,13 @@ function Planets({ selectedCharacter, onError }) {
         </div>
       )}
 
-      {planetData.length === 0 ? (
+      {filteredPlanetData.length === 0 ? (
         <div className="planets-empty">No characters found.</div>
       ) : allEmpty ? (
         <div className="planets-empty">No planet colonies found.</div>
       ) : viewMode === 'grid' ? (
         <div className="pi-grid-container">
-          {planetData.filter(c => c.colonies?.length > 0).map(charData => (
+          {filteredPlanetData.filter(c => c.colonies?.length > 0).map(charData => (
             <div className="pi-grid-row" key={charData.character_id}>
               <div className="pi-grid-character">{charData.character_name}</div>
               <div className="pi-grid-colonies">
@@ -1046,7 +1061,7 @@ function Planets({ selectedCharacter, onError }) {
           ))}
         </div>
       ) : (
-        planetData.map(charData => (
+        filteredPlanetData.map(charData => (
           <CharacterColonies key={charData.character_id} characterData={charData} alertMode={alertMode} />
         ))
       )}

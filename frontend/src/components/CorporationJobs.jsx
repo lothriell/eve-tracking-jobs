@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getCorporationJobs, getCorporations, initiateEveAuth, getAllCharacters } from '../services/api';
 import './CorporationJobs.css';
 
-function CorporationJobs({ selectedCharacter, onError }) {
+function CorporationJobs({ onError }) {
   const [jobs, setJobs] = useState([]);
   const [corporations, setCorporations] = useState([]);
   const [characters, setCharacters] = useState([]);
@@ -47,32 +47,15 @@ function CorporationJobs({ selectedCharacter, onError }) {
         return;
       }
 
-      // Load corporation jobs - show ALL corporation jobs, not just user's characters
-      if (selectedCharacter) {
-        const response = await getCorporationJobs(selectedCharacter.id);
-        if (response.data.has_access) {
-          const allJobs = response.data.jobs || [];
-          setJobs(allJobs);
-          setStats({
-            total: allJobs.length,
-            active: allJobs.filter(j => j.status === 'active').length,
-            ready: allJobs.filter(j => j.status === 'ready').length
-          });
-        } else {
-          setAccessMessage(response.data.message || 'No access to corporation jobs');
-          setJobs([]);
-        }
-      } else {
-        // All characters - get all corporation jobs
-        const response = await getCorporationJobs();
-        const allJobs = response.data.jobs || [];
-        setJobs(allJobs);
-        setStats({
-          total: allJobs.length,
-          active: allJobs.filter(j => j.status === 'active').length,
-          ready: allJobs.filter(j => j.status === 'ready').length
-        });
-      }
+      // Always fetch all corporation jobs — filter client-side
+      const response = await getCorporationJobs();
+      const allJobs = response.data.jobs || [];
+      setJobs(allJobs);
+      setStats({
+        total: allJobs.length,
+        active: allJobs.filter(j => j.status === 'active').length,
+        ready: allJobs.filter(j => j.status === 'ready').length
+      });
     } catch (error) {
       console.error('Failed to load corporation jobs:', error);
       if (error.response?.status === 403) {
@@ -88,7 +71,7 @@ function CorporationJobs({ selectedCharacter, onError }) {
     } finally {
       setLoading(false);
     }
-  }, [selectedCharacter, onError]);
+  }, [onError]);
 
   useEffect(() => {
     loadData();

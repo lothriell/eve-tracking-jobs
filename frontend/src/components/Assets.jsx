@@ -11,7 +11,7 @@ function formatISK(value) {
   return value.toFixed(0);
 }
 
-function Assets({ selectedCharacter, onError }) {
+function Assets({ onError }) {
   const [activeTab, setActiveTab] = useState('personal');
   const [personalAssets, setPersonalAssets] = useState([]);
   const [corpAssets, setCorpAssets] = useState([]);
@@ -34,9 +34,8 @@ function Assets({ selectedCharacter, onError }) {
     try {
       const charsResponse = await getAllCharacters();
       setCharacters(charsResponse.data.characters || []);
-      const charId = selectedCharacter?.character_id || null;
-      const all = !selectedCharacter;
-      const response = await getCharacterAssets(charId, all, priceMode);
+      // Always fetch all — filter client-side via characterFilter
+      const response = await getCharacterAssets(null, true, priceMode);
       const data = response.data;
       if (data.error === 'missing_scope') {
         setScopeError(true);
@@ -55,17 +54,17 @@ function Assets({ selectedCharacter, onError }) {
     } finally {
       setLoading(false);
     }
-  }, [selectedCharacter, onError, priceMode]);
+  }, [onError, priceMode]);
 
   const loadCorpAssets = useCallback(async () => {
-    if (!selectedCharacter) {
+    if (characterFilter === 'all') {
       setCorpAccessError({ type: 'info', message: 'Select a character to view corporation assets' });
       return;
     }
     setCorpLoading(true);
     setCorpAccessError(null);
     try {
-      const response = await getCorporationAssets(selectedCharacter.character_id, priceMode);
+      const response = await getCorporationAssets(parseInt(characterFilter), priceMode);
       const data = response.data;
       if (data.error === 'missing_scope' || data.error === 'needs_reauthorization') {
         setCorpAccessError({ type: 'reauth', message: data.message });
@@ -81,11 +80,10 @@ function Assets({ selectedCharacter, onError }) {
     } finally {
       setCorpLoading(false);
     }
-  }, [selectedCharacter]);
+  }, [characterFilter, priceMode]);
 
   useEffect(() => {
     setFilter('');
-    setCharacterFilter('all');
     setExpanded({});
     setCorpAssets([]);
     setCorpAccessError(null);
@@ -93,10 +91,10 @@ function Assets({ selectedCharacter, onError }) {
   }, [loadPersonalAssets]);
 
   useEffect(() => {
-    if (activeTab === 'corp' && corpAssets.length === 0 && !corpAccessError) {
+    if (activeTab === 'corp') {
       loadCorpAssets();
     }
-  }, [activeTab, corpAssets.length, corpAccessError, loadCorpAssets]);
+  }, [activeTab, characterFilter, loadCorpAssets]);
 
   const toggle = (key) => {
     setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
@@ -196,7 +194,7 @@ function Assets({ selectedCharacter, onError }) {
   const { tree, structureIds, totalItems, totalUnits, totalValue } = buildTree(currentAssets);
   const systemCount = Object.keys(tree).length;
   const allCollapsed = systemCount > 0 && Object.keys(tree).every(sys => expanded[`sys_${sys}`] === false);
-  const showCharCol = !selectedCharacter;
+  const showCharCol = characterFilter === 'all';
 
   const renderItemsTable = (items) => {
     const sorted = [...items].sort((a, b) => (b.quantity || 1) - (a.quantity || 1));
@@ -326,10 +324,10 @@ function Assets({ selectedCharacter, onError }) {
           <button className={`assets-tab ${activeTab === 'corp' ? 'active' : ''}`} onClick={() => { setActiveTab('corp'); setFilter(''); }}>
             Corporation Assets
           </button>
-          {activeTab === 'personal' && assetCharacters.length > 1 && (
+          {characters.length > 1 && (
             <select className="assets-char-filter" value={characterFilter} onChange={e => setCharacterFilter(e.target.value)}>
               <option value="all">All Characters</option>
-              {assetCharacters.map(c => <option key={c.character_id} value={c.character_id}>{c.character_name}</option>)}
+              {characters.map(c => <option key={c.character_id} value={c.character_id}>{c.name}</option>)}
             </select>
           )}
         </div>
