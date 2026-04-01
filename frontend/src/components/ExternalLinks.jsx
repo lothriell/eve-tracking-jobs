@@ -5,7 +5,6 @@ const LINKS = {
   item: (props) => [
     { label: 'Fuzzwork Market', url: `https://market.fuzzwork.co.uk/hub/type/${props.typeId}/` },
     { label: 'EVE Ref', url: `https://everef.net/type/${props.typeId}` },
-    { label: 'zKillboard', url: `https://zkillboard.com/ship/${props.typeId}/` },
   ],
   system: (props) => [
     { label: 'Dotlan', url: `https://evemaps.dotlan.net/system/${encodeURIComponent(props.name)}` },
