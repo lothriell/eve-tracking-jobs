@@ -114,7 +114,7 @@ function CharacterPage({ characterId, onError, refreshKey }) {
       <div className="charpage-header">
         <img src={data.portrait_url} alt={data.character_name} className="charpage-portrait" />
         <div className="charpage-header-info">
-          <h2>{data.character_name}</h2>
+          <h2>{data.character_name} <ExternalLinks type="character" characterId={data.character_id} /></h2>
           <div className="charpage-affiliation">
             {data.corporation && (
               <div className="charpage-affiliation-row">

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { getDashboardStats, getCorporationJobs, getCorporations, getWealth } from '../services/api';
+import ExternalLinks from './ExternalLinks';
 import './Dashboard.css';
 
 const ROMAN = ['0', 'I', 'II', 'III', 'IV', 'V'];
@@ -308,7 +309,7 @@ function Dashboard({ onError, refreshKey }) {
                 className="character-avatar"
               />
               <div className="character-details">
-                <span className="character-name">{char.character_name}</span>
+                <span className="character-name">{char.character_name} <ExternalLinks type="character" characterId={char.character_id} /></span>
                 {char.error ? (
                   <span className="character-error">{char.error}</span>
                 ) : (
