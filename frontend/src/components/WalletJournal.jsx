@@ -190,7 +190,7 @@ function JournalTable({ entries, showItem }) {
 }
 
 // ===== MARKET TRANSACTIONS TAB =====
-function MarketTransactionsTab({ characterId, refreshKey, buyFilter, filtered, loading }) {
+function MarketTransactionsTab({ filtered, loading }) {
   if (loading) return <div className="wj-loading">Loading market transactions...</div>;
   if (filtered.length === 0) return <div className="wj-empty">No market transactions found.</div>;
 
@@ -201,12 +201,12 @@ function MarketTransactionsTab({ characterId, refreshKey, buyFilter, filtered, l
           <tr>
             <th className="wj-col-date">Date</th>
             <th className="wj-col-qty">Qty</th>
-            <th className="wj-col-item">Type</th>
+            <th className="wj-col-item">Item</th>
+            <th className="wj-col-badge">Buy/Sell</th>
             <th className="wj-col-amount">Unit Price</th>
             <th className="wj-col-amount">Total</th>
-            <th className="wj-col-badge">Buy/Sell</th>
-            <th className="wj-col-parties">Client</th>
-            <th className="wj-col-desc">Where</th>
+            <th className="wj-col-desc">Description</th>
+            <th className="wj-col-parties">Parties</th>
           </tr>
         </thead>
         <tbody>
@@ -215,11 +215,11 @@ function MarketTransactionsTab({ characterId, refreshKey, buyFilter, filtered, l
               <td className="wj-date">{formatDate(t.date)}</td>
               <td className="wj-qty">{(t.quantity || 0).toLocaleString()}</td>
               <td className="wj-typename">{t.type_name || `Type ${t.type_id}`}</td>
-              <td className="wj-amount">{formatISKPlain(t.unit_price)} ISK</td>
-              <td className="wj-amount">{formatISKPlain(t.total)} ISK</td>
               <td><span className={`wj-bs-badge ${t.is_buy ? 'buy' : 'sell'}`}>{t.is_buy ? 'Buy' : 'Sell'}</span></td>
-              <td className="wj-parties">{t.client_name || '—'}</td>
+              <td className={`wj-amount ${t.is_buy ? 'negative' : 'positive'}`}>{formatISKPlain(t.unit_price)} ISK</td>
+              <td className={`wj-amount ${t.is_buy ? 'negative' : 'positive'}`}>{formatISKPlain(t.total)} ISK</td>
               <td className="wj-desc">{t.location_name || '—'}</td>
+              <td className="wj-parties">{t.client_name || '—'}</td>
             </tr>
           ))}
         </tbody>

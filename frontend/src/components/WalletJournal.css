@@ -117,14 +117,14 @@
 
 /* Unified column widths — percentages for flexible layout */
 .wj-col-date { width: 11%; }
-.wj-col-type { width: 12%; }
+.wj-col-type { width: 11%; }
 .wj-col-qty { width: 4%; text-align: right; }
-.wj-col-item { width: 14%; }
-.wj-col-amount { width: 8%; text-align: right; }
+.wj-col-item { width: auto; }
+.wj-col-amount { width: 10%; text-align: right; }
 .wj-col-balance { width: 8%; text-align: right; }
 .wj-col-badge { width: 6%; }
-.wj-col-desc { width: 18%; }
-.wj-col-parties { width: 15%; }
+.wj-col-desc { width: 16%; }
+.wj-col-parties { width: 14%; }
 
 .wj-table thead th {
   position: sticky;
