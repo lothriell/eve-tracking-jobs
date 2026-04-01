@@ -17,7 +17,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 }
 
 .dashboard-loading {
@@ -133,9 +133,8 @@
   position: sticky;
   top: 54px;
   z-index: 40;
-  background: linear-gradient(135deg, rgba(26, 31, 46, 0.98) 0%, rgba(13, 17, 23, 0.98) 100%);
-  backdrop-filter: blur(8px);
-  padding: 8px 0;
+  background: transparent;
+  padding: 8px 0 0;
 }
 
 .slot-card {
@@ -297,12 +296,27 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.characters-section-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
 .characters-section h3 {
-  margin: 0 0 12px;
+  margin: 0;
   color: #a0aec0;
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.characters-header-stats {
+  font-size: 12px;
+  color: #718096;
 }
 
 .characters-grid {

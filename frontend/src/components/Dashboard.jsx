@@ -365,21 +365,11 @@ function Dashboard({ onError }) {
 
       {/* Characters Overview Section */}
       <div className="characters-section">
-        <h3>Characters Overview</h3>
-        <div className="overview-stats-row">
-          <div className="overview-stat-item">
-            <span className="overview-stat-icon">👤</span>
-            <span className="overview-stat-value">{stats.total_characters}</span>
-            <span className="overview-stat-label">Linked Characters</span>
-          </div>
-          <div className="overview-stat-item">
-            <span className="overview-stat-icon">📊</span>
-            <span className="overview-stat-value">{stats.total_active_jobs}</span>
-            <span className="overview-stat-label">Total Active Jobs</span>
-            <span className="overview-stat-breakdown">
-              ({stats.personal_active_jobs || 0} personal + {stats.corp_active_jobs || 0} corp)
-            </span>
-          </div>
+        <div className="characters-section-header">
+          <h3>Characters Overview</h3>
+          <span className="characters-header-stats">
+            👤 {stats.total_characters} characters &nbsp; 📊 {stats.total_active_jobs} active jobs ({stats.personal_active_jobs || 0} personal + {stats.corp_active_jobs || 0} corp)
+          </span>
         </div>
         <div className="characters-grid">
           {orderedCharacters.map((char, idx) => (
