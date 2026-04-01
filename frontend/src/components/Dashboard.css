@@ -17,7 +17,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 14px;
 }
 
 .dashboard-loading {
@@ -38,7 +38,7 @@
 .dashboard-header h2 {
   margin: 0;
   color: #fff;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 600;
 }
 
@@ -129,22 +129,29 @@
 .slot-cards-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 10px;
+  position: sticky;
+  top: -24px;
+  z-index: 40;
+  background: rgba(13, 17, 23, 0.95);
+  backdrop-filter: blur(8px);
+  padding: 10px 0 8px;
+  margin: -4px -2px 0;
 }
 
 .slot-card {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 20px;
-  border-radius: 12px;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
   border: 1px solid;
   transition: all 0.2s;
   cursor: pointer;
 }
 
 .slot-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 /* Hovered state for slot cards */
@@ -169,7 +176,7 @@
 }
 
 .slot-card-icon {
-  font-size: 28px;
+  font-size: 20px;
   opacity: 0.9;
 }
 
@@ -179,23 +186,23 @@
 }
 
 .slot-card-value {
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 700;
   line-height: 1;
   font-family: 'Consolas', 'Monaco', monospace;
 }
 
 .slot-card-breakdown {
-  font-size: 11px;
+  font-size: 10px;
   opacity: 0.7;
   margin-top: 2px;
 }
 
 .slot-card-label {
-  font-size: 12px;
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-top: 4px;
+  margin-top: 2px;
   opacity: 0.8;
 }
 
@@ -247,9 +254,9 @@
 /* Overview Stats Row - For Characters and Corporation sections */
 .overview-stats-row {
   display: flex;
-  gap: 24px;
-  margin-bottom: 16px;
-  padding: 12px 0;
+  gap: 16px;
+  margin-bottom: 10px;
+  padding: 8px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -286,23 +293,23 @@
 /* Characters Section */
 .characters-section {
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 10px;
+  padding: 14px;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .characters-section h3 {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
   color: #a0aec0;
-  font-size: 14px;
+  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .characters-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 10px;
 }
 
 .character-card {
