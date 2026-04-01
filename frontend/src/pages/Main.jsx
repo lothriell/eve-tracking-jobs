@@ -106,6 +106,36 @@ function Main({ onLogout }) {
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [autoRefreshInterval, setAutoRefreshInterval] = useState(() => {
+    const saved = localStorage.getItem('globalAutoRefresh');
+    return saved && saved !== 'null' ? parseInt(saved) : null;
+  });
+  const [autoRefreshDropdown, setAutoRefreshDropdown] = useState(false);
+  const autoRefreshTimerRef = useRef(null);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshKey(k => k + 1);
+  }, []);
+
+  const handleAutoRefreshChange = (minutes) => {
+    setAutoRefreshInterval(minutes);
+    if (minutes) {
+      localStorage.setItem('globalAutoRefresh', minutes.toString());
+    } else {
+      localStorage.removeItem('globalAutoRefresh');
+    }
+    setAutoRefreshDropdown(false);
+  };
+
+  useEffect(() => {
+    if (autoRefreshTimerRef.current) clearInterval(autoRefreshTimerRef.current);
+    if (!autoRefreshInterval) return;
+    autoRefreshTimerRef.current = setInterval(() => {
+      setRefreshKey(k => k + 1);
+    }, autoRefreshInterval * 60 * 1000);
+    return () => clearInterval(autoRefreshTimerRef.current);
+  }, [autoRefreshInterval]);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -155,21 +185,21 @@ function Main({ onLogout }) {
     switch (currentView) {
       case 'character':
         return selectedCharacter ? (
-          <CharacterPage characterId={selectedCharacter.character_id} onError={setError} />
+          <CharacterPage characterId={selectedCharacter.character_id} onError={setError} refreshKey={refreshKey} />
         ) : (
-          <Dashboard onError={setError} />
+          <Dashboard onError={setError} refreshKey={refreshKey} />
         );
       case 'jobs':
-        return <IndustryJobs onError={setError} />;
+        return <IndustryJobs onError={setError} refreshKey={refreshKey} />;
       case 'corp-jobs':
-        return <CorporationJobs onError={setError} />;
+        return <CorporationJobs onError={setError} refreshKey={refreshKey} />;
       case 'assets':
-        return <Assets onError={setError} />;
+        return <Assets onError={setError} refreshKey={refreshKey} />;
       case 'planets':
-        return <Planets onError={setError} />;
+        return <Planets onError={setError} refreshKey={refreshKey} />;
       case 'dashboard':
       default:
-        return <Dashboard onError={setError} />;
+        return <Dashboard onError={setError} refreshKey={refreshKey} />;
     }
   };
 
@@ -198,6 +228,24 @@ function Main({ onLogout }) {
           <div className="header-right">
             <WealthIndicator />
             <ServerStatus />
+            <div className="auto-refresh-container">
+              <button
+                className={`auto-refresh-btn ${autoRefreshInterval ? 'active' : ''}`}
+                onClick={() => setAutoRefreshDropdown(!autoRefreshDropdown)}
+              >
+                <span className={`refresh-icon ${autoRefreshInterval ? 'spinning' : ''}`}>⟳</span>
+                {autoRefreshInterval ? `${autoRefreshInterval}m` : 'Off'}
+              </button>
+              {autoRefreshDropdown && (
+                <div className="auto-refresh-dropdown">
+                  <div className={`dropdown-item ${!autoRefreshInterval ? 'active' : ''}`} onClick={() => handleAutoRefreshChange(null)}>Off</div>
+                  <div className={`dropdown-item ${autoRefreshInterval === 5 ? 'active' : ''}`} onClick={() => handleAutoRefreshChange(5)}>5 min</div>
+                  <div className={`dropdown-item ${autoRefreshInterval === 10 ? 'active' : ''}`} onClick={() => handleAutoRefreshChange(10)}>10 min</div>
+                  <div className={`dropdown-item ${autoRefreshInterval === 15 ? 'active' : ''}`} onClick={() => handleAutoRefreshChange(15)}>15 min</div>
+                </div>
+              )}
+            </div>
+            <button className="refresh-btn" onClick={handleRefresh}>↻</button>
             <button onClick={handleLogout} className="logout-btn">
               Logout
             </button>

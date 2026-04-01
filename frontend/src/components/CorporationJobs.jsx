@@ -4,7 +4,7 @@ import ExternalLinks from './ExternalLinks';
 import ExportButton from './ExportButton';
 import './CorporationJobs.css';
 
-function CorporationJobs({ onError }) {
+function CorporationJobs({ onError, refreshKey }) {
   const [jobs, setJobs] = useState([]);
   const [corporations, setCorporations] = useState([]);
   const [characters, setCharacters] = useState([]);
@@ -80,7 +80,7 @@ function CorporationJobs({ onError }) {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [loadData]);
+  }, [loadData, refreshKey]);
 
   // Real-time countdown timer
   useEffect(() => {
@@ -294,9 +294,6 @@ function CorporationJobs({ onError }) {
           </div>
         </div>
         <div className="toolbar-actions">
-          <button className="refresh-btn" onClick={handleRefresh}>
-            ↻ Refresh
-          </button>
           <ExportButton
             getData={() => filteredJobs}
             columns={[

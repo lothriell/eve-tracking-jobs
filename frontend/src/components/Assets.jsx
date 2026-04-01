@@ -13,7 +13,7 @@ function formatISK(value) {
   return value.toFixed(0);
 }
 
-function Assets({ onError }) {
+function Assets({ onError, refreshKey }) {
   const [activeTab, setActiveTab] = useState('personal');
   const [personalAssets, setPersonalAssets] = useState([]);
   const [corpAssets, setCorpAssets] = useState([]);
@@ -90,7 +90,7 @@ function Assets({ onError }) {
     setCorpAssets([]);
     setCorpAccessError(null);
     loadPersonalAssets();
-  }, [loadPersonalAssets]);
+  }, [loadPersonalAssets, refreshKey]);
 
   useEffect(() => {
     if (activeTab === 'corp') {

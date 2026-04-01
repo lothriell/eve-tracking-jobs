@@ -57,13 +57,11 @@ function applySavedOrder(chars) {
   }
 }
 
-function Dashboard({ onError }) {
+function Dashboard({ onError, refreshKey }) {
   const [stats, setStats] = useState(null);
   const [corpStats, setCorpStats] = useState(null);
   const [wealthData, setWealthData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [autoRefreshInterval, setAutoRefreshInterval] = useState(null);
-  const [autoRefreshDropdown, setAutoRefreshDropdown] = useState(false);
   const [hoveredJobType, setHoveredJobType] = useState(null);
   const [dragIdx, setDragIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
@@ -112,26 +110,7 @@ function Dashboard({ onError }) {
 
   useEffect(() => {
     loadStats();
-  }, [loadStats]);
-
-  // Load auto-refresh setting from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('autoRefreshInterval');
-    if (saved && saved !== 'null') {
-      setAutoRefreshInterval(parseInt(saved));
-    }
-  }, []);
-
-  // Auto-refresh timer
-  useEffect(() => {
-    if (!autoRefreshInterval) return;
-    
-    const interval = setInterval(() => {
-      loadStats();
-    }, autoRefreshInterval * 60 * 1000);
-    
-    return () => clearInterval(interval);
-  }, [autoRefreshInterval, loadStats]);
+  }, [loadStats, refreshKey]);
 
   // Apply saved order when stats load
   useEffect(() => {
@@ -168,15 +147,7 @@ function Dashboard({ onError }) {
     setDragOverIdx(null);
   };
 
-  const handleAutoRefreshChange = (minutes) => {
-    setAutoRefreshInterval(minutes);
-    if (minutes) {
-      localStorage.setItem('autoRefreshInterval', minutes.toString());
-    } else {
-      localStorage.removeItem('autoRefreshInterval');
-    }
-    setAutoRefreshDropdown(false);
-  };
+
 
   // Check if character has full slots for a given job type
   const isCharacterSlotFull = (character, jobType) => {
@@ -240,52 +211,6 @@ function Dashboard({ onError }) {
 
   return (
     <div className="dashboard-container">
-      <div className="dashboard-header">
-        <h2>Dashboard Overview</h2>
-        <div className="header-actions">
-          <div className="auto-refresh-container">
-            <button 
-              className={`auto-refresh-btn ${autoRefreshInterval ? 'active' : ''}`}
-              onClick={() => setAutoRefreshDropdown(!autoRefreshDropdown)}
-            >
-              <span className={`refresh-icon ${autoRefreshInterval ? 'spinning' : ''}`}>⟳</span>
-              Auto: {autoRefreshInterval ? `${autoRefreshInterval}m` : 'Off'}
-            </button>
-            {autoRefreshDropdown && (
-              <div className="auto-refresh-dropdown">
-                <div 
-                  className={`dropdown-item ${!autoRefreshInterval ? 'active' : ''}`}
-                  onClick={() => handleAutoRefreshChange(null)}
-                >
-                  Off
-                </div>
-                <div 
-                  className={`dropdown-item ${autoRefreshInterval === 5 ? 'active' : ''}`}
-                  onClick={() => handleAutoRefreshChange(5)}
-                >
-                  5 minutes
-                </div>
-                <div 
-                  className={`dropdown-item ${autoRefreshInterval === 10 ? 'active' : ''}`}
-                  onClick={() => handleAutoRefreshChange(10)}
-                >
-                  10 minutes
-                </div>
-                <div 
-                  className={`dropdown-item ${autoRefreshInterval === 15 ? 'active' : ''}`}
-                  onClick={() => handleAutoRefreshChange(15)}
-                >
-                  15 minutes
-                </div>
-              </div>
-            )}
-          </div>
-          <button className="refresh-btn" onClick={loadStats}>
-            ↻ Refresh
-          </button>
-        </div>
-      </div>
-
       {/* Scope Warning Banner */}
       {stats.jobs_by_character.some(char => char.slots?.needsReauthorization) && (
         <div className="scope-warning-banner">

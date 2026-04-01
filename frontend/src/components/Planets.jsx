@@ -877,15 +877,13 @@ function ColonyCard({ colony, characterName, characterId }) {
 
 // ============== MAIN PLANETS COMPONENT ==============
 
-function Planets({ onError }) {
+function Planets({ onError, refreshKey }) {
   const [planetData, setPlanetData] = useState([]);
   const [characters, setCharacters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [characterFilter, setCharacterFilter] = useState('all');
   const [alertMode, setAlertMode] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
-  const [autoRefreshInterval, setAutoRefreshInterval] = useState(null);
-  const [autoRefreshDropdown, setAutoRefreshDropdown] = useState(false);
 
   const loadPlanets = useCallback(async () => {
     setLoading(true);
@@ -911,36 +909,7 @@ function Planets({ onError }) {
 
   useEffect(() => {
     loadPlanets();
-  }, [loadPlanets]);
-
-  // Load auto-refresh setting from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('planetsAutoRefreshInterval');
-    if (saved && saved !== 'null') {
-      setAutoRefreshInterval(parseInt(saved));
-    }
-  }, []);
-
-  // Auto-refresh timer
-  useEffect(() => {
-    if (!autoRefreshInterval) return;
-
-    const interval = setInterval(() => {
-      loadPlanets();
-    }, autoRefreshInterval * 60 * 1000);
-
-    return () => clearInterval(interval);
-  }, [autoRefreshInterval, loadPlanets]);
-
-  const handleAutoRefreshChange = (minutes) => {
-    setAutoRefreshInterval(minutes);
-    if (minutes) {
-      localStorage.setItem('planetsAutoRefreshInterval', minutes.toString());
-    } else {
-      localStorage.removeItem('planetsAutoRefreshInterval');
-    }
-    setAutoRefreshDropdown(false);
-  };
+  }, [loadPlanets, refreshKey]);
 
   if (loading) {
     return (
@@ -1018,43 +987,6 @@ function Planets({ onError }) {
               <span className="pi-legend-item"><span className="pi-legend-dot" style={{ background: '#765B21' }}></span> &lt;4h</span>
               <span className="pi-legend-item"><span className="pi-legend-dot" style={{ background: '#2C6C2F' }}></span> &lt;12h</span>
               <span className="pi-legend-item"><span className="pi-legend-dot" style={{ background: '#006596' }}></span> OK</span>
-            </div>
-            <div className="auto-refresh-container">
-              <button
-                className={`auto-refresh-btn ${autoRefreshInterval ? 'active' : ''}`}
-                onClick={() => setAutoRefreshDropdown(!autoRefreshDropdown)}
-              >
-                <span className={`refresh-icon ${autoRefreshInterval ? 'spinning' : ''}`}>⟳</span>
-                Auto: {autoRefreshInterval ? `${autoRefreshInterval}m` : 'Off'}
-              </button>
-              {autoRefreshDropdown && (
-                <div className="auto-refresh-dropdown">
-                  <div
-                    className={`dropdown-item ${!autoRefreshInterval ? 'active' : ''}`}
-                    onClick={() => handleAutoRefreshChange(null)}
-                  >
-                    Off
-                  </div>
-                  <div
-                    className={`dropdown-item ${autoRefreshInterval === 5 ? 'active' : ''}`}
-                    onClick={() => handleAutoRefreshChange(5)}
-                  >
-                    5 minutes
-                  </div>
-                  <div
-                    className={`dropdown-item ${autoRefreshInterval === 10 ? 'active' : ''}`}
-                    onClick={() => handleAutoRefreshChange(10)}
-                  >
-                    10 minutes
-                  </div>
-                  <div
-                    className={`dropdown-item ${autoRefreshInterval === 15 ? 'active' : ''}`}
-                    onClick={() => handleAutoRefreshChange(15)}
-                  >
-                    15 minutes
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>

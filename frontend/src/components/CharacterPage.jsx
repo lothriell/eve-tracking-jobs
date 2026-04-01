@@ -52,7 +52,7 @@ function formatCountdown(diff) {
   return `${m}m`;
 }
 
-function CharacterPage({ characterId, onError }) {
+function CharacterPage({ characterId, onError, refreshKey }) {
   const [data, setData] = useState(null);
   const [assetValue, setAssetValue] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -80,7 +80,7 @@ function CharacterPage({ characterId, onError }) {
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, [loadData, refreshKey]);
 
   // 1-second timer for live countdowns
   useEffect(() => {
@@ -157,7 +157,6 @@ function CharacterPage({ characterId, onError }) {
               <span className="wealth-box-value">— ISK</span>
             </span>
           </div>
-          <button className="refresh-btn" onClick={loadData}>&#x21bb; Refresh</button>
         </div>
       </div>
 
