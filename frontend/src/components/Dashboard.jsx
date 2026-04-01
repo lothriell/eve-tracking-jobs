@@ -426,7 +426,6 @@ function Dashboard({ onError }) {
                         R: {char.slots?.reactions?.current || 0}/{char.slots?.reactions?.max || 0}
                       </span>
                     </div>
-                    <SkillTrainingLine training={char.skill_training} />
                     <div className="character-wealth-row">
                       {(() => {
                         const cw = wealthData?.per_character?.find(w => w.character_id === char.character_id);
@@ -442,6 +441,7 @@ function Dashboard({ onError }) {
                         <span className="wealth-box-value">—</span>
                       </span>
                     </div>
+                    <SkillTrainingLine training={char.skill_training} />
                   </>
                 )}
               </div>
