@@ -115,16 +115,16 @@
   table-layout: fixed;
 }
 
-/* Unified column widths */
-.wj-col-date { width: 130px; }
-.wj-col-type { width: 130px; }
-.wj-col-qty { width: 55px; text-align: right; }
-.wj-col-item { width: auto; }
-.wj-col-amount { width: 100px; text-align: right; }
-.wj-col-balance { width: 100px; text-align: right; }
-.wj-col-badge { width: 65px; }
-.wj-col-desc { width: 200px; }
-.wj-col-parties { width: 180px; }
+/* Unified column widths — percentages for flexible layout */
+.wj-col-date { width: 11%; }
+.wj-col-type { width: 12%; }
+.wj-col-qty { width: 4%; text-align: right; }
+.wj-col-item { width: 14%; }
+.wj-col-amount { width: 8%; text-align: right; }
+.wj-col-balance { width: 8%; text-align: right; }
+.wj-col-badge { width: 6%; }
+.wj-col-desc { width: 18%; }
+.wj-col-parties { width: 15%; }
 
 .wj-table thead th {
   position: sticky;
