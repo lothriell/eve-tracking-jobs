@@ -279,6 +279,7 @@ function WalletJournal({ characterId, refreshKey }) {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const tabsRef = useRef(null);
   const LIMIT = 200;
 
   const loadJournal = useCallback(async (append = false) => {
@@ -304,12 +305,17 @@ function WalletJournal({ characterId, refreshKey }) {
 
   return (
     <div className="wj-container">
-      <div className="wj-tabs">
+      <div className="wj-tabs" ref={tabsRef}>
         {['overview', 'transactions', 'market', 'all'].map(tab => (
           <button
             key={tab}
             className={`wj-tab ${activeTab === tab ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => {
+              setActiveTab(tab);
+              requestAnimationFrame(() => {
+                tabsRef.current?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+              });
+            }}
           >
             {tab === 'all' ? 'All' : tab === 'overview' ? 'Overview' : tab === 'transactions' ? 'Transactions' : 'Market Transactions'}
           </button>
