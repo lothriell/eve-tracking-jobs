@@ -72,37 +72,31 @@ function Dashboard({ onError }) {
   const loadStats = useCallback(async () => {
     try {
       setLoading(true);
-      
-      // Load personal stats
-      const response = await getDashboardStats();
-      setStats(response.data);
-      
-      // Load corporation stats
-      try {
-        const corpsResponse = await getCorporations();
-        const hasCorpAccess = corpsResponse.data.corporations?.some(c => c.has_industry_access);
-        
-        if (hasCorpAccess) {
-          const corpJobsResponse = await getCorporationJobs();
-          setCorpStats({
-            corporations: corpsResponse.data.corporations,
-            total_jobs: corpJobsResponse.data.total_jobs || 0,
-            active_jobs: corpJobsResponse.data.active_jobs || 0,
-            corps_with_access: corpsResponse.data.corporations.filter(c => c.has_industry_access).length
-          });
-        } else {
-          setCorpStats(null);
-        }
-      } catch (corpError) {
-        console.log('No corporation access:', corpError.message);
-        setCorpStats(null);
-      }
 
-      // Load per-character wealth
-      try {
-        const wealthResp = await getWealth();
-        setWealthData(wealthResp.data);
-      } catch { setWealthData(null); }
+      // Fetch dashboard stats, corp info, and wealth ALL in parallel
+      const [statsResp, corpsResult, wealthResult] = await Promise.all([
+        getDashboardStats(),
+        (async () => {
+          try {
+            const corpsResponse = await getCorporations();
+            const corps = corpsResponse.data.corporations || [];
+            const hasCorpAccess = corps.some(c => c.has_industry_access);
+            if (!hasCorpAccess) return null;
+            const corpJobsResponse = await getCorporationJobs();
+            return {
+              corporations: corps,
+              total_jobs: corpJobsResponse.data.total_jobs || 0,
+              active_jobs: corpJobsResponse.data.active_jobs || 0,
+              corps_with_access: corps.filter(c => c.has_industry_access).length
+            };
+          } catch { return null; }
+        })(),
+        getWealth().catch(() => null)
+      ]);
+
+      setStats(statsResp.data);
+      setCorpStats(corpsResult);
+      setWealthData(wealthResult?.data || null);
     } catch (error) {
       console.error('Failed to load dashboard stats:', error);
       const status = error.response?.status;

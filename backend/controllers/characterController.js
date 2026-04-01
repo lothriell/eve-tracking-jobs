@@ -34,7 +34,8 @@ const {
   getPlanetName,
   getColonyLayout,
   getSystemNames,
-  getCharacterSkillQueue
+  getCharacterSkillQueue,
+  getMaxSlots
 } = require('../services/esiClient');
 const {
   getCharacterCorporation,
@@ -323,14 +324,25 @@ exports.getJobSlots = async (req, res) => {
 };
 
 // Get dashboard statistics
+// In-memory dashboard stats cache (2-minute TTL)
+const dashboardCache = new Map();
+const DASHBOARD_CACHE_TTL = 120000;
+
 exports.getDashboardStats = async (req, res) => {
   try {
     if (!req.session.userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
+    // Check cache
+    const cacheKey = `dashboard_${req.session.userId}`;
+    const cached = dashboardCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < DASHBOARD_CACHE_TTL) {
+      return res.json(cached.data);
+    }
+
     const characters = await db.getAllCharactersByUserId(req.session.userId);
-    
+
     if (characters.length === 0) {
       return res.json({
         total_characters: 0,
@@ -349,9 +361,7 @@ exports.getDashboardStats = async (req, res) => {
 
     let totalPersonalJobs = 0;
     let totalCorpJobs = 0;
-    // Use activity categories: manufacturing, science, reactions
     const jobsByActivity = { manufacturing: 0, science: 0, reactions: 0 };
-    // Track personal vs corp breakdown separately
     const personalJobsByActivity = { manufacturing: 0, science: 0, reactions: 0 };
     const corpJobsByActivity = { manufacturing: 0, science: 0, reactions: 0 };
     const jobsByCharacter = [];
@@ -360,184 +370,139 @@ exports.getDashboardStats = async (req, res) => {
       science: { current: 0, max: 0 },
       reactions: { current: 0, max: 0 }
     };
-    
-    // Track processed corps to avoid counting same corp jobs multiple times
-    const processedCorps = new Map(); // corp_id -> { jobs: [], activeJobs: [] }
-    
-    // First pass: fetch all corp jobs
+
+    // Fetch corp jobs once per corporation (sequential — need role check per corp)
+    const processedCorps = new Map();
     for (const character of characters) {
       try {
         const accessToken = await getValidAccessToken(character);
         const corpData = await getCharacterCorporation(character.character_id, accessToken);
-        
-        if (!processedCorps.has(corpData.corporation_id)) {
-          const roles = await getCharacterRoles(character.character_id, accessToken);
-          
-          if (hasIndustryRole(roles) && !roles.needsReauthorization) {
-            const rawCorpJobs = await getCorporationJobs(corpData.corporation_id, accessToken);
-            
-            if (!rawCorpJobs.error && Array.isArray(rawCorpJobs)) {
-              const activeCorpJobs = rawCorpJobs.filter(j => j.status === 'active');
-              processedCorps.set(corpData.corporation_id, {
-                allJobs: rawCorpJobs,
-                activeJobs: activeCorpJobs
-              });
-            }
+        if (processedCorps.has(corpData.corporation_id)) continue;
+        processedCorps.set(corpData.corporation_id, null); // mark as attempted
+        const roles = await getCharacterRoles(character.character_id, accessToken);
+        if (hasIndustryRole(roles) && !roles.needsReauthorization) {
+          const rawCorpJobs = await getCorporationJobs(corpData.corporation_id, accessToken);
+          if (!rawCorpJobs.error && Array.isArray(rawCorpJobs)) {
+            processedCorps.set(corpData.corporation_id, {
+              activeJobs: rawCorpJobs.filter(j => j.status === 'active')
+            });
           }
         }
-      } catch (error) {
-        // Silently fail - character might not have access
-      }
+      } catch {}
     }
 
-    // Second pass: calculate stats per character
-    for (const character of characters) {
+    // Process all characters in parallel — fetch jobs, skills, skillqueue concurrently
+    const charResults = await Promise.all(characters.map(async (character) => {
       try {
         const accessToken = await getValidAccessToken(character);
-        const jobs = await getCharacterIndustryJobs(character.character_id, accessToken);
-        const slots = await getJobSlotUsage(character.character_id, accessToken);
 
-        // Fetch skill queue for training status
+        // Fetch jobs, max slots, and skill queue in parallel (no duplicate calls)
+        const [jobs, maxSlots, sqResult, corpData] = await Promise.all([
+          getCharacterIndustryJobs(character.character_id, accessToken).catch(() => []),
+          getMaxSlots(character.character_id, accessToken),
+          getCharacterSkillQueue(character.character_id, accessToken).catch(() => ({ queue: [], hasScope: false })),
+          getCharacterCorporation(character.character_id, accessToken).catch(() => null)
+        ]);
+
+        // Skill training status
         let skillTraining = null;
-        try {
-          const sqResult = await getCharacterSkillQueue(character.character_id, accessToken);
-          if (sqResult.hasScope && sqResult.queue.length > 0) {
-            const now = new Date();
-            // Find the currently training skill (has start_date in the past and finish_date in the future)
-            const active = sqResult.queue.find(s =>
-              s.finish_date && new Date(s.finish_date) > now &&
-              s.start_date && new Date(s.start_date) <= now
-            );
-            if (active) {
-              const skillName = await getTypeName(active.skill_id);
-              skillTraining = {
-                skill_name: skillName,
-                finished_level: active.finished_level,
-                finish_date: active.finish_date,
-                queue_length: sqResult.queue.filter(s => s.finish_date && new Date(s.finish_date) > now).length
-              };
-            } else {
-              // Queue exists but nothing actively training (paused or all finished)
-              const future = sqResult.queue.find(s => s.finish_date && new Date(s.finish_date) > now);
-              if (!future) {
-                skillTraining = { status: 'not_training' };
-              } else {
-                skillTraining = { status: 'paused' };
-              }
-            }
-          } else if (sqResult.hasScope) {
-            skillTraining = { status: 'not_training' };
+        if (sqResult.hasScope && sqResult.queue.length > 0) {
+          const now = new Date();
+          const active = sqResult.queue.find(s =>
+            s.finish_date && new Date(s.finish_date) > now &&
+            s.start_date && new Date(s.start_date) <= now
+          );
+          if (active) {
+            const skillName = await getTypeName(active.skill_id);
+            skillTraining = {
+              skill_name: skillName,
+              finished_level: active.finished_level,
+              finish_date: active.finish_date,
+              queue_length: sqResult.queue.filter(s => s.finish_date && new Date(s.finish_date) > now).length
+            };
+          } else {
+            const future = sqResult.queue.find(s => s.finish_date && new Date(s.finish_date) > now);
+            skillTraining = future ? { status: 'paused' } : { status: 'not_training' };
           }
-        } catch (sqError) {
-          console.error(`[SKILL] ${character.character_name} error:`, sqError.message);
+        } else if (sqResult.hasScope) {
+          skillTraining = { status: 'not_training' };
         }
 
         const activeJobs = jobs.filter(j => j.status === 'active');
-        totalPersonalJobs += activeJobs.length;
-        
-        // Count personal jobs by activity category
-        let personalByCategory = { manufacturing: 0, science: 0, reactions: 0 };
+        const personalByCategory = { manufacturing: 0, science: 0, reactions: 0 };
         activeJobs.forEach(job => {
-          const category = job.activity_category || 'other';
-          if (category in personalByCategory) {
-            personalByCategory[category]++;
-            jobsByActivity[category]++;
-            personalJobsByActivity[category]++;
-          }
+          const cat = job.activity_category || 'other';
+          if (cat in personalByCategory) personalByCategory[cat]++;
         });
 
-        // Find corp jobs for this character (by installer_id)
+        // Corp jobs for this character
         let corpJobsCount = 0;
-        let corpByCategory = { manufacturing: 0, science: 0, reactions: 0 };
-        
-        try {
-          const corpData = await getCharacterCorporation(character.character_id, accessToken);
+        const corpByCategory = { manufacturing: 0, science: 0, reactions: 0 };
+        if (corpData) {
           const corpJobsData = processedCorps.get(corpData.corporation_id);
-          
           if (corpJobsData) {
-            // Count corp jobs where this character is the installer
             corpJobsData.activeJobs.forEach(job => {
               if (job.installer_id === character.character_id) {
                 corpJobsCount++;
-                const activityId = job.activity_id;
-                // Manufacturing: 1, Science: 3,4,5,7,8, Reactions: 9
-                if (activityId === 1) {
-                  corpByCategory.manufacturing++;
-                  jobsByActivity.manufacturing++;
-                  corpJobsByActivity.manufacturing++;
-                } else if ([3, 4, 5, 7, 8].includes(activityId)) {
-                  corpByCategory.science++;
-                  jobsByActivity.science++;
-                  corpJobsByActivity.science++;
-                } else if (activityId === 9) {
-                  corpByCategory.reactions++;
-                  jobsByActivity.reactions++;
-                  corpJobsByActivity.reactions++;
-                }
+                const aid = job.activity_id;
+                if (aid === 1) corpByCategory.manufacturing++;
+                else if ([3, 4, 5, 7, 8].includes(aid)) corpByCategory.science++;
+                else if (aid === 9) corpByCategory.reactions++;
               }
             });
           }
-        } catch (corpError) {
-          // Silently fail
         }
-        
-        totalCorpJobs += corpJobsCount;
 
-        // Calculate combined slot usage (personal + corp jobs for this character)
-        // Slots are SHARED between personal and corp jobs
-        const combinedSlots = {
-          manufacturing: {
-            current: personalByCategory.manufacturing + corpByCategory.manufacturing,
-            max: slots.manufacturing.max
-          },
-          science: {
-            current: personalByCategory.science + corpByCategory.science,
-            max: slots.science.max
-          },
-          reactions: {
-            current: personalByCategory.reactions + corpByCategory.reactions,
-            max: slots.reactions.max
-          }
-        };
-
-        jobsByCharacter.push({
+        return {
           character_id: character.character_id,
           character_name: character.character_name,
           portrait_url: `https://images.evetech.net/characters/${character.character_id}/portrait?size=64`,
           active_jobs: activeJobs.length,
           corp_jobs: corpJobsCount,
           total_jobs: activeJobs.length + corpJobsCount,
-          slots: combinedSlots,
+          slots: {
+            manufacturing: { current: personalByCategory.manufacturing + corpByCategory.manufacturing, max: maxSlots.manufacturing.max },
+            science: { current: personalByCategory.science + corpByCategory.science, max: maxSlots.science.max },
+            reactions: { current: personalByCategory.reactions + corpByCategory.reactions, max: maxSlots.reactions.max },
+            needsReauthorization: maxSlots.needsReauthorization
+          },
           skill_training: skillTraining,
-          // Activity breakdown for this character
           activity_breakdown: {
             manufacturing: personalByCategory.manufacturing + corpByCategory.manufacturing,
             science: personalByCategory.science + corpByCategory.science,
             reactions: personalByCategory.reactions + corpByCategory.reactions
-          }
-        });
-
-        totals.manufacturing.current += combinedSlots.manufacturing.current;
-        totals.manufacturing.max += slots.manufacturing.max;
-        totals.science.current += combinedSlots.science.current;
-        totals.science.max += slots.science.max;
-        totals.reactions.current += combinedSlots.reactions.current;
-        totals.reactions.max += slots.reactions.max;
+          },
+          personalByCategory,
+          corpByCategory
+        };
       } catch (error) {
-        console.error(`Failed to get stats for character ${character.character_id}:`, error.message);
-        jobsByCharacter.push({
+        return {
           character_id: character.character_id,
           character_name: character.character_name,
           portrait_url: `https://images.evetech.net/characters/${character.character_id}/portrait?size=64`,
-          active_jobs: 0,
-          corp_jobs: 0,
-          total_jobs: 0,
+          active_jobs: 0, corp_jobs: 0, total_jobs: 0,
           error: 'Failed to fetch data'
-        });
+        };
       }
+    }));
+
+    // Aggregate totals from parallel results
+    for (const char of charResults) {
+      if (char.error) { jobsByCharacter.push(char); continue; }
+      totalPersonalJobs += char.active_jobs;
+      totalCorpJobs += char.corp_jobs;
+      for (const cat of ['manufacturing', 'science', 'reactions']) {
+        if (char.personalByCategory) { personalJobsByActivity[cat] += char.personalByCategory[cat]; jobsByActivity[cat] += char.personalByCategory[cat]; }
+        if (char.corpByCategory) { corpJobsByActivity[cat] += char.corpByCategory[cat]; jobsByActivity[cat] += char.corpByCategory[cat]; }
+        totals[cat].current += char.slots[cat].current;
+        totals[cat].max += char.slots[cat].max;
+      }
+      // Remove internal fields before sending to client
+      const { personalByCategory, corpByCategory, ...clientData } = char;
+      jobsByCharacter.push(clientData);
     }
 
-    res.json({
+    const result = {
       total_characters: characters.length,
       total_active_jobs: totalPersonalJobs + totalCorpJobs,
       personal_active_jobs: totalPersonalJobs,
@@ -547,7 +512,12 @@ exports.getDashboardStats = async (req, res) => {
       corp_jobs_by_activity: corpJobsByActivity,
       jobs_by_character: jobsByCharacter,
       slots: totals
-    });
+    };
+
+    // Cache result
+    dashboardCache.set(cacheKey, { data: result, timestamp: Date.now() });
+
+    res.json(result);
   } catch (error) {
     console.error('Get dashboard stats error:', error);
     res.status(500).json({ error: 'Failed to get dashboard stats' });

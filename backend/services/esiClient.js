@@ -381,14 +381,25 @@ function calculateJobSlots(skills) {
   };
 }
 
-// Get job slot usage for a character
+// Get max slot counts from skills only (no jobs fetch — avoids duplicate ESI call)
+async function getMaxSlots(characterId, accessToken) {
+  try {
+    const skillsResult = await getCharacterSkills(characterId, accessToken);
+    const slots = calculateJobSlots(skillsResult.skills);
+    return { ...slots, hasSkillsScope: skillsResult.hasScope, needsReauthorization: !skillsResult.hasScope };
+  } catch (error) {
+    return { manufacturing: { max: 1 }, science: { max: 1 }, reactions: { max: 1 }, hasSkillsScope: false, needsReauthorization: true };
+  }
+}
+
+// Get job slot usage for a character (fetches jobs + skills)
 async function getJobSlotUsage(characterId, accessToken) {
   try {
-    // Get active jobs
-    const jobs = await getCharacterIndustryJobs(characterId, accessToken, false);
-    
-    // Get character skills
-    const skillsResult = await getCharacterSkills(characterId, accessToken);
+    // Get active jobs and skills in parallel
+    const [jobs, skillsResult] = await Promise.all([
+      getCharacterIndustryJobs(characterId, accessToken, false),
+      getCharacterSkills(characterId, accessToken)
+    ]);
     const slots = calculateJobSlots(skillsResult.skills);
 
     // Count active jobs by category
@@ -803,6 +814,7 @@ module.exports = {
   getCharacterIndustryJobs,
   getCharacterPublicInfo,
   getJobSlotUsage,
+  getMaxSlots,
   getCharacterSkills,
   getCharacterSkillQueue,
   getTypeName,
