@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Current version:** v5.0.0 (2026-03-29)
+**Current version:** v5.4.0 (2026-04-01)
 
 ## Build & Deploy
 
@@ -53,10 +53,15 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 **Frontend**: React 18 + Vite 6 (migrated from CRA in v3.6.0)
 - `App.jsx`: Auth check on mount → renders `Login` or `Main` (no react-router)
-- `Main.jsx` renders views based on `currentView` state: dashboard, jobs, corp-jobs, assets, planets
+- `Main.jsx` renders views based on `currentView` state: dashboard, character, jobs, corp-jobs, assets, planets
+- `Main.jsx` owns global refresh (auto + manual) via `refreshKey` prop passed to all views
 - `Login.jsx`: Single "Login with EVE Online" button (no username/password)
-- `Sidebar.jsx` handles character selection, nav, ESI scope indicator dots
+- `Sidebar.jsx`: clicking character → navigates to CharacterPage; nav items switch views
+- `CharacterPage.jsx`: per-character detail view (skill queue, jobs, planets, net worth)
+- Each nav view has its own character filter dropdown (self-contained, no `selectedCharacter` prop)
+- Shared components: `ExternalLinks.jsx` (lookup links), `ExportButton.jsx` (CSV/JSON export)
 - `services/api.js`: Axios client using relative URLs (Nginx proxies to backend)
+- `services/export.js`: Client-side CSV/JSON generation utility
 - All `.jsx` files (Vite convention), services stay `.js`
 
 **Database**: SQLite on Longhorn PVC (K8s) or Docker volume (Compose)

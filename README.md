@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.3.0 | **Build Date:** 2026-04-01
+**Current Version:** v5.4.0 | **Build Date:** 2026-04-01
 
 A comprehensive web application for tracking EVE Online industry jobs, assets, planetary industry, and character management across multiple characters and corporations.
 
@@ -112,6 +112,13 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 ## Recent Updates
 
+### v5.4.0 (2026-04-01)
+- Global refresh — auto-refresh + manual refresh moved to header, works across all views
+- Slot cards moved inside Characters Overview (sticky on scroll, no background mismatch)
+- zKillboard links on character names (Dashboard cards + Character Page header)
+- Compact Assets toolbar (smaller buttons, stable layout on collapse/expand)
+- Unified ISK colors to amber across all views
+
 ### v5.3.0 (2026-04-01)
 - Character Page — dedicated view with skill queue, jobs, planets, corp/alliance logos
 - Self-contained character filters on all nav views (sidebar released from filter role)
@@ -140,6 +147,7 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| v5.4.0 | 2026-04-01 | Global refresh, sticky slot cards, zKillboard on characters, ISK color unify |
 | v5.3.0 | 2026-04-01 | Character Page, external lookups, CSV export, per-char net worth, perf |
 | v5.2.0 | 2026-03-30 | Skill training on Dashboard cards |
 | v5.1.0 | 2026-03-30 | Planets auto-refresh |

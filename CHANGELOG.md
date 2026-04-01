@@ -2,6 +2,40 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.4.0] - 2026-04-01
+
+### Global Refresh
+- **Auto-refresh + manual refresh moved to main header** — works globally across all views
+- Auto-refresh dropdown (Off / 5m / 10m / 15m) persisted in localStorage
+- Manual refresh button reloads whichever view is active (stays on current page)
+- Removed per-view refresh buttons from Dashboard, IndustryJobs, CorporationJobs, CharacterPage, Planets
+- Removed Dashboard Overview header entirely
+
+### Dashboard Layout
+- **Slot cards moved inside Characters Overview section** — sticky on scroll, uses section background (no gradient mismatch)
+- Characters Overview header + stats merged into single line
+- zKillboard links on character names in Dashboard cards
+
+### Style Fixes
+- **Unified ISK colors to amber (#f6ad55)** across Assets view (badges, cells, price mode selector)
+- **Wallet boxes changed to golden-yellow (#f6c90e)** — distinct from asset amber
+- **Header wealth** split into separate Assets + Wallet boxes (matching Dashboard card layout)
+- **Assets toolbar** — smaller buttons by default, stable layout (no resize on collapse/expand)
+- **External links dropdown** — switched to position:fixed to prevent clipping under table rows
+- Removed zKillboard from item links (kept only for characters)
+- Fixed Character Page job tables: correct field names for progress, blueprint names, locations
+
+### Performance
+- **Wealth endpoint** — parallel character fetching + 2-minute cache
+- **Dashboard stats** — parallel ESI calls via Promise.all, eliminated duplicate getCharacterIndustryJobs call, 2-minute cache
+- **Frontend** — stats, corp info, and wealth fetched in parallel instead of sequential
+
+### Bug Fixes
+- Fixed corporation assets showing empty (character filter was filtering corp-wide data)
+- Fixed blank page after login (slotsLoading undefined in Dashboard)
+
+---
+
 ## [v5.3.0] - 2026-04-01
 
 ### Character Page
