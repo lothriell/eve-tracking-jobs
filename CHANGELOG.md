@@ -2,6 +2,32 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.5.0] - 2026-04-01
+
+### Wallet Journal Improvements
+- **Item names in All tab** — market transactions now show item name, quantity, and buy/sell badge via date+amount matching (ESI journal_ref_id doesn't match entry_id)
+- **Unified table layout** — All, Transactions, and Market Transactions tabs share consistent column widths (percentage-based with `table-layout: fixed`)
+- **Separate Qty, Item, Buy/Sell columns** on All tab (badge moved out of Item cell)
+- **Buy/Sell filter dropdown** on All tab — second dropdown alongside ref-type filter
+- **Market Transactions filter/export moved to tab bar** — consistent with other tabs (no separate toolbar row)
+- **Correct per-tab counts** — Market tab shows "X transactions", others show "X entries"
+- **Buy/Sell badge colors swapped** — sell = green (income), buy = red (expense)
+- **Market Transactions buy/sell filter** converted from buttons to dropdown (matching ref-type filter style)
+- **All filters aligned left** — dropdowns sit after tab buttons, not centered
+- **Market tab prices colored** — green for sell, red for buy on Unit Price and Total columns
+- **Market tab columns reordered** — Date, Qty, Item, Buy/Sell, Unit Price, Total, Description, Parties
+
+### Wealth History Fixes
+- **Deduplicated snapshots** — chart aggregation deduplicates per character per hour before summing, preventing inflated values
+- **Backend dedup guard** — `saveWealthSnapshot` checks for existing snapshot within the last hour per character before inserting
+- **Purged bad historical data** on test environment
+
+### UI Fixes
+- **Market Transactions tab scroll jump** — `scrollIntoView` on tab switch prevents page jumping when content height changes during data fetch
+- **Top bar wallet ISK color** — removed opacity dimming, now matches character page wallet box (#f6c90e gold)
+
+---
+
 ## [v5.4.0] - 2026-04-01
 
 ### Global Refresh

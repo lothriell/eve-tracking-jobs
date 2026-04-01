@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Current version:** v5.4.0 (2026-04-01)
+**Current version:** v5.5.0 (2026-04-01)
 
 ## Build & Deploy
 
@@ -104,6 +104,7 @@ esi-assets.read_assets.v1
 esi-assets.read_corporation_assets.v1
 esi-planets.manage_planets.v1
 esi-universe.read_structures.v1
+esi-wallet.read_character_wallet.v1
 ```
 
 **Three EVE Developer Applications** — all must have these scopes enabled:

@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.4.0 | **Build Date:** 2026-04-01
+**Current Version:** v5.5.0 | **Build Date:** 2026-04-01
 
 A comprehensive web application for tracking EVE Online industry jobs, assets, planetary industry, and character management across multiple characters and corporations.
 
@@ -21,7 +21,7 @@ A comprehensive web application for tracking EVE Online industry jobs, assets, p
 - **Dedicated character view** — click any character in the sidebar for full details
 - **Corporation & Alliance** display with EVE logos
 - **Skill queue** — currently training skill + expandable full queue table
-- **Per-character net worth** — asset value with wallet placeholder (Phase 2)
+- **Per-character net worth** — asset value + wallet balance
 - **Personal & Corporation industry jobs** with progress bars and locations
 - **Planetary industry** — extractor expiry countdown + launchpad storage fill bar
 
@@ -71,7 +71,9 @@ A comprehensive web application for tracking EVE Online industry jobs, assets, p
 - **Multi-character support** — unlimited characters with alt linking
 - **External lookups** — Fuzzwork, EVE Ref, zKillboard, Dotlan on items/systems/characters
 - **CSV/JSON export** on all table views
-- **Net worth tracking** — per-character asset values on dashboard and character page
+- **Net worth tracking** — per-character asset values + wallet balances on dashboard and character page
+- **Wealth history chart** — hourly snapshots with 7d/30d/90d views, per-character deduplication
+- **Wallet journal** — Overview (donut chart), Transactions, Market Transactions, and All tabs with filters and export
 - **EVE-inspired dark theme** with responsive design
 
 ---
@@ -107,10 +109,17 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 | `esi-assets.read_corporation_assets.v1` | Corporation assets |
 | `esi-planets.manage_planets.v1` | Planetary industry |
 | `esi-universe.read_structures.v1` | Player structure names |
+| `esi-wallet.read_character_wallet.v1` | Wallet balance + journal + transactions |
 
 ---
 
 ## Recent Updates
+
+### v5.5.0 (2026-04-01)
+- Wallet Journal — unified table layout across tabs, item names via date+amount matching, buy/sell filters
+- Wealth History — deduplicated snapshots per character per hour, correct chart values
+- Market Transactions — filter/export in tab bar, colored prices (green=sell, red=buy)
+- Top bar wallet ISK color matches character page
 
 ### v5.4.0 (2026-04-01)
 - Global refresh — auto-refresh + manual refresh moved to header, works across all views
