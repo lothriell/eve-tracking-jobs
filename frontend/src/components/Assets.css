@@ -51,33 +51,38 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
-  margin-bottom: 16px;
+  padding: 8px 0;
+  margin-bottom: 10px;
+  flex-wrap: nowrap;
+  min-height: 36px;
 }
 
 .assets-toolbar-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .assets-toolbar-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 /* Tab buttons — integrated into toolbar, no border line */
 .assets-tab {
-  padding: 6px 16px;
+  padding: 4px 12px;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
   color: #a0aec0;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .assets-tab:hover {
@@ -93,14 +98,14 @@
 
 /* Filter + dropdown — same row as tabs */
 .assets-filter-input {
-  padding: 6px 12px;
+  padding: 4px 10px;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
   color: #e2e8f0;
-  font-size: 13px;
+  font-size: 12px;
   outline: none;
-  width: 260px;
+  width: 160px;
   transition: border-color 0.2s;
 }
 
@@ -116,9 +121,9 @@
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
-  padding: 6px 28px 6px 10px;
+  padding: 4px 28px 4px 10px;
   color: #e2e8f0;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0aec0' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
@@ -137,7 +142,7 @@
 
 /* Price mode dropdown */
 .assets-price-mode {
-  padding: 6px 28px 6px 10px;
+  padding: 4px 28px 4px 10px;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(246, 173, 85, 0.25);
   border-radius: 6px;
@@ -162,7 +167,7 @@
 
 /* View toggle button */
 .assets-view-btn {
-  padding: 6px 12px;
+  padding: 4px 10px;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
@@ -185,7 +190,7 @@
 }
 
 .assets-collapse-btn {
-  padding: 6px 12px;
+  padding: 4px 10px;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
@@ -203,8 +208,10 @@
 
 .assets-stats {
   color: #718096;
-  font-size: 12px;
+  font-size: 11px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ============== TREE: SYSTEM LEVEL ============== */
