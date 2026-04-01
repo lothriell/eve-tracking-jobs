@@ -85,14 +85,18 @@ function WealthIndicator() {
     return () => clearInterval(timerRef.current);
   }, [fetchWealth]);
 
-  if (!wealth || wealth.total_value === 0) return null;
+  if (!wealth) return null;
 
   return (
-    <div className="wealth-indicator" title={`Total asset value: ${wealth.total_value.toLocaleString()} ISK across ${wealth.total_items.toLocaleString()} items`}>
-      <span className="wealth-icon">💰</span>
-      <span className="wealth-value">{formatISKHeader(wealth.total_value)}</span>
-      <span className="wealth-label">ISK</span>
-      <span className="wealth-items">{wealth.total_items.toLocaleString()}</span>
+    <div className="wealth-header-boxes">
+      <div className="wealth-header-box assets" title={`Total asset value: ${wealth.total_value.toLocaleString()} ISK across ${wealth.total_items.toLocaleString()} items`}>
+        <span className="wealth-header-label">Assets</span>
+        <span className="wealth-header-value">{wealth.total_value > 0 ? formatISKHeader(wealth.total_value) : '—'}</span>
+      </div>
+      <div className="wealth-header-box wallet" title="Wallet balance (requires wallet ESI scope)">
+        <span className="wealth-header-label">Wallet</span>
+        <span className="wealth-header-value">—</span>
+      </div>
     </div>
   );
 }

@@ -135,48 +135,56 @@
 }
 
 /* Wealth indicator */
-.wealth-indicator {
+.wealth-header-boxes {
+  display: flex;
+  gap: 6px;
+}
+
+.wealth-header-box {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   padding: 4px 12px;
   border-radius: 6px;
-  background: rgba(246, 173, 85, 0.1);
-  border: 1px solid rgba(246, 173, 85, 0.3);
+  border: 1px solid;
   cursor: default;
   transition: all 0.2s;
 }
 
-.wealth-indicator:hover {
+.wealth-header-box .wealth-header-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  opacity: 0.8;
+}
+
+.wealth-header-box .wealth-header-value {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.wealth-header-box.assets {
+  background: rgba(246, 173, 85, 0.1);
+  border-color: rgba(246, 173, 85, 0.3);
+  color: #f6ad55;
+}
+
+.wealth-header-box.assets:hover {
   background: rgba(246, 173, 85, 0.15);
   border-color: rgba(246, 173, 85, 0.5);
 }
 
-.wealth-icon {
-  font-size: 13px;
+.wealth-header-box.wallet {
+  background: rgba(246, 201, 14, 0.1);
+  border-color: rgba(246, 201, 14, 0.3);
+  color: #f6c90e;
+  opacity: 0.4;
 }
 
-.wealth-value {
-  font-size: 13px;
-  font-weight: 700;
-  color: #f6ad55;
-  font-family: 'Consolas', 'Monaco', monospace;
-}
-
-.wealth-label {
-  font-size: 10px;
-  font-weight: 600;
-  color: rgba(246, 173, 85, 0.6);
-  letter-spacing: 0.5px;
-}
-
-.wealth-items {
-  font-size: 11px;
-  color: rgba(246, 173, 85, 0.5);
-  font-family: 'Consolas', monospace;
-  margin-left: 2px;
-  padding-left: 6px;
-  border-left: 1px solid rgba(246, 173, 85, 0.2);
+.wealth-header-box.wallet:hover {
+  opacity: 0.5;
 }
 
 .logout-btn {

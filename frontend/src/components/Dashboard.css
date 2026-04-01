@@ -475,9 +475,9 @@
 }
 
 .wealth-box.wallet {
-  background: rgba(72, 187, 120, 0.1);
-  border-color: rgba(72, 187, 120, 0.3);
-  color: #68d391;
+  background: rgba(246, 201, 14, 0.1);
+  border-color: rgba(246, 201, 14, 0.3);
+  color: #f6c90e;
 }
 
 .wealth-box.placeholder {
