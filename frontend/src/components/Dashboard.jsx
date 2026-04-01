@@ -307,7 +307,7 @@ function Dashboard({ onError }) {
         </div>
 
         {/* Job Slot Summary — sticky inside characters section */}
-        {!slotsLoading && (
+        {stats.slots && (
           <div className="slot-cards-grid">
             <div
               className={`slot-card manufacturing ${hoveredJobType === 'manufacturing' ? 'hovered' : ''}`}
