@@ -93,9 +93,9 @@ function WealthIndicator() {
         <span className="wealth-header-label">Assets</span>
         <span className="wealth-header-value">{wealth.total_value > 0 ? formatISKHeader(wealth.total_value) : '—'}</span>
       </div>
-      <div className="wealth-header-box wallet" title="Wallet balance (requires wallet ESI scope)">
+      <div className={`wealth-header-box wallet ${wealth.total_wallet_balance > 0 ? '' : 'placeholder-dim'}`} title={wealth.total_wallet_balance > 0 ? `Total wallet: ${wealth.total_wallet_balance.toLocaleString()} ISK` : 'Wallet balance (requires wallet ESI scope)'}>
         <span className="wealth-header-label">Wallet</span>
-        <span className="wealth-header-value">—</span>
+        <span className="wealth-header-value">{wealth.total_wallet_balance > 0 ? formatISKHeader(wealth.total_wallet_balance) : '—'}</span>
       </div>
     </div>
   );

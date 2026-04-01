@@ -506,6 +506,13 @@
   opacity: 0.4;
 }
 
+.wealth-box.needs-reauth {
+  opacity: 0.6;
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #f59e0b;
+}
+
 /* Activity Section */
 .activity-section {
   background: rgba(0, 0, 0, 0.2);

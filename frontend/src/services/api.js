@@ -137,6 +137,18 @@ export const getWealth = (characterId = null) => {
   return api.get(`/api/wealth${params}`);
 };
 
+// Wealth history for chart
+export const getWealthHistory = (days = 30) => {
+  return api.get(`/api/wealth/history?days=${days}`);
+};
+
+// Wallet journal
+export const getWalletJournal = (characterId, limit = 100, offset = 0, refType = null) => {
+  const params = new URLSearchParams({ characterId, limit, offset });
+  if (refType) params.append('refType', refType);
+  return api.get(`/api/wallet/journal?${params.toString()}`);
+};
+
 // EVE server status
 export const getEveStatus = () => {
   return api.get('/api/eve/status');

@@ -809,6 +809,46 @@ async function getColonyLayout(characterId, planetId, accessToken) {
   }
 }
 
+// Get character wallet balance
+async function getCharacterWallet(characterId, accessToken) {
+  try {
+    const url = `${ESI_BASE_URL}/characters/${characterId}/wallet/`;
+    const balance = await makeESIRequest(url, accessToken);
+    return { balance: balance || 0, hasScope: true };
+  } catch (error) {
+    const status = error.response?.status;
+    if (status === 401 || status === 403) {
+      return { balance: null, hasScope: false };
+    }
+    console.error(`Get character wallet error (${characterId}):`, error.message);
+    return { balance: null, hasScope: false };
+  }
+}
+
+// Get wallet journal (paginated)
+async function getWalletJournal(characterId, accessToken) {
+  try {
+    const allEntries = [];
+    let page = 1;
+    while (true) {
+      const url = `${ESI_BASE_URL}/characters/${characterId}/wallet/journal/?page=${page}`;
+      const data = await makeESIRequest(url, accessToken);
+      if (!data || data.length === 0) break;
+      allEntries.push(...data);
+      if (data.length < 1000) break;
+      page++;
+    }
+    return { entries: allEntries, hasScope: true };
+  } catch (error) {
+    const status = error.response?.status;
+    if (status === 401 || status === 403) {
+      return { entries: [], hasScope: false };
+    }
+    console.error(`Get wallet journal error (${characterId}):`, error.message);
+    return { entries: [], hasScope: false };
+  }
+}
+
 module.exports = {
   makeESIRequest,
   getCharacterIndustryJobs,
@@ -833,5 +873,7 @@ module.exports = {
   getColonyLayout,
   getSystemName,
   getSystemNames,
-  ACTIVITY_MAP
+  ACTIVITY_MAP,
+  getCharacterWallet,
+  getWalletJournal
 };

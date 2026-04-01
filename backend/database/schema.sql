@@ -64,3 +64,36 @@ CREATE TABLE IF NOT EXISTS cost_indices (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (system_id, activity)
 );
+
+-- Wealth snapshots (historical net worth tracking)
+CREATE TABLE IF NOT EXISTS wealth_snapshots (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    character_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    wallet_balance REAL DEFAULT 0,
+    asset_value REAL DEFAULT 0,
+    total_wealth REAL DEFAULT 0,
+    snapshot_date DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_wealth_snapshots_char_date ON wealth_snapshots(character_id, snapshot_date);
+CREATE INDEX IF NOT EXISTS idx_wealth_snapshots_user ON wealth_snapshots(user_id);
+
+-- Wallet journal entries (cached from ESI)
+CREATE TABLE IF NOT EXISTS wallet_journal (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    character_id INTEGER NOT NULL,
+    entry_id INTEGER NOT NULL,
+    amount REAL DEFAULT 0,
+    balance REAL DEFAULT 0,
+    date DATETIME NOT NULL,
+    description TEXT,
+    first_party_id INTEGER,
+    second_party_id INTEGER,
+    ref_type TEXT,
+    reason TEXT,
+    UNIQUE(character_id, entry_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_wallet_journal_char_date ON wallet_journal(character_id, date);
+CREATE INDEX IF NOT EXISTS idx_wallet_journal_ref_type ON wallet_journal(ref_type);

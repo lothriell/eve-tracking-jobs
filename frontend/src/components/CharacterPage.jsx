@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { getCharacterSummary, getWealth } from '../services/api';
+import WealthChart from './WealthChart';
+import WalletJournal from './WalletJournal';
 import ExternalLinks from './ExternalLinks';
 import './CharacterPage.css';
 
@@ -55,6 +57,8 @@ function formatCountdown(diff) {
 function CharacterPage({ characterId, onError, refreshKey }) {
   const [data, setData] = useState(null);
   const [assetValue, setAssetValue] = useState(null);
+  const [walletBalance, setWalletBalance] = useState(null);
+  const [needsWalletScope, setNeedsWalletScope] = useState(false);
   const [loading, setLoading] = useState(true);
   const [queueExpanded, setQueueExpanded] = useState(false);
   const [, forceUpdate] = useState(0);
@@ -70,6 +74,8 @@ function CharacterPage({ characterId, onError, refreshKey }) {
       setData(summaryResp.data);
       const cw = wealthResp?.data?.per_character?.[0];
       setAssetValue(cw?.asset_value || null);
+      setWalletBalance(cw?.wallet_balance ?? null);
+      setNeedsWalletScope(cw?.needs_wallet_scope || false);
     } catch (error) {
       console.error('Failed to load character summary:', error);
       onError?.('Failed to load character data');
@@ -152,9 +158,16 @@ function CharacterPage({ characterId, onError, refreshKey }) {
                 return assetValue.toFixed(0);
               })() : '—'} ISK</span>
             </span>
-            <span className="wealth-box wallet placeholder">
+            <span className={`wealth-box wallet ${needsWalletScope ? 'needs-reauth' : walletBalance != null ? '' : 'placeholder'}`}>
               <span className="wealth-box-label">Wallet</span>
-              <span className="wealth-box-value">— ISK</span>
+              <span className="wealth-box-value">{needsWalletScope ? 'Re-auth' : walletBalance != null ? (() => {
+                const v = walletBalance;
+                if (v >= 1e12) return `${(v / 1e12).toFixed(2)}T`;
+                if (v >= 1e9) return `${(v / 1e9).toFixed(2)}B`;
+                if (v >= 1e6) return `${(v / 1e6).toFixed(1)}M`;
+                if (v >= 1e3) return `${(v / 1e3).toFixed(0)}K`;
+                return v.toFixed(0);
+              })() + ' ISK' : '— ISK'}</span>
             </span>
           </div>
         </div>
@@ -387,6 +400,18 @@ function CharacterPage({ characterId, onError, refreshKey }) {
             })}
           </div>
         )}
+      </div>
+
+      {/* Wealth History Chart */}
+      <div className="charpage-section">
+        <h3>Wealth History</h3>
+        <WealthChart characterId={data.character_id} refreshKey={refreshKey} />
+      </div>
+
+      {/* Wallet Journal */}
+      <div className="charpage-section">
+        <h3>Wallet Journal</h3>
+        <WalletJournal characterId={data.character_id} refreshKey={refreshKey} />
       </div>
     </div>
   );

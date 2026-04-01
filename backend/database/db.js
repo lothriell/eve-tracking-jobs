@@ -248,6 +248,62 @@ class DB {
     return this.db.prepare('SELECT MIN(updated_at) as oldest, MAX(updated_at) as newest, COUNT(*) as count FROM cost_indices').get();
   }
 
+  // Wealth snapshots
+  saveWealthSnapshot(characterId, userId, walletBalance, assetValue) {
+    const totalWealth = (walletBalance || 0) + (assetValue || 0);
+    this.db.prepare(
+      'INSERT INTO wealth_snapshots (character_id, user_id, wallet_balance, asset_value, total_wealth) VALUES (?, ?, ?, ?, ?)'
+    ).run(characterId, userId, walletBalance || 0, assetValue || 0, totalWealth);
+  }
+
+  getLatestSnapshotDate(userId) {
+    const row = this.db.prepare('SELECT MAX(snapshot_date) as latest FROM wealth_snapshots WHERE user_id = ?').get(userId);
+    return row?.latest || null;
+  }
+
+  getWealthHistory(userId, days = 30) {
+    return this.db.prepare(
+      `SELECT character_id, wallet_balance, asset_value, total_wealth, snapshot_date
+       FROM wealth_snapshots WHERE user_id = ? AND snapshot_date > datetime('now', '-' || ? || ' days')
+       ORDER BY snapshot_date ASC`
+    ).all(userId, days);
+  }
+
+  // Wallet journal
+  saveWalletJournalEntries(characterId, entries) {
+    if (!entries || entries.length === 0) return 0;
+    const stmt = this.db.prepare(
+      `INSERT OR REPLACE INTO wallet_journal (character_id, entry_id, amount, balance, date, description, first_party_id, second_party_id, ref_type, reason)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    );
+    const batch = this.db.transaction((items) => {
+      for (const e of items) {
+        stmt.run(characterId, e.id, e.amount || 0, e.balance || 0, e.date, e.description || null, e.first_party_id || null, e.second_party_id || null, e.ref_type || null, e.reason || null);
+      }
+    });
+    batch(entries);
+    return entries.length;
+  }
+
+  getWalletJournal(characterId, limit = 100, offset = 0, refType = null) {
+    if (refType) {
+      return this.db.prepare(
+        'SELECT * FROM wallet_journal WHERE character_id = ? AND ref_type = ? ORDER BY date DESC LIMIT ? OFFSET ?'
+      ).all(characterId, refType, limit, offset);
+    }
+    return this.db.prepare(
+      'SELECT * FROM wallet_journal WHERE character_id = ? ORDER BY date DESC LIMIT ? OFFSET ?'
+    ).all(characterId, limit, offset);
+  }
+
+  getWalletJournalNewest(characterId) {
+    return this.db.prepare('SELECT MAX(date) as newest FROM wallet_journal WHERE character_id = ?').get(characterId);
+  }
+
+  getWalletJournalRefTypes(characterId) {
+    return this.db.prepare('SELECT DISTINCT ref_type FROM wallet_journal WHERE character_id = ? ORDER BY ref_type').all(characterId).map(r => r.ref_type);
+  }
+
   close() {
     if (this.db) {
       this.db.close();

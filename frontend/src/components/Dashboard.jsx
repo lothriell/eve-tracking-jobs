@@ -346,10 +346,15 @@ function Dashboard({ onError, refreshKey }) {
                           </span>
                         );
                       })()}
-                      <span className="wealth-box wallet placeholder">
-                        <span className="wealth-box-label">Wallet</span>
-                        <span className="wealth-box-value">—</span>
-                      </span>
+                      {(() => {
+                        const cw = wealthData?.per_character?.find(w => w.character_id === char.character_id);
+                        return (
+                          <span className={`wealth-box wallet ${cw?.needs_wallet_scope ? 'needs-reauth' : cw?.wallet_balance != null ? '' : 'placeholder'}`}>
+                            <span className="wealth-box-label">Wallet</span>
+                            <span className="wealth-box-value">{cw?.needs_wallet_scope ? 'Re-auth' : cw?.wallet_balance != null ? formatISK(cw.wallet_balance) : '—'}</span>
+                          </span>
+                        );
+                      })()}
                     </div>
                     <SkillTrainingLine training={char.skill_training} />
                   </>
