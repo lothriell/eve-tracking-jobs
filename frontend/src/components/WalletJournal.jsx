@@ -191,85 +191,41 @@ function JournalTable({ entries, showItem }) {
 }
 
 // ===== MARKET TRANSACTIONS TAB =====
-function MarketTransactionsTab({ characterId, refreshKey }) {
-  const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [buyFilter, setBuyFilter] = useState('all'); // 'all', 'buy', 'sell'
-
-  const loadTx = useCallback(async () => {
-    if (!characterId) return;
-    setLoading(true);
-    try {
-      const resp = await getWalletTransactions(characterId, 500, 0);
-      setTransactions(resp.data.transactions || []);
-    } catch { setTransactions([]); }
-    finally { setLoading(false); }
-  }, [characterId]);
-
-  useEffect(() => { loadTx(); }, [loadTx, refreshKey]);
-
-  const filtered = buyFilter === 'all' ? transactions
-    : transactions.filter(t => buyFilter === 'buy' ? t.is_buy : !t.is_buy);
+function MarketTransactionsTab({ characterId, refreshKey, buyFilter, filtered, loading }) {
+  if (loading) return <div className="wj-loading">Loading market transactions...</div>;
+  if (filtered.length === 0) return <div className="wj-empty">No market transactions found.</div>;
 
   return (
-    <>
-      <div className="wj-table-toolbar">
-        <div className="wj-buysell-filter">
-          {['all', 'buy', 'sell'].map(f => (
-            <button key={f} className={`wj-filter-btn ${buyFilter === f ? 'active' : ''}`} onClick={() => setBuyFilter(f)}>
-              {f.charAt(0).toUpperCase() + f.slice(1)}
-            </button>
-          ))}
-        </div>
-        <ExportButton
-          getData={() => filtered}
-          columns={[
-            { key: 'date', label: 'Date' },
-            { key: 'quantity', label: 'Qty' },
-            { key: 'type_name', label: 'Type' },
-            { key: 'unit_price', label: 'Unit Price' },
-            { key: 'total', label: 'Total' },
-            { key: 'is_buy', label: 'Buy/Sell' },
-            { key: 'client_name', label: 'Client' },
-            { key: 'location_name', label: 'Where' },
-          ]}
-          filename="market-transactions"
-        />
-        <span className="wj-count">{filtered.length} transactions</span>
-      </div>
-      {loading ? <div className="wj-loading">Loading market transactions...</div>
-       : filtered.length === 0 ? <div className="wj-empty">No market transactions found.</div>
-       : <div className="wj-table-wrap">
-        <table className="wj-table wj-table-market">
-          <thead>
-            <tr>
-              <th className="wj-col-date">Date</th>
-              <th className="wj-col-qty">Qty</th>
-              <th className="wj-col-item">Type</th>
-              <th className="wj-col-amount">Unit Price</th>
-              <th className="wj-col-amount">Total</th>
-              <th className="wj-col-badge">Buy/Sell</th>
-              <th className="wj-col-parties">Client</th>
-              <th className="wj-col-desc">Where</th>
+    <div className="wj-table-wrap">
+      <table className="wj-table wj-table-market">
+        <thead>
+          <tr>
+            <th className="wj-col-date">Date</th>
+            <th className="wj-col-qty">Qty</th>
+            <th className="wj-col-item">Type</th>
+            <th className="wj-col-amount">Unit Price</th>
+            <th className="wj-col-amount">Total</th>
+            <th className="wj-col-badge">Buy/Sell</th>
+            <th className="wj-col-parties">Client</th>
+            <th className="wj-col-desc">Where</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filtered.map((t, i) => (
+            <tr key={t.transaction_id || i}>
+              <td className="wj-date">{formatDate(t.date)}</td>
+              <td className="wj-qty">{(t.quantity || 0).toLocaleString()}</td>
+              <td className="wj-typename">{t.type_name || `Type ${t.type_id}`}</td>
+              <td className="wj-amount">{formatISKPlain(t.unit_price)} ISK</td>
+              <td className="wj-amount">{formatISKPlain(t.total)} ISK</td>
+              <td><span className={`wj-bs-badge ${t.is_buy ? 'buy' : 'sell'}`}>{t.is_buy ? 'Buy' : 'Sell'}</span></td>
+              <td className="wj-parties">{t.client_name || '—'}</td>
+              <td className="wj-desc">{t.location_name || '—'}</td>
             </tr>
-          </thead>
-          <tbody>
-            {filtered.map((t, i) => (
-              <tr key={t.transaction_id || i}>
-                <td className="wj-date">{formatDate(t.date)}</td>
-                <td className="wj-qty">{(t.quantity || 0).toLocaleString()}</td>
-                <td className="wj-typename">{t.type_name || `Type ${t.type_id}`}</td>
-                <td className="wj-amount">{formatISKPlain(t.unit_price)} ISK</td>
-                <td className="wj-amount">{formatISKPlain(t.total)} ISK</td>
-                <td><span className={`wj-bs-badge ${t.is_buy ? 'buy' : 'sell'}`}>{t.is_buy ? 'Buy' : 'Sell'}</span></td>
-                <td className="wj-parties">{t.client_name || '—'}</td>
-                <td className="wj-desc">{t.location_name || '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>}
-    </>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -283,6 +239,9 @@ function WalletJournal({ characterId, refreshKey }) {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [marketTx, setMarketTx] = useState([]);
+  const [marketLoading, setMarketLoading] = useState(true);
+  const [buyFilter, setBuyFilter] = useState('all');
   const tabsRef = useRef(null);
   const LIMIT = 200;
 
@@ -304,6 +263,22 @@ function WalletJournal({ characterId, refreshKey }) {
   }, [characterId, selectedRefType, offset]);
 
   useEffect(() => { setOffset(0); loadJournal(false); }, [characterId, selectedRefType, refreshKey]);
+
+  // Load market transactions
+  const loadMarketTx = useCallback(async () => {
+    if (!characterId) return;
+    setMarketLoading(true);
+    try {
+      const resp = await getWalletTransactions(characterId, 500, 0);
+      setMarketTx(resp.data.transactions || []);
+    } catch { setMarketTx([]); }
+    finally { setMarketLoading(false); }
+  }, [characterId]);
+
+  useEffect(() => { loadMarketTx(); }, [loadMarketTx, refreshKey]);
+
+  const filteredMarketTx = buyFilter === 'all' ? marketTx
+    : marketTx.filter(t => buyFilter === 'buy' ? t.is_buy : !t.is_buy);
 
   if (needsScope) return <div className="wj-needs-scope">Wallet requires re-authorization with wallet scope.</div>;
 
@@ -330,7 +305,32 @@ function WalletJournal({ characterId, refreshKey }) {
             {refTypes.map(rt => <option key={rt} value={rt}>{rt.replace(/_/g, ' ')}</option>)}
           </select>
         )}
+        {activeTab === 'market' && (
+          <div className="wj-buysell-filter">
+            {['all', 'buy', 'sell'].map(f => (
+              <button key={f} className={`wj-filter-btn ${buyFilter === f ? 'active' : ''}`} onClick={() => setBuyFilter(f)}>
+                {f.charAt(0).toUpperCase() + f.slice(1)}
+              </button>
+            ))}
+          </div>
+        )}
         <span className="wj-tabs-right">
+          {activeTab === 'market' && (
+            <ExportButton
+              getData={() => filteredMarketTx}
+              columns={[
+                { key: 'date', label: 'Date' },
+                { key: 'quantity', label: 'Qty' },
+                { key: 'type_name', label: 'Type' },
+                { key: 'unit_price', label: 'Unit Price' },
+                { key: 'total', label: 'Total' },
+                { key: 'is_buy', label: 'Buy/Sell' },
+                { key: 'client_name', label: 'Client' },
+                { key: 'location_name', label: 'Where' },
+              ]}
+              filename="market-transactions"
+            />
+          )}
           {activeTab !== 'overview' && activeTab !== 'market' && (
             <ExportButton
               getData={() => entries.map(e => ({
@@ -350,7 +350,9 @@ function WalletJournal({ characterId, refreshKey }) {
               filename={activeTab === 'all' ? 'wallet-all' : 'wallet-journal'}
             />
           )}
-          <span className="wj-count">{entries.length} entries</span>
+          <span className="wj-count">
+            {activeTab === 'market' ? `${filteredMarketTx.length} transactions` : `${entries.length} entries`}
+          </span>
         </span>
       </div>
 
@@ -374,7 +376,7 @@ function WalletJournal({ characterId, refreshKey }) {
             </>
           )}
 
-          {activeTab === 'market' && <MarketTransactionsTab characterId={characterId} refreshKey={refreshKey} />}
+          {activeTab === 'market' && <MarketTransactionsTab filtered={filteredMarketTx} loading={marketLoading} />}
         </>
       )}
     </div>

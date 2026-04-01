@@ -229,8 +229,8 @@
   text-transform: uppercase;
 }
 
-.wj-bs-badge.buy { background: rgba(104, 211, 145, 0.15); color: #68d391; }
-.wj-bs-badge.sell { background: rgba(252, 129, 129, 0.15); color: #fc8181; }
+.wj-bs-badge.sell { background: rgba(104, 211, 145, 0.15); color: #68d391; }
+.wj-bs-badge.buy { background: rgba(252, 129, 129, 0.15); color: #fc8181; }
 
 /* Load more */
 .wj-load-more {
