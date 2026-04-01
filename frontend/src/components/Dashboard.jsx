@@ -433,12 +433,21 @@ function Dashboard({ onError }) {
                       </span>
                     </div>
                     <SkillTrainingLine training={char.skill_training} />
-                    {wealthData?.per_character && (() => {
-                      const cw = wealthData.per_character.find(w => w.character_id === char.character_id);
-                      return cw && cw.asset_value > 0 ? (
-                        <span className="character-asset-value">{formatISK(cw.asset_value)} ISK</span>
-                      ) : null;
-                    })()}
+                    <div className="character-wealth-row">
+                      {(() => {
+                        const cw = wealthData?.per_character?.find(w => w.character_id === char.character_id);
+                        return (
+                          <span className="wealth-box assets">
+                            <span className="wealth-box-label">Assets</span>
+                            <span className="wealth-box-value">{cw && cw.asset_value > 0 ? formatISK(cw.asset_value) : '—'}</span>
+                          </span>
+                        );
+                      })()}
+                      <span className="wealth-box wallet placeholder">
+                        <span className="wealth-box-label">Wallet</span>
+                        <span className="wealth-box-value">—</span>
+                      </span>
+                    </div>
                   </>
                 )}
               </div>

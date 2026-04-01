@@ -437,12 +437,51 @@
   50% { opacity: 0.3; }
 }
 
-/* Per-character asset value */
-.character-asset-value {
-  font-size: 11px;
-  color: #f6ad55;
-  font-family: 'Consolas', monospace;
+/* Per-character wealth boxes */
+.character-wealth-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.wealth-box {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  flex: 1;
+  justify-content: space-between;
+  border: 1px solid;
+}
+
+.wealth-box .wealth-box-label {
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  opacity: 0.8;
+}
+
+.wealth-box .wealth-box-value {
+  font-family: 'Consolas', monospace;
+  font-weight: 700;
+}
+
+.wealth-box.assets {
+  background: rgba(246, 173, 85, 0.1);
+  border-color: rgba(246, 173, 85, 0.3);
+  color: #f6ad55;
+}
+
+.wealth-box.wallet {
+  background: rgba(72, 187, 120, 0.1);
+  border-color: rgba(72, 187, 120, 0.3);
+  color: #68d391;
+}
+
+.wealth-box.placeholder {
+  opacity: 0.4;
 }
 
 /* Activity Section */

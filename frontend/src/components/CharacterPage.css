@@ -89,27 +89,55 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
+  gap: 10px;
   margin-left: auto;
 }
 
-.charpage-asset-value {
+.charpage-wealth-boxes {
   display: flex;
-  align-items: baseline;
-  gap: 4px;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.asset-value-amount {
-  font-size: 20px;
+.charpage-wealth-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid;
+  min-width: 180px;
+}
+
+.charpage-wealth-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
+}
+
+.charpage-wealth-value {
+  font-size: 14px;
   font-weight: 700;
   font-family: 'Consolas', monospace;
+}
+
+.charpage-wealth-box.assets {
+  background: rgba(246, 173, 85, 0.1);
+  border-color: rgba(246, 173, 85, 0.3);
   color: #f6ad55;
 }
 
-.asset-value-label {
-  font-size: 12px;
-  color: #718096;
-  text-transform: uppercase;
+.charpage-wealth-box.wallet {
+  background: rgba(72, 187, 120, 0.1);
+  border-color: rgba(72, 187, 120, 0.3);
+  color: #68d391;
+}
+
+.charpage-wealth-box.placeholder {
+  opacity: 0.4;
 }
 
 /* Sections */
