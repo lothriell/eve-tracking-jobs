@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { getWalletJournal } from '../services/api';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { getWalletJournal, getWalletTransactions } from '../services/api';
 import ExportButton from './ExportButton';
 import './WalletJournal.css';
 
@@ -14,11 +14,285 @@ function formatISK(value) {
   return `${sign}${value.toFixed(0)}`;
 }
 
+function formatISKPlain(value) {
+  if (!value || value === 0) return '0';
+  if (value >= 1e12) return `${(value / 1e12).toFixed(2)}T`;
+  if (value >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
+  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
+  if (value >= 1e3) return `${(value / 1e3).toFixed(0)}K`;
+  return value.toFixed(0);
+}
+
 function formatDate(dateStr) {
   const d = new Date(dateStr);
   return `${d.getFullYear()}.${(d.getMonth()+1).toString().padStart(2,'0')}.${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
 }
 
+// Category grouping for overview
+const REF_CATEGORIES = {
+  'market_transaction': 'Trade', 'transaction_tax': 'Trade', 'brokers_fee': 'Trade',
+  'bounty_prizes': 'Bounty', 'bounty_prize': 'Bounty', 'agent_mission_reward': 'Bounty', 'agent_mission_time_bonus_reward': 'Bounty',
+  'player_donation': 'Transfers', 'player_trading': 'Transfers', 'corporation_account_withdrawal': 'Transfers', 'contract_price': 'Transfers', 'contract_reward': 'Transfers', 'contract_collateral': 'Transfers',
+  'industry_job_tax': 'Industry', 'manufacturing': 'Industry', 'reprocessing_tax': 'Industry',
+  'planetary_import_tax': 'Planetary', 'planetary_export_tax': 'Planetary', 'planetary_construction': 'Planetary',
+  'insurance': 'Insurance', 'structure_gate_jump': 'Fees', 'jump_clone_activation_fee': 'Fees', 'office_rental_fee': 'Fees',
+};
+
+const CATEGORY_COLORS = {
+  'Trade': '#f6ad55', 'Bounty': '#68d391', 'Transfers': '#63b3ed',
+  'Industry': '#fc8181', 'Planetary': '#b794f4', 'Insurance': '#f687b3',
+  'Fees': '#a0aec0', 'Other': '#718096',
+};
+
+function getCategory(refType) {
+  return REF_CATEGORIES[refType] || 'Other';
+}
+
+// ===== OVERVIEW TAB (Donut Chart) =====
+function OverviewTab({ entries }) {
+  const canvasRef = useRef(null);
+
+  const stats = React.useMemo(() => {
+    let income = 0, expenses = 0;
+    const byCategory = {};
+    entries.forEach(e => {
+      const cat = getCategory(e.ref_type);
+      if (!byCategory[cat]) byCategory[cat] = { income: 0, expenses: 0 };
+      if (e.amount > 0) { income += e.amount; byCategory[cat].income += e.amount; }
+      else if (e.amount < 0) { expenses += Math.abs(e.amount); byCategory[cat].expenses += Math.abs(e.amount); }
+    });
+    return { income, expenses, byCategory };
+  }, [entries]);
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const size = 180;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, size, size);
+
+    const cx = size / 2, cy = size / 2, r = 70, lineWidth = 18;
+    const total = stats.income + stats.expenses;
+    if (total === 0) return;
+
+    // Draw donut — income categories
+    let angle = -Math.PI / 2;
+    const categories = Object.entries(stats.byCategory).sort((a, b) => (b[1].income + b[1].expenses) - (a[1].income + a[1].expenses));
+    categories.forEach(([cat, data]) => {
+      const val = data.income + data.expenses;
+      const sweep = (val / total) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, angle, angle + sweep);
+      ctx.strokeStyle = CATEGORY_COLORS[cat] || '#718096';
+      ctx.lineWidth = lineWidth;
+      ctx.stroke();
+      angle += sweep;
+    });
+
+    // Center text
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = 'bold 18px Consolas, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(formatISKPlain(stats.income), cx, cy - 4);
+    ctx.fillStyle = '#718096';
+    ctx.font = '10px sans-serif';
+    ctx.fillText('30 Days Income', cx, cy + 12);
+  }, [stats]);
+
+  return (
+    <div className="wj-overview">
+      <div className="wj-overview-chart">
+        <canvas ref={canvasRef} style={{ width: 180, height: 180 }} />
+      </div>
+      <div className="wj-overview-stats">
+        <div className="wj-overview-totals">
+          <div className="wj-overview-total income">
+            <span className="wj-ov-label">Income</span>
+            <span className="wj-ov-value positive">+{formatISKPlain(stats.income)} ISK</span>
+          </div>
+          <div className="wj-overview-total expenses">
+            <span className="wj-ov-label">Expenses</span>
+            <span className="wj-ov-value negative">-{formatISKPlain(stats.expenses)} ISK</span>
+          </div>
+        </div>
+        <div className="wj-overview-categories">
+          {Object.entries(stats.byCategory)
+            .sort((a, b) => (b[1].income + b[1].expenses) - (a[1].income + a[1].expenses))
+            .map(([cat, data]) => (
+              <div key={cat} className="wj-ov-cat">
+                <span className="wj-ov-cat-dot" style={{ background: CATEGORY_COLORS[cat] || '#718096' }} />
+                <span className="wj-ov-cat-pct">{((data.income + data.expenses) / (stats.income + stats.expenses) * 100).toFixed(1)}%</span>
+                <span className="wj-ov-cat-name">{cat}</span>
+              </div>
+            ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===== JOURNAL TABLE (shared between All and Transactions tabs) =====
+function JournalTable({ entries, showItem, exportFilename }) {
+  const columns = [
+    { key: 'date', label: 'Date' },
+    { key: 'ref_type', label: 'Type' },
+    ...(showItem ? [{ key: '_item', label: 'Item' }] : []),
+    { key: 'amount', label: 'Amount' },
+    { key: 'balance', label: 'Balance' },
+    { key: 'description', label: 'Description' },
+    { key: 'first_party_name', label: 'From' },
+    { key: 'second_party_name', label: 'To' },
+  ];
+
+  return (
+    <>
+      <div className="wj-table-toolbar">
+        <ExportButton
+          getData={() => entries.map(e => ({
+            ...e,
+            _item: e.transaction ? `${e.transaction.quantity}x ${e.transaction.type_name} (${e.transaction.is_buy ? 'buy' : 'sell'})` : '',
+          }))}
+          columns={columns}
+          filename={exportFilename}
+        />
+        <span className="wj-count">{entries.length} entries</span>
+      </div>
+      <div className="wj-table-wrap">
+        <table className="wj-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              {showItem && <th>Item</th>}
+              <th className="wj-amount-col">Amount</th>
+              <th className="wj-balance-col">Balance</th>
+              <th>Description</th>
+              <th>Parties</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((e, i) => (
+              <tr key={e.entry_id || i}>
+                <td className="wj-date">{formatDate(e.date)}</td>
+                <td className="wj-type">{(e.ref_type || '').replace(/_/g, ' ')}</td>
+                {showItem && (
+                  <td className="wj-item">
+                    {e.transaction ? (
+                      <span className={e.transaction.is_buy ? 'wj-buy' : 'wj-sell'}>
+                        {e.transaction.quantity}x {e.transaction.type_name}
+                        <span className="wj-buysell"> ({e.transaction.is_buy ? 'buy' : 'sell'})</span>
+                      </span>
+                    ) : ''}
+                  </td>
+                )}
+                <td className={`wj-amount ${e.amount > 0 ? 'positive' : e.amount < 0 ? 'negative' : ''}`}>
+                  {formatISK(e.amount)}
+                </td>
+                <td className="wj-balance">{formatISKPlain(e.balance)}</td>
+                <td className="wj-desc">{e.description || e.reason || '—'}</td>
+                <td className="wj-parties">
+                  {e.first_party_name && <span>{e.first_party_name}</span>}
+                  {e.first_party_name && e.second_party_name && <span className="wj-arrow"> → </span>}
+                  {e.second_party_name && <span>{e.second_party_name}</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+// ===== MARKET TRANSACTIONS TAB =====
+function MarketTransactionsTab({ characterId, refreshKey }) {
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [buyFilter, setBuyFilter] = useState('all'); // 'all', 'buy', 'sell'
+
+  const loadTx = useCallback(async () => {
+    if (!characterId) return;
+    setLoading(true);
+    try {
+      const resp = await getWalletTransactions(characterId, 500, 0);
+      setTransactions(resp.data.transactions || []);
+    } catch { setTransactions([]); }
+    finally { setLoading(false); }
+  }, [characterId]);
+
+  useEffect(() => { loadTx(); }, [loadTx, refreshKey]);
+
+  const filtered = buyFilter === 'all' ? transactions
+    : transactions.filter(t => buyFilter === 'buy' ? t.is_buy : !t.is_buy);
+
+  if (loading) return <div className="wj-loading">Loading market transactions...</div>;
+  if (transactions.length === 0) return <div className="wj-empty">No market transactions found.</div>;
+
+  return (
+    <>
+      <div className="wj-table-toolbar">
+        <div className="wj-buysell-filter">
+          {['all', 'buy', 'sell'].map(f => (
+            <button key={f} className={`wj-filter-btn ${buyFilter === f ? 'active' : ''}`} onClick={() => setBuyFilter(f)}>
+              {f.charAt(0).toUpperCase() + f.slice(1)}
+            </button>
+          ))}
+        </div>
+        <ExportButton
+          getData={() => filtered}
+          columns={[
+            { key: 'date', label: 'Date' },
+            { key: 'quantity', label: 'Qty' },
+            { key: 'type_name', label: 'Type' },
+            { key: 'unit_price', label: 'Unit Price' },
+            { key: 'total', label: 'Total' },
+            { key: 'is_buy', label: 'Buy/Sell' },
+            { key: 'client_name', label: 'Client' },
+            { key: 'location_name', label: 'Where' },
+          ]}
+          filename="market-transactions"
+        />
+        <span className="wj-count">{filtered.length} transactions</span>
+      </div>
+      <div className="wj-table-wrap">
+        <table className="wj-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Qty</th>
+              <th>Type</th>
+              <th className="wj-amount-col">Unit Price</th>
+              <th className="wj-amount-col">Total</th>
+              <th>Buy/Sell</th>
+              <th>Client</th>
+              <th>Where</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((t, i) => (
+              <tr key={t.transaction_id || i}>
+                <td className="wj-date">{formatDate(t.date)}</td>
+                <td className="wj-qty">{(t.quantity || 0).toLocaleString()}</td>
+                <td className="wj-typename">{t.type_name || `Type ${t.type_id}`}</td>
+                <td className="wj-amount">{formatISKPlain(t.unit_price)} ISK</td>
+                <td className="wj-amount">{formatISKPlain(t.total)} ISK</td>
+                <td><span className={`wj-bs-badge ${t.is_buy ? 'buy' : 'sell'}`}>{t.is_buy ? 'Buy' : 'Sell'}</span></td>
+                <td className="wj-parties">{t.client_name || '—'}</td>
+                <td className="wj-desc">{t.location_name || '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+// ===== MAIN COMPONENT =====
 function WalletJournal({ characterId, refreshKey }) {
   const [entries, setEntries] = useState([]);
   const [refTypes, setRefTypes] = useState([]);
@@ -27,7 +301,8 @@ function WalletJournal({ characterId, refreshKey }) {
   const [needsScope, setNeedsScope] = useState(false);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
-  const LIMIT = 100;
+  const [activeTab, setActiveTab] = useState('all');
+  const LIMIT = 200;
 
   const loadJournal = useCallback(async (append = false) => {
     if (!characterId) return;
@@ -35,103 +310,62 @@ function WalletJournal({ characterId, refreshKey }) {
     try {
       const currentOffset = append ? offset : 0;
       const resp = await getWalletJournal(characterId, LIMIT, currentOffset, selectedRefType || null);
-      if (resp.data.needs_scope) {
-        setNeedsScope(true);
-        setEntries([]);
-        return;
-      }
+      if (resp.data.needs_scope) { setNeedsScope(true); setEntries([]); return; }
       setNeedsScope(false);
       setRefTypes(resp.data.ref_types || []);
-      if (append) {
-        setEntries(prev => [...prev, ...resp.data.entries]);
-      } else {
-        setEntries(resp.data.entries || []);
-      }
+      if (append) setEntries(prev => [...prev, ...resp.data.entries]);
+      else setEntries(resp.data.entries || []);
       setHasMore(resp.data.entries?.length === LIMIT);
-      if (!append) setOffset(LIMIT);
-      else setOffset(prev => prev + LIMIT);
-    } catch {
-      if (!append) setEntries([]);
-    } finally {
-      setLoading(false);
-    }
+      if (!append) setOffset(LIMIT); else setOffset(prev => prev + LIMIT);
+    } catch { if (!append) setEntries([]); }
+    finally { setLoading(false); }
   }, [characterId, selectedRefType, offset]);
 
-  useEffect(() => {
-    setOffset(0);
-    loadJournal(false);
-  }, [characterId, selectedRefType, refreshKey]);
+  useEffect(() => { setOffset(0); loadJournal(false); }, [characterId, selectedRefType, refreshKey]);
 
-  if (needsScope) {
-    return <div className="wj-needs-scope">Wallet journal requires re-authorization with wallet scope.</div>;
-  }
+  if (needsScope) return <div className="wj-needs-scope">Wallet requires re-authorization with wallet scope.</div>;
 
   return (
     <div className="wj-container">
-      <div className="wj-toolbar">
-        <select className="wj-filter" value={selectedRefType} onChange={e => setSelectedRefType(e.target.value)}>
-          <option value="">All types</option>
-          {refTypes.map(rt => <option key={rt} value={rt}>{rt.replace(/_/g, ' ')}</option>)}
-        </select>
-        <ExportButton
-          getData={() => entries}
-          columns={[
-            { key: 'date', label: 'Date' },
-            { key: 'ref_type', label: 'Type' },
-            { key: 'amount', label: 'Amount' },
-            { key: 'balance', label: 'Balance' },
-            { key: 'description', label: 'Description' },
-            { key: 'first_party_name', label: 'From' },
-            { key: 'second_party_name', label: 'To' },
-          ]}
-          filename="wallet-journal"
-        />
-        <span className="wj-count">{entries.length} entries</span>
+      <div className="wj-tabs">
+        {['all', 'overview', 'transactions', 'market'].map(tab => (
+          <button
+            key={tab}
+            className={`wj-tab ${activeTab === tab ? 'active' : ''}`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab === 'all' ? 'All' : tab === 'overview' ? 'Overview' : tab === 'transactions' ? 'Transactions' : 'Market Transactions'}
+          </button>
+        ))}
+        {(activeTab === 'all' || activeTab === 'transactions') && (
+          <select className="wj-ref-filter" value={selectedRefType} onChange={e => setSelectedRefType(e.target.value)}>
+            <option value="">All types</option>
+            {refTypes.map(rt => <option key={rt} value={rt}>{rt.replace(/_/g, ' ')}</option>)}
+          </select>
+        )}
       </div>
 
       {loading && entries.length === 0 ? (
-        <div className="wj-loading">Loading journal...</div>
-      ) : entries.length === 0 ? (
-        <div className="wj-empty">No journal entries found.</div>
+        <div className="wj-loading">Loading wallet data...</div>
       ) : (
         <>
-          <div className="wj-table-wrap">
-            <table className="wj-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Type</th>
-                  <th className="wj-amount-col">Amount</th>
-                  <th className="wj-balance-col">Balance</th>
-                  <th>Description</th>
-                  <th>Parties</th>
-                </tr>
-              </thead>
-              <tbody>
-                {entries.map((e, i) => (
-                  <tr key={e.entry_id || i}>
-                    <td className="wj-date">{formatDate(e.date)}</td>
-                    <td className="wj-type">{(e.ref_type || '').replace(/_/g, ' ')}</td>
-                    <td className={`wj-amount ${e.amount > 0 ? 'positive' : e.amount < 0 ? 'negative' : ''}`}>
-                      {formatISK(e.amount)}
-                    </td>
-                    <td className="wj-balance">{formatISK(e.balance)}</td>
-                    <td className="wj-desc">{e.description || e.reason || '—'}</td>
-                    <td className="wj-parties">
-                      {e.first_party_name && <span>{e.first_party_name}</span>}
-                      {e.first_party_name && e.second_party_name && <span className="wj-arrow"> → </span>}
-                      {e.second_party_name && <span>{e.second_party_name}</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {hasMore && (
-            <button className="wj-load-more" onClick={() => loadJournal(true)} disabled={loading}>
-              {loading ? 'Loading...' : 'Load more'}
-            </button>
+          {activeTab === 'overview' && <OverviewTab entries={entries} />}
+
+          {activeTab === 'all' && (
+            <>
+              <JournalTable entries={entries} showItem={true} exportFilename="wallet-all" />
+              {hasMore && <button className="wj-load-more" onClick={() => loadJournal(true)} disabled={loading}>{loading ? 'Loading...' : 'Load more'}</button>}
+            </>
           )}
+
+          {activeTab === 'transactions' && (
+            <>
+              <JournalTable entries={entries} showItem={false} exportFilename="wallet-journal" />
+              {hasMore && <button className="wj-load-more" onClick={() => loadJournal(true)} disabled={loading}>{loading ? 'Loading...' : 'Load more'}</button>}
+            </>
+          )}
+
+          {activeTab === 'market' && <MarketTransactionsTab characterId={characterId} refreshKey={refreshKey} />}
         </>
       )}
     </div>

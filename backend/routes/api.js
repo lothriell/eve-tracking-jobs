@@ -154,7 +154,7 @@ router.get('/wealth/history', requireAuth, (req, res) => {
 router.get('/wallet/journal', requireAuth, async (req, res) => {
   const db = require('../database/db');
   const { getValidAccessToken } = require('../services/tokenRefresh');
-  const { getWalletJournal, getCharacterNames } = require('../services/esiClient');
+  const { getWalletJournal, getWalletTransactions, getCharacterNames, getTypeNames } = require('../services/esiClient');
 
   try {
     const characterId = parseInt(req.query.characterId);
@@ -175,15 +175,21 @@ router.get('/wallet/journal', requireAuth, async (req, res) => {
     if (!newest?.newest || newest.newest < fifteenMinAgo) {
       try {
         const accessToken = await getValidAccessToken(character);
-        const result = await getWalletJournal(characterId, accessToken);
-        if (result.hasScope && result.entries.length > 0) {
-          db.saveWalletJournalEntries(characterId, result.entries);
+        const [journalResult, txResult] = await Promise.all([
+          getWalletJournal(characterId, accessToken),
+          getWalletTransactions(characterId, accessToken)
+        ]);
+        if (journalResult.hasScope && journalResult.entries.length > 0) {
+          db.saveWalletJournalEntries(characterId, journalResult.entries);
         }
-        if (!result.hasScope) {
+        if (txResult.hasScope && txResult.transactions.length > 0) {
+          db.saveWalletTransactions(characterId, txResult.transactions);
+        }
+        if (!journalResult.hasScope) {
           return res.json({ entries: [], needs_scope: true, ref_types: [] });
         }
       } catch (e) {
-        console.error('Failed to fetch wallet journal from ESI:', e.message);
+        console.error('Failed to fetch wallet data from ESI:', e.message);
       }
     }
 
@@ -202,10 +208,94 @@ router.get('/wallet/journal', requireAuth, async (req, res) => {
       e.second_party_name = partyNames[e.second_party_id] || null;
     });
 
+    // Attach matching market transactions to journal entries
+    const entryIds = entries.map(e => e.entry_id).filter(Boolean);
+    const transactions = entryIds.length > 0 ? db.getTransactionsByJournalRefs(characterId, entryIds) : [];
+    if (transactions.length > 0) {
+      const txTypeIds = [...new Set(transactions.map(t => t.type_id).filter(Boolean))];
+      const txTypeNames = txTypeIds.length > 0 ? await getTypeNames(txTypeIds) : {};
+      const txByRef = {};
+      transactions.forEach(t => { txByRef[t.journal_ref_id] = { ...t, type_name: txTypeNames[t.type_id] || `Type ${t.type_id}` }; });
+      entries.forEach(e => {
+        e.transaction = txByRef[e.entry_id] || null;
+      });
+    } else {
+      entries.forEach(e => { e.transaction = null; });
+    }
+
     res.json({ entries, ref_types: refTypes, total: entries.length });
   } catch (error) {
     console.error('Wallet journal error:', error);
     res.status(500).json({ error: 'Failed to get wallet journal' });
+  }
+});
+
+// Wallet market transactions
+router.get('/wallet/transactions', requireAuth, async (req, res) => {
+  const db = require('../database/db');
+  const { getValidAccessToken } = require('../services/tokenRefresh');
+  const { getWalletTransactions, getTypeNames, getCharacterNames, getLocationName } = require('../services/esiClient');
+
+  try {
+    const characterId = parseInt(req.query.characterId);
+    if (!characterId) return res.status(400).json({ error: 'characterId required' });
+
+    const character = db.getCharacterById(characterId);
+    if (!character || character.user_id !== req.session.userId) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
+
+    const limit = Math.min(parseInt(req.query.limit) || 100, 500);
+    const offset = parseInt(req.query.offset) || 0;
+
+    // Refresh cache if stale
+    const newest = db.getWalletTransactionsNewest(characterId);
+    const fifteenMinAgo = new Date(Date.now() - 900000).toISOString();
+    if (!newest?.newest || newest.newest < fifteenMinAgo) {
+      try {
+        const accessToken = await getValidAccessToken(character);
+        const result = await getWalletTransactions(characterId, accessToken);
+        if (result.hasScope && result.transactions.length > 0) {
+          db.saveWalletTransactions(characterId, result.transactions);
+        }
+        if (!result.hasScope) {
+          return res.json({ transactions: [], needs_scope: true });
+        }
+      } catch (e) {
+        console.error('Failed to fetch wallet transactions from ESI:', e.message);
+      }
+    }
+
+    const transactions = db.getWalletTransactions(characterId, limit, offset);
+
+    // Resolve names
+    const typeIds = [...new Set(transactions.map(t => t.type_id).filter(Boolean))];
+    const clientIds = [...new Set(transactions.map(t => t.client_id).filter(Boolean))];
+    const [typeNames, clientNames] = await Promise.all([
+      typeIds.length > 0 ? getTypeNames(typeIds) : {},
+      clientIds.length > 0 ? getCharacterNames(clientIds) : {}
+    ]);
+
+    // Resolve locations (batch — reuse cache)
+    const accessToken = await getValidAccessToken(character);
+    const locationIds = [...new Set(transactions.map(t => t.location_id).filter(Boolean))];
+    const locationNames = {};
+    for (const locId of locationIds) {
+      try { locationNames[locId] = await getLocationName(locId, accessToken); } catch {}
+    }
+
+    const enriched = transactions.map(t => ({
+      ...t,
+      type_name: typeNames[t.type_id] || `Type ${t.type_id}`,
+      client_name: clientNames[t.client_id] || null,
+      location_name: locationNames[t.location_id] || null,
+      total: (t.quantity || 0) * (t.unit_price || 0),
+    }));
+
+    res.json({ transactions: enriched, total: enriched.length });
+  } catch (error) {
+    console.error('Wallet transactions error:', error);
+    res.status(500).json({ error: 'Failed to get wallet transactions' });
   }
 });
 

@@ -875,5 +875,22 @@ module.exports = {
   getSystemNames,
   ACTIVITY_MAP,
   getCharacterWallet,
-  getWalletJournal
+  getWalletJournal,
+  getWalletTransactions
 };
+
+// Get wallet market transactions
+async function getWalletTransactions(characterId, accessToken) {
+  try {
+    const url = `${ESI_BASE_URL}/characters/${characterId}/wallet/transactions/`;
+    const data = await makeESIRequest(url, accessToken);
+    return { transactions: data || [], hasScope: true };
+  } catch (error) {
+    const status = error.response?.status;
+    if (status === 401 || status === 403) {
+      return { transactions: [], hasScope: false };
+    }
+    console.error(`Get wallet transactions error (${characterId}):`, error.message);
+    return { transactions: [], hasScope: false };
+  }
+}

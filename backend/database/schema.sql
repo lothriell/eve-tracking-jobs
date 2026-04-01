@@ -97,3 +97,21 @@ CREATE TABLE IF NOT EXISTS wallet_journal (
 
 CREATE INDEX IF NOT EXISTS idx_wallet_journal_char_date ON wallet_journal(character_id, date);
 CREATE INDEX IF NOT EXISTS idx_wallet_journal_ref_type ON wallet_journal(ref_type);
+
+-- Wallet market transactions (cached from ESI)
+CREATE TABLE IF NOT EXISTS wallet_transactions (
+    character_id INTEGER NOT NULL,
+    transaction_id INTEGER NOT NULL,
+    journal_ref_id INTEGER,
+    type_id INTEGER NOT NULL,
+    quantity INTEGER DEFAULT 0,
+    unit_price REAL DEFAULT 0,
+    is_buy BOOLEAN DEFAULT 0,
+    client_id INTEGER,
+    location_id INTEGER,
+    date DATETIME NOT NULL,
+    UNIQUE(character_id, transaction_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_wallet_trans_char_date ON wallet_transactions(character_id, date);
+CREATE INDEX IF NOT EXISTS idx_wallet_trans_journal ON wallet_transactions(character_id, journal_ref_id);

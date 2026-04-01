@@ -149,6 +149,12 @@ export const getWalletJournal = (characterId, limit = 100, offset = 0, refType =
   return api.get(`/api/wallet/journal?${params.toString()}`);
 };
 
+// Wallet market transactions
+export const getWalletTransactions = (characterId, limit = 100, offset = 0) => {
+  const params = new URLSearchParams({ characterId, limit, offset });
+  return api.get(`/api/wallet/transactions?${params.toString()}`);
+};
+
 // EVE server status
 export const getEveStatus = () => {
   return api.get('/api/eve/status');

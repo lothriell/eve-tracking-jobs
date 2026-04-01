@@ -11,14 +11,39 @@
   padding: 12px 0;
 }
 
-.wj-toolbar {
+/* Tabs */
+.wj-tabs {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
 }
 
-.wj-filter {
+.wj-tab {
+  padding: 4px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #a0aec0;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.wj-tab:hover {
+  border-color: rgba(102, 126, 234, 0.4);
+  color: #e2e8f0;
+}
+
+.wj-tab.active {
+  background: rgba(102, 126, 234, 0.15);
+  border-color: rgba(102, 126, 234, 0.5);
+  color: #a3bffa;
+}
+
+.wj-ref-filter {
   padding: 4px 28px 4px 10px;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -27,9 +52,18 @@
   font-size: 12px;
   cursor: pointer;
   appearance: none;
+  margin-left: auto;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0aec0' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 8px center;
+}
+
+/* Toolbar inside tabs */
+.wj-table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 
 .wj-count {
@@ -38,6 +72,27 @@
   margin-left: auto;
 }
 
+/* Buy/Sell filter buttons */
+.wj-buysell-filter {
+  display: flex;
+  gap: 4px;
+}
+
+.wj-filter-btn {
+  padding: 3px 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: #718096;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.wj-filter-btn:hover { color: #a0aec0; }
+.wj-filter-btn.active { background: rgba(102, 126, 234, 0.15); border-color: rgba(102, 126, 234, 0.5); color: #a3bffa; }
+
+/* Table */
 .wj-table-wrap {
   overflow-x: auto;
   border-radius: 6px;
@@ -126,10 +181,41 @@
   white-space: nowrap;
 }
 
-.wj-arrow {
-  color: #4a5568;
+.wj-arrow { color: #4a5568; }
+
+/* Item column */
+.wj-item {
+  font-size: 11px;
+  white-space: nowrap;
 }
 
+.wj-buy { color: #68d391; }
+.wj-sell { color: #fc8181; }
+.wj-buysell { color: #718096; font-size: 10px; }
+
+.wj-qty {
+  font-family: 'Consolas', monospace;
+  text-align: right;
+  color: #a0aec0;
+}
+
+.wj-typename {
+  color: #e2e8f0;
+}
+
+.wj-bs-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.wj-bs-badge.buy { background: rgba(104, 211, 145, 0.15); color: #68d391; }
+.wj-bs-badge.sell { background: rgba(252, 129, 129, 0.15); color: #fc8181; }
+
+/* Load more */
 .wj-load-more {
   margin-top: 10px;
   padding: 6px 16px;
@@ -143,12 +229,87 @@
   transition: all 0.2s;
 }
 
-.wj-load-more:hover {
-  background: rgba(102, 126, 234, 0.15);
-  color: #e2e8f0;
+.wj-load-more:hover { background: rgba(102, 126, 234, 0.15); color: #e2e8f0; }
+.wj-load-more:disabled { opacity: 0.5; cursor: default; }
+
+/* Overview tab */
+.wj-overview {
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+  padding: 10px 0;
 }
 
-.wj-load-more:disabled {
-  opacity: 0.5;
-  cursor: default;
+.wj-overview-chart {
+  flex-shrink: 0;
+}
+
+.wj-overview-stats {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wj-overview-totals {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wj-overview-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.wj-ov-label {
+  font-size: 12px;
+  color: #718096;
+}
+
+.wj-ov-value {
+  font-family: 'Consolas', monospace;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.wj-ov-value.positive { color: #68d391; }
+.wj-ov-value.negative { color: #fc8181; }
+
+.wj-overview-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wj-ov-cat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.wj-ov-cat-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.wj-ov-cat-pct {
+  font-family: 'Consolas', monospace;
+  color: #a0aec0;
+  min-width: 45px;
+}
+
+.wj-ov-cat-name {
+  color: #718096;
+}
+
+@media (max-width: 768px) {
+  .wj-overview {
+    flex-direction: column;
+    align-items: center;
+  }
 }

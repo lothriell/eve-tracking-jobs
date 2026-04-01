@@ -304,6 +304,40 @@ class DB {
     return this.db.prepare('SELECT DISTINCT ref_type FROM wallet_journal WHERE character_id = ? ORDER BY ref_type').all(characterId).map(r => r.ref_type);
   }
 
+  // Wallet transactions
+  saveWalletTransactions(characterId, transactions) {
+    if (!transactions || transactions.length === 0) return 0;
+    const stmt = this.db.prepare(
+      `INSERT OR REPLACE INTO wallet_transactions (character_id, transaction_id, journal_ref_id, type_id, quantity, unit_price, is_buy, client_id, location_id, date)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    );
+    const batch = this.db.transaction((items) => {
+      for (const t of items) {
+        stmt.run(characterId, t.transaction_id, t.journal_ref_id || null, t.type_id, t.quantity || 0, t.unit_price || 0, t.is_buy ? 1 : 0, t.client_id || null, t.location_id || null, t.date);
+      }
+    });
+    batch(transactions);
+    return transactions.length;
+  }
+
+  getWalletTransactions(characterId, limit = 100, offset = 0) {
+    return this.db.prepare(
+      'SELECT * FROM wallet_transactions WHERE character_id = ? ORDER BY date DESC LIMIT ? OFFSET ?'
+    ).all(characterId, limit, offset);
+  }
+
+  getWalletTransactionsNewest(characterId) {
+    return this.db.prepare('SELECT MAX(date) as newest FROM wallet_transactions WHERE character_id = ?').get(characterId);
+  }
+
+  getTransactionsByJournalRefs(characterId, entryIds) {
+    if (!entryIds || entryIds.length === 0) return [];
+    const placeholders = entryIds.map(() => '?').join(',');
+    return this.db.prepare(
+      `SELECT * FROM wallet_transactions WHERE character_id = ? AND journal_ref_id IN (${placeholders})`
+    ).all(characterId, ...entryIds);
+  }
+
   close() {
     if (this.db) {
       this.db.close();
