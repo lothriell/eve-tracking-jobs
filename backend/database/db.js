@@ -338,6 +338,14 @@ class DB {
     ).all(characterId, ...entryIds);
   }
 
+  getTransactionsByDates(characterId, dates) {
+    if (!dates || dates.length === 0) return [];
+    const placeholders = dates.map(() => '?').join(',');
+    return this.db.prepare(
+      `SELECT * FROM wallet_transactions WHERE character_id = ? AND date IN (${placeholders})`
+    ).all(characterId, ...dates);
+  }
+
   close() {
     if (this.db) {
       this.db.close();

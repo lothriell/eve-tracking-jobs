@@ -214,17 +214,33 @@ router.get('/wallet/journal', requireAuth, async (req, res) => {
       e.second_party_name = partyNames[e.second_party_id] || null;
     });
 
-    // Attach matching market transactions to journal entries
-    const entryIds = entries.map(e => e.entry_id).filter(Boolean);
-    const transactions = entryIds.length > 0 ? db.getTransactionsByJournalRefs(characterId, entryIds) : [];
-    if (transactions.length > 0) {
-      const txTypeIds = [...new Set(transactions.map(t => t.type_id).filter(Boolean))];
-      const txTypeNames = txTypeIds.length > 0 ? await getTypeNames(txTypeIds) : {};
-      const txByRef = {};
-      transactions.forEach(t => { txByRef[t.journal_ref_id] = { ...t, type_name: txTypeNames[t.type_id] || `Type ${t.type_id}` }; });
-      entries.forEach(e => {
-        e.transaction = txByRef[e.entry_id] || null;
-      });
+    // Attach matching market transactions to journal entries by date+amount
+    const marketEntries = entries.filter(e => e.ref_type === 'market_transaction');
+    if (marketEntries.length > 0) {
+      const dates = marketEntries.map(e => e.date);
+      const transactions = db.getTransactionsByDates(characterId, dates);
+      if (transactions.length > 0) {
+        const txTypeIds = [...new Set(transactions.map(t => t.type_id).filter(Boolean))];
+        const txTypeNames = txTypeIds.length > 0 ? await getTypeNames(txTypeIds) : {};
+        transactions.forEach(t => { t.type_name = txTypeNames[t.type_id] || `Type ${t.type_id}`; });
+        // Match by date and absolute amount
+        const txByKey = {};
+        transactions.forEach(t => {
+          const total = t.quantity * t.unit_price;
+          const key = `${t.date}|${Math.round(total)}`;
+          txByKey[key] = t;
+        });
+        entries.forEach(e => {
+          if (e.ref_type === 'market_transaction') {
+            const key = `${e.date}|${Math.round(Math.abs(e.amount))}`;
+            e.transaction = txByKey[key] || null;
+          } else {
+            e.transaction = null;
+          }
+        });
+      } else {
+        entries.forEach(e => { e.transaction = null; });
+      }
     } else {
       entries.forEach(e => { e.transaction = null; });
     }
