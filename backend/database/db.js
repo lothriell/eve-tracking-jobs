@@ -250,6 +250,11 @@ class DB {
 
   // Wealth snapshots
   saveWealthSnapshot(characterId, userId, walletBalance, assetValue) {
+    // Only save one snapshot per character per hour
+    const existing = this.db.prepare(
+      `SELECT id FROM wealth_snapshots WHERE character_id = ? AND snapshot_date > datetime('now', '-1 hour')`
+    ).get(characterId);
+    if (existing) return;
     const totalWealth = (walletBalance || 0) + (assetValue || 0);
     this.db.prepare(
       'INSERT INTO wealth_snapshots (character_id, user_id, wallet_balance, asset_value, total_wealth) VALUES (?, ?, ?, ?, ?)'

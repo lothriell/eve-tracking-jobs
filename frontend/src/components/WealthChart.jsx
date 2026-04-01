@@ -35,13 +35,24 @@ function WealthChart({ characterId, refreshKey }) {
 
   useEffect(() => { loadHistory(); }, [loadHistory, refreshKey]);
 
-  // Aggregate snapshots by date
+  // Aggregate snapshots by date — deduplicate per character per hour, then sum across characters
   const chartData = React.useMemo(() => {
     if (snapshots.length === 0) return [];
-    const byDate = {};
+    // First: keep only latest snapshot per character per hour
+    const perCharHour = {};
     snapshots.forEach(s => {
       if (characterId && s.character_id !== characterId) return;
-      const dateKey = s.snapshot_date.substring(0, 13); // group by hour
+      const hourKey = s.snapshot_date.substring(0, 13);
+      const key = `${s.character_id}_${hourKey}`;
+      // Keep the latest snapshot per character per hour
+      if (!perCharHour[key] || s.snapshot_date > perCharHour[key].snapshot_date) {
+        perCharHour[key] = s;
+      }
+    });
+    // Then: sum across characters per hour
+    const byDate = {};
+    Object.values(perCharHour).forEach(s => {
+      const dateKey = s.snapshot_date.substring(0, 13);
       if (!byDate[dateKey]) byDate[dateKey] = { date: s.snapshot_date, wallet: 0, assets: 0, total: 0 };
       byDate[dateKey].wallet += s.wallet_balance || 0;
       byDate[dateKey].assets += s.asset_value || 0;
