@@ -207,9 +207,6 @@ function MarketTransactionsTab({ characterId, refreshKey }) {
   const filtered = buyFilter === 'all' ? transactions
     : transactions.filter(t => buyFilter === 'buy' ? t.is_buy : !t.is_buy);
 
-  if (loading) return <div className="wj-loading">Loading market transactions...</div>;
-  if (transactions.length === 0) return <div className="wj-empty">No market transactions found.</div>;
-
   return (
     <>
       <div className="wj-table-toolbar">
@@ -236,7 +233,9 @@ function MarketTransactionsTab({ characterId, refreshKey }) {
         />
         <span className="wj-count">{filtered.length} transactions</span>
       </div>
-      <div className="wj-table-wrap">
+      {loading ? <div className="wj-loading">Loading market transactions...</div>
+       : filtered.length === 0 ? <div className="wj-empty">No market transactions found.</div>
+       : <div className="wj-table-wrap">
         <table className="wj-table">
           <thead>
             <tr>
@@ -265,7 +264,7 @@ function MarketTransactionsTab({ characterId, refreshKey }) {
             ))}
           </tbody>
         </table>
-      </div>
+      </div>}
     </>
   );
 }

@@ -118,13 +118,16 @@ router.get('/wealth', requireAuth, async (req, res) => {
       per_character: results
     };
 
-    // Save wealth snapshots (max once per hour)
+    // Save wealth snapshots (max once per hour, only with real data)
     try {
       const latest = db.getLatestSnapshotDate(req.session.userId);
       const hourAgo = new Date(Date.now() - 3600000).toISOString();
       if (!latest || latest < hourAgo) {
         for (const r of results) {
-          db.saveWealthSnapshot(r.character_id, req.session.userId, r.wallet_balance || 0, r.asset_value);
+          // Only snapshot characters with actual asset data
+          if (r.asset_value > 0) {
+            db.saveWealthSnapshot(r.character_id, req.session.userId, r.wallet_balance || 0, r.asset_value);
+          }
         }
       }
     } catch (snapErr) {
@@ -143,6 +146,8 @@ router.get('/wealth/history', requireAuth, (req, res) => {
   const db = require('../database/db');
   try {
     const days = Math.min(parseInt(req.query.days) || 30, 90);
+    // Clean up bad snapshots (0 asset value = no real data)
+    try { db.db.prepare('DELETE FROM wealth_snapshots WHERE asset_value = 0 AND wallet_balance = 0').run(); } catch {}
     const snapshots = db.getWealthHistory(req.session.userId, days);
     res.json({ snapshots });
   } catch (error) {
