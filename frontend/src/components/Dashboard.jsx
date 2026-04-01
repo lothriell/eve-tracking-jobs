@@ -286,72 +286,6 @@ function Dashboard({ onError }) {
         </div>
       </div>
 
-      {/* Job Slot Summary as Grid Cards with EVE Colors */}
-      <div className="slot-cards-grid">
-        <div 
-          className={`slot-card manufacturing ${hoveredJobType === 'manufacturing' ? 'hovered' : ''}`}
-          onMouseEnter={() => setHoveredJobType('manufacturing')}
-          onMouseLeave={() => setHoveredJobType(null)}
-          onClick={() => handleJobTypeClick('manufacturing')}
-          role="button"
-          tabIndex={0}
-          aria-label="Highlight characters with available manufacturing slots"
-        >
-          <div className="slot-card-icon">⚙️</div>
-          <div className="slot-card-content">
-            <span className="slot-card-value">
-              {stats.slots?.manufacturing?.current || 0}/{stats.slots?.manufacturing?.max || 0}
-            </span>
-            <span className="slot-card-breakdown">
-              ({stats.personal_jobs_by_activity?.manufacturing || 0} personal + {stats.corp_jobs_by_activity?.manufacturing || 0} corp)
-            </span>
-            <span className="slot-card-label">Manufacturing jobs</span>
-          </div>
-        </div>
-
-        <div 
-          className={`slot-card science ${hoveredJobType === 'science' ? 'hovered' : ''}`}
-          onMouseEnter={() => setHoveredJobType('science')}
-          onMouseLeave={() => setHoveredJobType(null)}
-          onClick={() => handleJobTypeClick('science')}
-          role="button"
-          tabIndex={0}
-          aria-label="Highlight characters with available science slots"
-        >
-          <div className="slot-card-icon">🔬</div>
-          <div className="slot-card-content">
-            <span className="slot-card-value">
-              {stats.slots?.science?.current || 0}/{stats.slots?.science?.max || 0}
-            </span>
-            <span className="slot-card-breakdown">
-              ({stats.personal_jobs_by_activity?.science || 0} personal + {stats.corp_jobs_by_activity?.science || 0} corp)
-            </span>
-            <span className="slot-card-label">Science jobs</span>
-          </div>
-        </div>
-
-        <div 
-          className={`slot-card reactions ${hoveredJobType === 'reactions' ? 'hovered' : ''}`}
-          onMouseEnter={() => setHoveredJobType('reactions')}
-          onMouseLeave={() => setHoveredJobType(null)}
-          onClick={() => handleJobTypeClick('reactions')}
-          role="button"
-          tabIndex={0}
-          aria-label="Highlight characters with available reaction slots"
-        >
-          <div className="slot-card-icon">⚗️</div>
-          <div className="slot-card-content">
-            <span className="slot-card-value">
-              {stats.slots?.reactions?.current || 0}/{stats.slots?.reactions?.max || 0}
-            </span>
-            <span className="slot-card-breakdown">
-              ({stats.personal_jobs_by_activity?.reactions || 0} personal + {stats.corp_jobs_by_activity?.reactions || 0} corp)
-            </span>
-            <span className="slot-card-label">Reactions</span>
-          </div>
-        </div>
-      </div>
-
       {/* Scope Warning Banner */}
       {stats.jobs_by_character.some(char => char.slots?.needsReauthorization) && (
         <div className="scope-warning-banner">
@@ -371,6 +305,66 @@ function Dashboard({ onError }) {
             👤 {stats.total_characters} characters &nbsp; 📊 {stats.total_active_jobs} active jobs ({stats.personal_active_jobs || 0} personal + {stats.corp_active_jobs || 0} corp)
           </span>
         </div>
+
+        {/* Job Slot Summary — sticky inside characters section */}
+        {!slotsLoading && (
+          <div className="slot-cards-grid">
+            <div
+              className={`slot-card manufacturing ${hoveredJobType === 'manufacturing' ? 'hovered' : ''}`}
+              onMouseEnter={() => setHoveredJobType('manufacturing')}
+              onMouseLeave={() => setHoveredJobType(null)}
+              onClick={() => handleJobTypeClick('manufacturing')}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="slot-card-content">
+                <span className="slot-card-value">
+                  {stats.slots?.manufacturing?.current || 0}/{stats.slots?.manufacturing?.max || 0}
+                </span>
+                <span className="slot-card-breakdown">
+                  ({stats.personal_jobs_by_activity?.manufacturing || 0} personal + {stats.corp_jobs_by_activity?.manufacturing || 0} corp)
+                </span>
+                <span className="slot-card-label">Manufacturing</span>
+              </div>
+            </div>
+            <div
+              className={`slot-card science ${hoveredJobType === 'science' ? 'hovered' : ''}`}
+              onMouseEnter={() => setHoveredJobType('science')}
+              onMouseLeave={() => setHoveredJobType(null)}
+              onClick={() => handleJobTypeClick('science')}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="slot-card-content">
+                <span className="slot-card-value">
+                  {stats.slots?.science?.current || 0}/{stats.slots?.science?.max || 0}
+                </span>
+                <span className="slot-card-breakdown">
+                  ({stats.personal_jobs_by_activity?.science || 0} personal + {stats.corp_jobs_by_activity?.science || 0} corp)
+                </span>
+                <span className="slot-card-label">Science</span>
+              </div>
+            </div>
+            <div
+              className={`slot-card reactions ${hoveredJobType === 'reactions' ? 'hovered' : ''}`}
+              onMouseEnter={() => setHoveredJobType('reactions')}
+              onMouseLeave={() => setHoveredJobType(null)}
+              onClick={() => handleJobTypeClick('reactions')}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="slot-card-content">
+                <span className="slot-card-value">
+                  {stats.slots?.reactions?.current || 0}/{stats.slots?.reactions?.max || 0}
+                </span>
+                <span className="slot-card-breakdown">
+                  ({stats.personal_jobs_by_activity?.reactions || 0} personal + {stats.corp_jobs_by_activity?.reactions || 0} corp)
+                </span>
+                <span className="slot-card-label">Reactions</span>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="characters-grid">
           {orderedCharacters.map((char, idx) => (
             <div
