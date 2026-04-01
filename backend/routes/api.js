@@ -46,23 +46,29 @@ router.get('/dashboard/stats', requireAuth, characterController.getDashboardStat
 router.get('/character/:characterId/summary', requireAuth, characterController.getCharacterSummary);
 
 // Total asset value (quick summary from cached prices)
+const wealthCache = new Map();
+const WEALTH_CACHE_TTL = 120000; // 2 minutes
+
 router.get('/wealth', requireAuth, async (req, res) => {
   const db = require('../database/db');
   const { getValidAccessToken } = require('../services/tokenRefresh');
   const { getCharacterAssets } = require('../services/esiClient');
 
   try {
-    const allCharacters = db.getAllCharactersByUserId(req.session.userId);
     const targetCharId = req.query.characterId ? parseInt(req.query.characterId) : null;
+    const cacheKey = `wealth_${req.session.userId}_${targetCharId || 'all'}`;
+    const cached = wealthCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < WEALTH_CACHE_TTL) {
+      return res.json(cached.data);
+    }
+
+    const allCharacters = db.getAllCharactersByUserId(req.session.userId);
     const characters = targetCharId
       ? allCharacters.filter(c => c.character_id === targetCharId)
       : allCharacters;
 
-    let totalValue = 0;
-    let totalItems = 0;
-    const perCharacter = [];
-
-    for (const character of characters) {
+    // Fetch all characters in parallel
+    const results = await Promise.all(characters.map(async (character) => {
       let charValue = 0;
       let charItems = 0;
       try {
@@ -81,17 +87,20 @@ router.get('/wealth', requireAuth, async (req, res) => {
       } catch (e) {
         // Skip character
       }
-      totalValue += charValue;
-      totalItems += charItems;
-      perCharacter.push({
+      return {
         character_id: character.character_id,
         character_name: character.character_name,
         asset_value: charValue,
         item_count: charItems,
-      });
-    }
+      };
+    }));
 
-    res.json({ total_value: totalValue, total_items: totalItems, per_character: perCharacter });
+    const totalValue = results.reduce((s, r) => s + r.asset_value, 0);
+    const totalItems = results.reduce((s, r) => s + r.item_count, 0);
+    const data = { total_value: totalValue, total_items: totalItems, per_character: results };
+
+    wealthCache.set(cacheKey, { data, timestamp: Date.now() });
+    res.json(data);
   } catch (error) {
     res.status(500).json({ error: 'Failed to calculate wealth' });
   }
