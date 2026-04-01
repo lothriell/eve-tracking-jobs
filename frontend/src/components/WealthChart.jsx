@@ -156,15 +156,17 @@ function WealthChart({ characterId, refreshKey }) {
     );
   }
 
-  const hd = hover !== null && chartData[hover] ? chartData[hover] : null;
+  // Show hovered point or latest data point
+  const displayData = (hover !== null && chartData[hover]) ? chartData[hover] : chartData[chartData.length - 1];
 
   return (
     <div className="wealth-chart-container">
       <div className="wealth-chart-header">
         <div className="wealth-chart-legend">
-          <span className="legend-item"><span className="legend-dot" style={{ background: '#e2e8f0' }} /> Total</span>
-          <span className="legend-item"><span className="legend-dot" style={{ background: '#f6ad55' }} /> Assets</span>
-          <span className="legend-item"><span className="legend-dot" style={{ background: '#f6c90e' }} /> Wallet</span>
+          <span className="legend-item"><span className="legend-dot" style={{ background: '#e2e8f0' }} /> Total: <span className="legend-val total">{hover !== null ? formatISKTooltip(displayData.total) : formatISKTooltip(displayData.total)}</span></span>
+          <span className="legend-item"><span className="legend-dot" style={{ background: '#f6ad55' }} /> Assets: <span className="legend-val assets">{formatISKTooltip(displayData.assets)}</span></span>
+          <span className="legend-item"><span className="legend-dot" style={{ background: '#f6c90e' }} /> Wallet: <span className="legend-val wallet">{formatISKTooltip(displayData.wallet)}</span></span>
+          {hover !== null && <span className="legend-date">{new Date(displayData.date).toLocaleString()}</span>}
         </div>
         <div className="wealth-chart-range">
           {[7, 30, 90].map(d => (
@@ -172,14 +174,6 @@ function WealthChart({ characterId, refreshKey }) {
           ))}
         </div>
       </div>
-      {hd && (
-        <div className="wealth-chart-tooltip">
-          <span className="tooltip-date">{new Date(hd.date).toLocaleString()}</span>
-          <span className="tooltip-val total">Total: {formatISKTooltip(hd.total)}</span>
-          <span className="tooltip-val assets">Assets: {formatISKTooltip(hd.assets)}</span>
-          <span className="tooltip-val wallet">Wallet: {formatISKTooltip(hd.wallet)}</span>
-        </div>
-      )}
       <canvas
         ref={canvasRef}
         className="wealth-chart-canvas"

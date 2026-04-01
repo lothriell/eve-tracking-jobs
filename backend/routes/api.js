@@ -169,10 +169,11 @@ router.get('/wallet/journal', requireAuth, async (req, res) => {
     const offset = parseInt(req.query.offset) || 0;
     const refType = req.query.refType || null;
 
-    // Check if cache is stale (>15 min since newest entry)
+    // Check if cache is stale (>15 min since newest entry) or transactions missing
     const newest = db.getWalletJournalNewest(characterId);
+    const newestTx = db.getWalletTransactionsNewest(characterId);
     const fifteenMinAgo = new Date(Date.now() - 900000).toISOString();
-    if (!newest?.newest || newest.newest < fifteenMinAgo) {
+    if (!newest?.newest || newest.newest < fifteenMinAgo || !newestTx?.newest) {
       try {
         const accessToken = await getValidAccessToken(character);
         const [journalResult, txResult] = await Promise.all([

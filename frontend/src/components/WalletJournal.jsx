@@ -136,31 +136,9 @@ function OverviewTab({ entries }) {
 }
 
 // ===== JOURNAL TABLE (shared between All and Transactions tabs) =====
-function JournalTable({ entries, showItem, exportFilename }) {
-  const columns = [
-    { key: 'date', label: 'Date' },
-    { key: 'ref_type', label: 'Type' },
-    ...(showItem ? [{ key: '_item', label: 'Item' }] : []),
-    { key: 'amount', label: 'Amount' },
-    { key: 'balance', label: 'Balance' },
-    { key: 'description', label: 'Description' },
-    { key: 'first_party_name', label: 'From' },
-    { key: 'second_party_name', label: 'To' },
-  ];
-
+function JournalTable({ entries, showItem }) {
   return (
     <>
-      <div className="wj-table-toolbar">
-        <ExportButton
-          getData={() => entries.map(e => ({
-            ...e,
-            _item: e.transaction ? `${e.transaction.quantity}x ${e.transaction.type_name} (${e.transaction.is_buy ? 'buy' : 'sell'})` : '',
-          }))}
-          columns={columns}
-          filename={exportFilename}
-        />
-        <span className="wj-count">{entries.length} entries</span>
-      </div>
       <div className="wj-table-wrap">
         <table className="wj-table">
           <thead>
@@ -301,7 +279,7 @@ function WalletJournal({ characterId, refreshKey }) {
   const [needsScope, setNeedsScope] = useState(false);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState('overview');
   const LIMIT = 200;
 
   const loadJournal = useCallback(async (append = false) => {
@@ -328,7 +306,7 @@ function WalletJournal({ characterId, refreshKey }) {
   return (
     <div className="wj-container">
       <div className="wj-tabs">
-        {['all', 'overview', 'transactions', 'market'].map(tab => (
+        {['overview', 'transactions', 'market', 'all'].map(tab => (
           <button
             key={tab}
             className={`wj-tab ${activeTab === tab ? 'active' : ''}`}
@@ -343,6 +321,28 @@ function WalletJournal({ characterId, refreshKey }) {
             {refTypes.map(rt => <option key={rt} value={rt}>{rt.replace(/_/g, ' ')}</option>)}
           </select>
         )}
+        <span className="wj-tabs-right">
+          {activeTab !== 'overview' && activeTab !== 'market' && (
+            <ExportButton
+              getData={() => entries.map(e => ({
+                ...e,
+                _item: e.transaction ? `${e.transaction.quantity}x ${e.transaction.type_name} (${e.transaction.is_buy ? 'buy' : 'sell'})` : '',
+              }))}
+              columns={[
+                { key: 'date', label: 'Date' },
+                { key: 'ref_type', label: 'Type' },
+                ...(activeTab === 'all' ? [{ key: '_item', label: 'Item' }] : []),
+                { key: 'amount', label: 'Amount' },
+                { key: 'balance', label: 'Balance' },
+                { key: 'description', label: 'Description' },
+                { key: 'first_party_name', label: 'From' },
+                { key: 'second_party_name', label: 'To' },
+              ]}
+              filename={activeTab === 'all' ? 'wallet-all' : 'wallet-journal'}
+            />
+          )}
+          <span className="wj-count">{entries.length} entries</span>
+        </span>
       </div>
 
       {loading && entries.length === 0 ? (
@@ -353,14 +353,14 @@ function WalletJournal({ characterId, refreshKey }) {
 
           {activeTab === 'all' && (
             <>
-              <JournalTable entries={entries} showItem={true} exportFilename="wallet-all" />
+              <JournalTable entries={entries} showItem={true}  />
               {hasMore && <button className="wj-load-more" onClick={() => loadJournal(true)} disabled={loading}>{loading ? 'Loading...' : 'Load more'}</button>}
             </>
           )}
 
           {activeTab === 'transactions' && (
             <>
-              <JournalTable entries={entries} showItem={false} exportFilename="wallet-journal" />
+              <JournalTable entries={entries} showItem={false}  />
               {hasMore && <button className="wj-load-more" onClick={() => loadJournal(true)} disabled={loading}>{loading ? 'Loading...' : 'Load more'}</button>}
             </>
           )}

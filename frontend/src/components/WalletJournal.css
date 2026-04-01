@@ -43,6 +43,13 @@
   color: #a3bffa;
 }
 
+.wj-tabs-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
 .wj-ref-filter {
   padding: 4px 28px 4px 10px;
   background: rgba(0, 0, 0, 0.3);
