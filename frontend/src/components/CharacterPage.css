@@ -93,51 +93,22 @@
   margin-left: auto;
 }
 
-.charpage-wealth-boxes {
+/* Wealth boxes — reuse .wealth-box from Dashboard.css, just override size for Character Page */
+.charpage-wealth-row {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.charpage-wealth-box {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+.charpage-wealth-row .wealth-box {
+  min-width: 180px;
   padding: 6px 14px;
   border-radius: 6px;
-  border: 1px solid;
-  min-width: 180px;
+  font-size: 12px;
 }
 
-.charpage-wealth-label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  opacity: 0.8;
-}
-
-.charpage-wealth-value {
+.charpage-wealth-row .wealth-box .wealth-box-value {
   font-size: 14px;
-  font-weight: 700;
-  font-family: 'Consolas', monospace;
-}
-
-.charpage-wealth-box.assets {
-  background: rgba(246, 173, 85, 0.1);
-  border-color: rgba(246, 173, 85, 0.3);
-  color: #f6ad55;
-}
-
-.charpage-wealth-box.wallet {
-  background: rgba(72, 187, 120, 0.1);
-  border-color: rgba(72, 187, 120, 0.3);
-  color: #68d391;
-}
-
-.charpage-wealth-box.placeholder {
-  opacity: 0.4;
 }
 
 /* Sections */

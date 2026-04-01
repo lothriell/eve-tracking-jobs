@@ -141,21 +141,21 @@ function CharacterPage({ characterId, onError }) {
           </div>
         </div>
         <div className="charpage-header-right">
-          <div className="charpage-wealth-boxes">
-            <div className="charpage-wealth-box assets">
-              <span className="charpage-wealth-label">Assets</span>
-              <span className="charpage-wealth-value">{assetValue > 0 ? (() => {
+          <div className="charpage-wealth-row">
+            <span className="wealth-box assets">
+              <span className="wealth-box-label">Assets</span>
+              <span className="wealth-box-value">{assetValue > 0 ? (() => {
                 if (assetValue >= 1e12) return `${(assetValue / 1e12).toFixed(2)}T`;
                 if (assetValue >= 1e9) return `${(assetValue / 1e9).toFixed(2)}B`;
                 if (assetValue >= 1e6) return `${(assetValue / 1e6).toFixed(1)}M`;
                 if (assetValue >= 1e3) return `${(assetValue / 1e3).toFixed(0)}K`;
                 return assetValue.toFixed(0);
               })() : '—'} ISK</span>
-            </div>
-            <div className="charpage-wealth-box wallet placeholder">
-              <span className="charpage-wealth-label">Wallet</span>
-              <span className="charpage-wealth-value">— ISK</span>
-            </div>
+            </span>
+            <span className="wealth-box wallet placeholder">
+              <span className="wealth-box-label">Wallet</span>
+              <span className="wealth-box-value">— ISK</span>
+            </span>
           </div>
           <button className="refresh-btn" onClick={loadData}>&#x21bb; Refresh</button>
         </div>
