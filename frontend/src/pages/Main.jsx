@@ -92,6 +92,7 @@ function WealthIndicator() {
       <span className="wealth-icon">💰</span>
       <span className="wealth-value">{formatISKHeader(wealth.total_value)}</span>
       <span className="wealth-label">ISK</span>
+      <span className="wealth-items">{wealth.total_items.toLocaleString()}</span>
     </div>
   );
 }

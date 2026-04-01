@@ -141,15 +141,15 @@
   gap: 5px;
   padding: 4px 12px;
   border-radius: 6px;
-  background: rgba(246, 201, 14, 0.08);
-  border: 1px solid rgba(246, 201, 14, 0.25);
+  background: rgba(246, 173, 85, 0.1);
+  border: 1px solid rgba(246, 173, 85, 0.3);
   cursor: default;
   transition: all 0.2s;
 }
 
 .wealth-indicator:hover {
-  background: rgba(246, 201, 14, 0.12);
-  border-color: rgba(246, 201, 14, 0.4);
+  background: rgba(246, 173, 85, 0.15);
+  border-color: rgba(246, 173, 85, 0.5);
 }
 
 .wealth-icon {
@@ -159,15 +159,24 @@
 .wealth-value {
   font-size: 13px;
   font-weight: 700;
-  color: #f6c90e;
+  color: #f6ad55;
   font-family: 'Consolas', 'Monaco', monospace;
 }
 
 .wealth-label {
   font-size: 10px;
   font-weight: 600;
-  color: rgba(246, 201, 14, 0.6);
+  color: rgba(246, 173, 85, 0.6);
   letter-spacing: 0.5px;
+}
+
+.wealth-items {
+  font-size: 11px;
+  color: rgba(246, 173, 85, 0.5);
+  font-family: 'Consolas', monospace;
+  margin-left: 2px;
+  padding-left: 6px;
+  border-left: 1px solid rgba(246, 173, 85, 0.2);
 }
 
 .logout-btn {
