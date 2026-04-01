@@ -2,6 +2,51 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.3.0] - 2026-04-01
+
+### Character Page
+- **Dedicated character view** — clicking a sidebar character opens a full Character Page
+- **Corporation & Alliance** with EVE logos in the header
+- **Expandable skill queue table** — full training queue with skill names, levels, and finish times
+- **Personal & Corp industry jobs** tables with progress bars, countdowns, and resolved locations
+- **Planetary industry cards** with extractor expiry countdown and launchpad storage fill bar
+- **Per-character net worth** displayed in the header
+
+### Self-Contained Character Filters
+- **All nav views** (Jobs, Corp Jobs, Assets, Planets) now have their own character filter dropdown
+- Sidebar characters no longer act as a global filter — they navigate to the Character Page
+- `selectedCharacter` prop removed from all views
+
+### External Lookups
+- **Reusable ExternalLinks component** — small icon button with dropdown on item/system/character names
+- Links to Fuzzwork Market, EVE Ref, zKillboard, Dotlan (depending on entity type)
+- Integrated across IndustryJobs, CorporationJobs, Assets, and CharacterPage
+
+### CSV/JSON Export
+- **ExportButton component** — dropdown with CSV and JSON export options
+- Added to IndustryJobs, CorporationJobs, Assets, and Planets toolbars
+- Exports respect current filters
+
+### Net Worth per Character
+- **/api/wealth** extended with per-character breakdown (backward compatible)
+- Dashboard character cards show asset ISK value in amber boxes
+- Wallet placeholder boxes (golden-yellow, dimmed) ready for Phase 2
+- Header shows separate Assets + Wallet boxes
+
+### Unified Table Styling
+- CorporationJobs now shares table/toolbar CSS from IndustryJobs
+- Fixed blueprint icon offset in CorporationJobs (was display:flex on `<td>`)
+- Character Page job tables use fixed column widths for consistent alignment
+
+### Performance Optimization
+- **Dashboard stats**: all characters processed in parallel via `Promise.all`
+- **Eliminated duplicate ESI calls**: new `getMaxSlots()` fetches only skills, not jobs again
+- **2-minute in-memory cache** for dashboard stats
+- **Frontend**: stats, corp info, and wealth fetched in parallel instead of sequential
+- Expected ~50-70% latency reduction for multi-character users
+
+---
+
 ## [v5.2.0] - 2026-03-30
 
 ### Skill Training Status on Dashboard
