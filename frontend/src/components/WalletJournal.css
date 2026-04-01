@@ -113,7 +113,19 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
+  table-layout: fixed;
 }
+
+/* Unified column widths */
+.wj-col-date { width: 130px; }
+.wj-col-type { width: 130px; }
+.wj-col-qty { width: 55px; text-align: right; }
+.wj-col-item { width: auto; }
+.wj-col-amount { width: 100px; text-align: right; }
+.wj-col-balance { width: 100px; text-align: right; }
+.wj-col-badge { width: 65px; }
+.wj-col-desc { width: 200px; }
+.wj-col-parties { width: 180px; }
 
 .wj-table thead th {
   position: sticky;
@@ -172,11 +184,9 @@
   white-space: nowrap;
 }
 
-.wj-amount-col { width: 100px; text-align: right; }
-.wj-balance-col { width: 100px; text-align: right; }
+/* Legacy col classes kept for compat */
 
 .wj-desc {
-  max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -197,10 +207,6 @@
   white-space: nowrap;
 }
 
-.wj-buy { color: #68d391; }
-.wj-sell { color: #fc8181; }
-.wj-buysell { color: #718096; font-size: 10px; }
-
 .wj-qty {
   font-family: 'Consolas', monospace;
   text-align: right;
@@ -209,6 +215,9 @@
 
 .wj-typename {
   color: #e2e8f0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .wj-bs-badge {

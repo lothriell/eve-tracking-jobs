@@ -140,16 +140,17 @@ function JournalTable({ entries, showItem }) {
   return (
     <>
       <div className="wj-table-wrap">
-        <table className="wj-table">
+        <table className="wj-table wj-table-journal">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Type</th>
-              {showItem && <th>Item</th>}
-              <th className="wj-amount-col">Amount</th>
-              <th className="wj-balance-col">Balance</th>
-              <th>Description</th>
-              <th>Parties</th>
+              <th className="wj-col-date">Date</th>
+              <th className="wj-col-type">Type</th>
+              {showItem && <th className="wj-col-qty">Qty</th>}
+              {showItem && <th className="wj-col-item">Item</th>}
+              <th className="wj-col-amount">Amount</th>
+              <th className="wj-col-balance">Balance</th>
+              <th className="wj-col-desc">Description</th>
+              <th className="wj-col-parties">Parties</th>
             </tr>
           </thead>
           <tbody>
@@ -158,12 +159,15 @@ function JournalTable({ entries, showItem }) {
                 <td className="wj-date">{formatDate(e.date)}</td>
                 <td className="wj-type">{(e.ref_type || '').replace(/_/g, ' ')}</td>
                 {showItem && (
-                  <td className="wj-item">
+                  <td className="wj-qty">{e.transaction ? (e.transaction.quantity || 0).toLocaleString() : ''}</td>
+                )}
+                {showItem && (
+                  <td className="wj-typename">
                     {e.transaction ? (
-                      <span className={e.transaction.is_buy ? 'wj-buy' : 'wj-sell'}>
-                        {e.transaction.quantity}x {e.transaction.type_name}
-                        <span className="wj-buysell"> ({e.transaction.is_buy ? 'buy' : 'sell'})</span>
-                      </span>
+                      <>
+                        {e.transaction.type_name}
+                        <span className={`wj-bs-badge ${e.transaction.is_buy ? 'buy' : 'sell'}`}> {e.transaction.is_buy ? 'Buy' : 'Sell'}</span>
+                      </>
                     ) : ''}
                   </td>
                 )}
@@ -236,17 +240,17 @@ function MarketTransactionsTab({ characterId, refreshKey }) {
       {loading ? <div className="wj-loading">Loading market transactions...</div>
        : filtered.length === 0 ? <div className="wj-empty">No market transactions found.</div>
        : <div className="wj-table-wrap">
-        <table className="wj-table">
+        <table className="wj-table wj-table-market">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Qty</th>
-              <th>Type</th>
-              <th className="wj-amount-col">Unit Price</th>
-              <th className="wj-amount-col">Total</th>
-              <th>Buy/Sell</th>
-              <th>Client</th>
-              <th>Where</th>
+              <th className="wj-col-date">Date</th>
+              <th className="wj-col-qty">Qty</th>
+              <th className="wj-col-item">Type</th>
+              <th className="wj-col-amount">Unit Price</th>
+              <th className="wj-col-amount">Total</th>
+              <th className="wj-col-badge">Buy/Sell</th>
+              <th className="wj-col-parties">Client</th>
+              <th className="wj-col-desc">Where</th>
             </tr>
           </thead>
           <tbody>
