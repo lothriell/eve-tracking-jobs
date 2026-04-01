@@ -133,8 +133,9 @@
   position: sticky;
   top: 54px;
   z-index: 40;
-  background: transparent;
-  padding: 8px 0 0;
+  background: #0f1319;
+  padding: 8px 4px 6px;
+  margin: 0 -4px;
 }
 
 .slot-card {
