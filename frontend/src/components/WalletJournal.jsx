@@ -147,6 +147,7 @@ function JournalTable({ entries, showItem }) {
               <th className="wj-col-type">Type</th>
               {showItem && <th className="wj-col-qty">Qty</th>}
               {showItem && <th className="wj-col-item">Item</th>}
+              {showItem && <th className="wj-col-badge">Buy/Sell</th>}
               <th className="wj-col-amount">Amount</th>
               <th className="wj-col-balance">Balance</th>
               <th className="wj-col-desc">Description</th>
@@ -163,13 +164,11 @@ function JournalTable({ entries, showItem }) {
                 )}
                 {showItem && (
                   <td className="wj-typename">
-                    {e.transaction ? (
-                      <>
-                        {e.transaction.type_name}
-                        <span className={`wj-bs-badge ${e.transaction.is_buy ? 'buy' : 'sell'}`}> {e.transaction.is_buy ? 'Buy' : 'Sell'}</span>
-                      </>
-                    ) : ''}
+                    {e.transaction ? e.transaction.type_name : ''}
                   </td>
+                )}
+                {showItem && (
+                  <td>{e.transaction ? <span className={`wj-bs-badge ${e.transaction.is_buy ? 'buy' : 'sell'}`}>{e.transaction.is_buy ? 'Buy' : 'Sell'}</span> : ''}</td>
                 )}
                 <td className={`wj-amount ${e.amount > 0 ? 'positive' : e.amount < 0 ? 'negative' : ''}`}>
                   {formatISK(e.amount)}
@@ -242,6 +241,7 @@ function WalletJournal({ characterId, refreshKey }) {
   const [marketTx, setMarketTx] = useState([]);
   const [marketLoading, setMarketLoading] = useState(true);
   const [buyFilter, setBuyFilter] = useState('all');
+  const [journalBuySell, setJournalBuySell] = useState('all');
   const tabsRef = useRef(null);
   const LIMIT = 200;
 
@@ -305,6 +305,13 @@ function WalletJournal({ characterId, refreshKey }) {
             {refTypes.map(rt => <option key={rt} value={rt}>{rt.replace(/_/g, ' ')}</option>)}
           </select>
         )}
+        {activeTab === 'all' && (
+          <select className="wj-ref-filter" value={journalBuySell} onChange={e => setJournalBuySell(e.target.value)}>
+            <option value="all">All trades</option>
+            <option value="buy">Buy only</option>
+            <option value="sell">Sell only</option>
+          </select>
+        )}
         {activeTab === 'market' && (
           <select className="wj-ref-filter" value={buyFilter} onChange={e => setBuyFilter(e.target.value)}>
             <option value="all">All transactions</option>
@@ -362,7 +369,10 @@ function WalletJournal({ characterId, refreshKey }) {
 
           {activeTab === 'all' && (
             <>
-              <JournalTable entries={entries} showItem={true}  />
+              <JournalTable entries={journalBuySell === 'all' ? entries : entries.filter(e => {
+                if (!e.transaction) return journalBuySell === 'all';
+                return journalBuySell === 'buy' ? e.transaction.is_buy : !e.transaction.is_buy;
+              })} showItem={true} />
               {hasMore && <button className="wj-load-more" onClick={() => loadJournal(true)} disabled={loading}>{loading ? 'Loading...' : 'Load more'}</button>}
             </>
           )}
