@@ -133,7 +133,7 @@
   position: sticky;
   top: 54px;
   z-index: 40;
-  background: #0f1319;
+  background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%);
   padding: 8px 4px 6px;
   margin: 0 -4px;
 }
