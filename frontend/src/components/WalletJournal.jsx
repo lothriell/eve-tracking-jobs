@@ -306,13 +306,11 @@ function WalletJournal({ characterId, refreshKey }) {
           </select>
         )}
         {activeTab === 'market' && (
-          <div className="wj-buysell-filter">
-            {['all', 'buy', 'sell'].map(f => (
-              <button key={f} className={`wj-filter-btn ${buyFilter === f ? 'active' : ''}`} onClick={() => setBuyFilter(f)}>
-                {f.charAt(0).toUpperCase() + f.slice(1)}
-              </button>
-            ))}
-          </div>
+          <select className="wj-ref-filter" value={buyFilter} onChange={e => setBuyFilter(e.target.value)}>
+            <option value="all">All transactions</option>
+            <option value="buy">Buy only</option>
+            <option value="sell">Sell only</option>
+          </select>
         )}
         <span className="wj-tabs-right">
           {activeTab === 'market' && (
