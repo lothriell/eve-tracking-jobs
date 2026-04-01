@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { getCharacterAssets, getCorporationAssets, getAllCharacters, nameStructure } from '../services/api';
+import ExternalLinks from './ExternalLinks';
+import ExportButton from './ExportButton';
 import './Assets.css';
 
 function formatISK(value) {
@@ -213,7 +215,7 @@ function Assets({ onError }) {
         <tbody>
           {sorted.map((asset, idx) => (
             <tr key={asset.item_id || idx}>
-              <td className="item-name">{asset.type_name || `Type ${asset.type_id}`}</td>
+              <td className="item-name">{asset.type_name || `Type ${asset.type_id}`} <ExternalLinks type="item" typeId={asset.type_id} /></td>
               <td className="text-right qty-value">{(asset.quantity || 1).toLocaleString()}</td>
               <td className="text-right isk-cell">{asset.total_price > 0 ? formatISK(asset.total_price) : '—'}</td>
               <td><span className="badge badge-blue">{asset.location_flag || '—'}</span></td>
@@ -277,7 +279,7 @@ function Assets({ onError }) {
 
               return (
                 <tr key={asset.item_id || idx}>
-                  <td className="item-name">{asset.type_name || `Type ${asset.type_id}`}</td>
+                  <td className="item-name">{asset.type_name || `Type ${asset.type_id}`} <ExternalLinks type="item" typeId={asset.type_id} /></td>
                   <td className="text-right qty-value">{(asset.quantity || 1).toLocaleString()}</td>
                   <td className="text-right isk-cell">{asset.total_price > 0 ? formatISK(asset.total_price) : '—'}</td>
                   <td className="location-breadcrumb" title={breadcrumb}>{breadcrumb || '—'}</td>
@@ -355,6 +357,20 @@ function Assets({ onError }) {
             placeholder="Filter..."
             value={filter}
             onChange={e => setFilter(e.target.value)}
+          />
+          <ExportButton
+            getData={() => getFilteredFlat(currentAssets)}
+            columns={[
+              { key: 'type_name', label: 'Item' },
+              { key: 'quantity', label: 'Quantity' },
+              { key: 'total_price', label: 'Value' },
+              { key: 'system_name', label: 'System' },
+              { key: 'location_name', label: 'Location' },
+              { key: 'container_name', label: 'Container' },
+              { key: 'character_name', label: 'Character' },
+              { key: 'location_flag', label: 'Flag' },
+            ]}
+            filename="assets"
           />
           <span className="assets-stats">
             {totalItems} items &bull; {totalUnits.toLocaleString()} units &bull; {systemCount} systems

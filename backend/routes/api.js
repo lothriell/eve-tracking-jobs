@@ -52,11 +52,19 @@ router.get('/wealth', requireAuth, async (req, res) => {
   const { getCharacterAssets } = require('../services/esiClient');
 
   try {
-    const characters = db.getAllCharactersByUserId(req.session.userId);
+    const allCharacters = db.getAllCharactersByUserId(req.session.userId);
+    const targetCharId = req.query.characterId ? parseInt(req.query.characterId) : null;
+    const characters = targetCharId
+      ? allCharacters.filter(c => c.character_id === targetCharId)
+      : allCharacters;
+
     let totalValue = 0;
     let totalItems = 0;
+    const perCharacter = [];
 
     for (const character of characters) {
+      let charValue = 0;
+      let charItems = 0;
       try {
         const accessToken = await getValidAccessToken(character);
         const assets = await getCharacterAssets(character.character_id, accessToken);
@@ -66,16 +74,24 @@ router.get('/wealth', requireAuth, async (req, res) => {
         for (const a of assets) {
           const p = prices[a.type_id];
           if (p) {
-            totalValue += (p.average_price || p.adjusted_price || 0) * (a.quantity || 1);
+            charValue += (p.average_price || p.adjusted_price || 0) * (a.quantity || 1);
           }
         }
-        totalItems += assets.length;
+        charItems = assets.length;
       } catch (e) {
         // Skip character
       }
+      totalValue += charValue;
+      totalItems += charItems;
+      perCharacter.push({
+        character_id: character.character_id,
+        character_name: character.character_name,
+        asset_value: charValue,
+        item_count: charItems,
+      });
     }
 
-    res.json({ total_value: totalValue, total_items: totalItems });
+    res.json({ total_value: totalValue, total_items: totalItems, per_character: perCharacter });
   } catch (error) {
     res.status(500).json({ error: 'Failed to calculate wealth' });
   }

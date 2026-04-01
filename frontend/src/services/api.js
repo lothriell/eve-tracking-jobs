@@ -132,8 +132,9 @@ export const getColonyLayout = (characterId, planetId) => {
 };
 
 // Wealth summary
-export const getWealth = () => {
-  return api.get('/api/wealth');
+export const getWealth = (characterId = null) => {
+  const params = characterId ? `?characterId=${characterId}` : '';
+  return api.get(`/api/wealth${params}`);
 };
 
 // EVE server status

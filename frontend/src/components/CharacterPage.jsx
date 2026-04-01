@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { getCharacterSummary } from '../services/api';
+import { getCharacterSummary, getWealth } from '../services/api';
+import ExternalLinks from './ExternalLinks';
 import './CharacterPage.css';
 
 const ROMAN = ['0', 'I', 'II', 'III', 'IV', 'V'];
@@ -53,6 +54,7 @@ function formatCountdown(diff) {
 
 function CharacterPage({ characterId, onError }) {
   const [data, setData] = useState(null);
+  const [assetValue, setAssetValue] = useState(null);
   const [loading, setLoading] = useState(true);
   const [queueExpanded, setQueueExpanded] = useState(false);
   const [, forceUpdate] = useState(0);
@@ -61,8 +63,13 @@ function CharacterPage({ characterId, onError }) {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await getCharacterSummary(characterId);
-      setData(response.data);
+      const [summaryResp, wealthResp] = await Promise.all([
+        getCharacterSummary(characterId),
+        getWealth(characterId).catch(() => null)
+      ]);
+      setData(summaryResp.data);
+      const cw = wealthResp?.data?.per_character?.[0];
+      setAssetValue(cw?.asset_value || null);
     } catch (error) {
       console.error('Failed to load character summary:', error);
       onError?.('Failed to load character data');
@@ -133,7 +140,21 @@ function CharacterPage({ characterId, onError }) {
             )}
           </div>
         </div>
-        <button className="refresh-btn" onClick={loadData}>&#x21bb; Refresh</button>
+        <div className="charpage-header-right">
+          {assetValue > 0 && (
+            <div className="charpage-asset-value">
+              <span className="asset-value-amount">{formatTimeRemaining ? '' : ''}{(() => {
+                if (assetValue >= 1e12) return `${(assetValue / 1e12).toFixed(2)}T`;
+                if (assetValue >= 1e9) return `${(assetValue / 1e9).toFixed(2)}B`;
+                if (assetValue >= 1e6) return `${(assetValue / 1e6).toFixed(1)}M`;
+                if (assetValue >= 1e3) return `${(assetValue / 1e3).toFixed(0)}K`;
+                return assetValue.toFixed(0);
+              })()}</span>
+              <span className="asset-value-label">ISK</span>
+            </div>
+          )}
+          <button className="refresh-btn" onClick={loadData}>&#x21bb; Refresh</button>
+        </div>
       </div>
 
       {/* Skill Training Section */}
@@ -236,6 +257,7 @@ function CharacterPage({ characterId, onError }) {
                       <td className="job-bp">
                         <img src={`https://images.evetech.net/types/${job.blueprint_type_id}/${job.runs === -1 ? 'bp' : 'bpc'}?size=32`} alt="" className="job-bp-icon" />
                         <span>{job.blueprint_name || `Type ${job.blueprint_type_id}`}</span>
+                        <ExternalLinks type="item" typeId={job.blueprint_type_id} />
                       </td>
                       <td><span className={`activity-tag ${ACTIVITY_CATEGORIES[job.activity_id] || ''}`}>{ACTIVITY_LABELS[job.activity_id] || job.activity_id}</span></td>
                       <td><span className={`status-badge status-${job.status}`}>{job.status}</span></td>
@@ -284,6 +306,7 @@ function CharacterPage({ characterId, onError }) {
                       <td className="job-bp">
                         <img src={`https://images.evetech.net/types/${job.blueprint_type_id}/${job.runs === -1 ? 'bp' : 'bpc'}?size=32`} alt="" className="job-bp-icon" />
                         <span>{job.blueprint_name || `Type ${job.blueprint_type_id}`}</span>
+                        <ExternalLinks type="item" typeId={job.blueprint_type_id} />
                       </td>
                       <td><span className={`activity-tag ${ACTIVITY_CATEGORIES[job.activity_id] || ''}`}>{ACTIVITY_LABELS[job.activity_id] || job.activity_id}</span></td>
                       <td><span className={`status-badge status-${job.status}`}>{job.status}</span></td>
@@ -327,7 +350,7 @@ function CharacterPage({ characterId, onError }) {
                     <span className="planet-type-dot" style={{ background: color }}>{pType.charAt(0).toUpperCase()}</span>
                     <div className="planet-info">
                       <span className="planet-name">{colony.planet_name || `Planet ${colony.planet_id}`}</span>
-                      <span className="planet-system">{colony.system_name}</span>
+                      <span className="planet-system">{colony.system_name} <ExternalLinks type="system" name={colony.system_name} /></span>
                     </div>
                   </div>
                   {/* Extractor expiry */}

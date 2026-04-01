@@ -1,8 +1,17 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { getDashboardStats, getCorporationJobs, getCorporations } from '../services/api';
+import { getDashboardStats, getCorporationJobs, getCorporations, getWealth } from '../services/api';
 import './Dashboard.css';
 
 const ROMAN = ['0', 'I', 'II', 'III', 'IV', 'V'];
+
+function formatISK(value) {
+  if (!value || value === 0) return '0';
+  if (value >= 1e12) return `${(value / 1e12).toFixed(2)}T`;
+  if (value >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
+  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
+  if (value >= 1e3) return `${(value / 1e3).toFixed(0)}K`;
+  return value.toFixed(0);
+}
 
 function SkillTrainingLine({ training }) {
   if (!training) return null;
@@ -51,6 +60,7 @@ function applySavedOrder(chars) {
 function Dashboard({ onError }) {
   const [stats, setStats] = useState(null);
   const [corpStats, setCorpStats] = useState(null);
+  const [wealthData, setWealthData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [autoRefreshInterval, setAutoRefreshInterval] = useState(null);
   const [autoRefreshDropdown, setAutoRefreshDropdown] = useState(false);
@@ -87,6 +97,12 @@ function Dashboard({ onError }) {
         console.log('No corporation access:', corpError.message);
         setCorpStats(null);
       }
+
+      // Load per-character wealth
+      try {
+        const wealthResp = await getWealth();
+        setWealthData(wealthResp.data);
+      } catch { setWealthData(null); }
     } catch (error) {
       console.error('Failed to load dashboard stats:', error);
       const status = error.response?.status;
@@ -417,6 +433,12 @@ function Dashboard({ onError }) {
                       </span>
                     </div>
                     <SkillTrainingLine training={char.skill_training} />
+                    {wealthData?.per_character && (() => {
+                      const cw = wealthData.per_character.find(w => w.character_id === char.character_id);
+                      return cw && cw.asset_value > 0 ? (
+                        <span className="character-asset-value">{formatISK(cw.asset_value)} ISK</span>
+                      ) : null;
+                    })()}
                   </>
                 )}
               </div>

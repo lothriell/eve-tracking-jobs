@@ -437,6 +437,14 @@
   50% { opacity: 0.3; }
 }
 
+/* Per-character asset value */
+.character-asset-value {
+  font-size: 11px;
+  color: #f6ad55;
+  font-family: 'Consolas', monospace;
+  font-weight: 600;
+}
+
 /* Activity Section */
 .activity-section {
   background: rgba(0, 0, 0, 0.2);

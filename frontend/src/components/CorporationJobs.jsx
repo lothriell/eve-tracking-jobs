@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getCorporationJobs, getCorporations, initiateEveAuth, getAllCharacters } from '../services/api';
+import ExternalLinks from './ExternalLinks';
+import ExportButton from './ExportButton';
 import './CorporationJobs.css';
 
 function CorporationJobs({ onError }) {
@@ -295,6 +297,21 @@ function CorporationJobs({ onError }) {
           <button className="refresh-btn" onClick={handleRefresh}>
             ↻ Refresh
           </button>
+          <ExportButton
+            getData={() => filteredJobs}
+            columns={[
+              { key: 'blueprint_name', label: 'Blueprint' },
+              { key: 'activity', label: 'Activity' },
+              { key: 'status', label: 'Status' },
+              { key: 'runs', label: 'Runs' },
+              { key: 'corporation_name', label: 'Corporation' },
+              { key: 'installer_name', label: 'Installer' },
+              { key: 'start_date', label: 'Start Date' },
+              { key: 'end_date', label: 'End Date' },
+              { key: 'progress', label: 'Progress %' },
+            ]}
+            filename="corporation-jobs"
+          />
           <span className="jobs-count-badge">{filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''}</span>
         </div>
       </div>
@@ -350,6 +367,7 @@ function CorporationJobs({ onError }) {
                         onError={(e) => { e.target.src = `https://images.evetech.net/types/${job.blueprint_type_id}/icon?size=32`; }}
                       />
                       <span className="blueprint-name">{job.blueprint_name}</span>
+                      <ExternalLinks type="item" typeId={job.blueprint_type_id} />
                     </div>
                   </td>
                   <td>
@@ -358,6 +376,7 @@ function CorporationJobs({ onError }) {
                   </td>
                   <td className="col-installer">
                     <span className="installer-name">{job.installer_name}</span>
+                    <ExternalLinks type="character" characterId={job.installer_id} />
                   </td>
                   <td className="col-progress">
                     <span className={`status-badge status-${job.status}`}>

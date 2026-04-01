@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { getCharacterPlanets, getColonyLayout } from '../services/api';
+import ExportButton from './ExportButton';
 import './Planets.css';
 
 // ============== CONSTANTS ==============
@@ -989,6 +990,27 @@ function Planets({ onError }) {
               <span className="alert-mode-icon">⚠️</span>
               <span>{alertMode ? 'Alerts Only' : 'Alerts'}</span>
             </button>
+            <ExportButton
+              getData={() => filteredPlanetData.flatMap(c => (c.colonies || []).map(col => ({
+                character_name: c.character_name,
+                planet_name: col.planet_name || `Planet ${col.planet_id}`,
+                system_name: col.system_name,
+                planet_type: (col.planet_type || '').replace('planet_type_', ''),
+                upgrade_level: col.upgrade_level,
+                num_pins: col.num_pins,
+                last_update: col.last_update,
+              })))}
+              columns={[
+                { key: 'character_name', label: 'Character' },
+                { key: 'planet_name', label: 'Planet' },
+                { key: 'system_name', label: 'System' },
+                { key: 'planet_type', label: 'Type' },
+                { key: 'upgrade_level', label: 'Level' },
+                { key: 'num_pins', label: 'Pins' },
+                { key: 'last_update', label: 'Last Update' },
+              ]}
+              filename="planets"
+            />
           </div>
           <div className="pi-toolbar-right">
             <div className="pi-toolbar-info">

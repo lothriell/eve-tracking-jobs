@@ -85,6 +85,33 @@
   color: #a0aec0;
 }
 
+.charpage-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.charpage-asset-value {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.asset-value-amount {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'Consolas', monospace;
+  color: #f6ad55;
+}
+
+.asset-value-label {
+  font-size: 12px;
+  color: #718096;
+  text-transform: uppercase;
+}
+
 /* Sections */
 .charpage-section {
   background: rgba(0, 0, 0, 0.2);

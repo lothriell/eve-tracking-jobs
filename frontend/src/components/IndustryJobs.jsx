@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { getIndustryJobs, getJobSlots, getAllCharacters, getCorporationJobs } from '../services/api';
+import ExternalLinks from './ExternalLinks';
+import ExportButton from './ExportButton';
 import './IndustryJobs.css';
 
 function IndustryJobs({ onError }) {
@@ -286,6 +288,7 @@ function IndustryJobs({ onError }) {
                       onError={(e) => { e.target.src = `https://images.evetech.net/types/${job.blueprint_type_id}/icon?size=32`; }}
                     />
                     <span className="blueprint-name">{job.blueprint_name}</span>
+                    <ExternalLinks type="item" typeId={job.blueprint_type_id} />
                   </div>
                 </td>
                 <td className="col-progress">
@@ -294,6 +297,7 @@ function IndustryJobs({ onError }) {
                 {showInstaller && (
                   <td className="col-installer">
                     <span className="installer-name">{job.installer_name || job.character_name}</span>
+                    <ExternalLinks type="character" characterId={job.installer_id || job.character_id} />
                   </td>
                 )}
                 <td className="col-date">{formatDate(job.start_date)}</td>
@@ -428,6 +432,21 @@ function IndustryJobs({ onError }) {
           <button className="refresh-btn" onClick={loadData}>
             ↻ Refresh
           </button>
+          <ExportButton
+            getData={() => [...filteredJobs, ...filteredCorpJobs]}
+            columns={[
+              { key: 'blueprint_name', label: 'Blueprint' },
+              { key: 'activity', label: 'Activity' },
+              { key: 'status', label: 'Status' },
+              { key: 'runs', label: 'Runs' },
+              { key: 'character_name', label: 'Character' },
+              { key: 'installer_name', label: 'Installer' },
+              { key: 'start_date', label: 'Start Date' },
+              { key: 'end_date', label: 'End Date' },
+              { key: 'progress', label: 'Progress %' },
+            ]}
+            filename="industry-jobs"
+          />
           <span className="jobs-count-badge">
             {filteredJobs.length + filteredCorpJobs.length} job{(filteredJobs.length + filteredCorpJobs.length) !== 1 ? 's' : ''}
           </span>
