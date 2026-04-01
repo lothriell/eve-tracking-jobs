@@ -129,23 +129,21 @@
 .slot-cards-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: 12px;
   position: sticky;
-  top: -24px;
+  top: 54px;
   z-index: 40;
   background: linear-gradient(135deg, rgba(26, 31, 46, 0.98) 0%, rgba(13, 17, 23, 0.98) 100%);
   backdrop-filter: blur(8px);
-  padding: 12px 4px 10px;
-  margin: -4px -4px 0;
-  border-radius: 0 0 10px 10px;
+  padding: 8px 0;
 }
 
 .slot-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-radius: 8px;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 10px;
   border: 1px solid;
   transition: all 0.2s;
   cursor: pointer;
@@ -177,7 +175,7 @@
 }
 
 .slot-card-icon {
-  font-size: 20px;
+  font-size: 24px;
   opacity: 0.9;
 }
 
@@ -187,23 +185,23 @@
 }
 
 .slot-card-value {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
   line-height: 1;
   font-family: 'Consolas', 'Monaco', monospace;
 }
 
 .slot-card-breakdown {
-  font-size: 10px;
+  font-size: 11px;
   opacity: 0.7;
   margin-top: 2px;
 }
 
 .slot-card-label {
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-top: 2px;
+  margin-top: 3px;
   opacity: 0.8;
 }
 
