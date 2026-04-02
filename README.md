@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.5.0 | **Build Date:** 2026-04-01
+**Current Version:** v5.6.0 | **Build Date:** 2026-04-02
 
 A comprehensive web application for tracking EVE Online industry jobs, assets, planetary industry, and character management across multiple characters and corporations.
 
@@ -20,7 +20,7 @@ A comprehensive web application for tracking EVE Online industry jobs, assets, p
 ### Character Page
 - **Dedicated character view** — click any character in the sidebar for full details
 - **Corporation & Alliance** display with EVE logos
-- **Skill queue** — currently training skill + expandable full queue table
+- **Skill queue** — EVE-style level boxes, expandable queue table, training timeline bar
 - **Per-character net worth** — asset value + wallet balance
 - **Personal & Corporation industry jobs** with progress bars and locations
 - **Planetary industry** — extractor expiry countdown + launchpad storage fill bar
@@ -72,7 +72,7 @@ A comprehensive web application for tracking EVE Online industry jobs, assets, p
 - **External lookups** — Fuzzwork, EVE Ref, zKillboard, Dotlan on items/systems/characters
 - **CSV/JSON export** on all table views
 - **Net worth tracking** — per-character asset values + wallet balances on dashboard and character page
-- **Wealth history chart** — hourly snapshots with 7d/30d/90d views, per-character deduplication
+- **Wealth history chart** — hourly snapshots with 1D/1W/1M/3M/6M/1Y/MAX views, per-character deduplication
 - **Wallet journal** — Overview (donut chart), Transactions, Market Transactions, and All tabs with filters and export
 - **EVE-inspired dark theme** with responsive design
 
@@ -115,10 +115,15 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 ## Recent Updates
 
+### v5.6.0 (2026-04-02)
+- Wallet Journal — unified 8-column layout, fixed-height tabs, dynamic overview donut
+- Wealth History — trading platform range selector (1D–MAX), unlimited history retention
+- Skill Queue — EVE-style level boxes with training pulse, timeline bar with training time
+- Adaptive chart X-axis labels based on actual data span
+
 ### v5.5.0 (2026-04-01)
-- Wallet Journal — unified table layout across tabs, item names via date+amount matching, buy/sell filters
-- Wealth History — deduplicated snapshots per character per hour, correct chart values
-- Market Transactions — filter/export in tab bar, colored prices (green=sell, red=buy)
+- Wallet Journal — item names via date+amount matching, buy/sell filters, colored prices
+- Wealth History — deduplicated snapshots per character per hour
 - Top bar wallet ISK color matches character page
 
 ### v5.4.0 (2026-04-01)

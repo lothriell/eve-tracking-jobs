@@ -2,6 +2,36 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.6.0] - 2026-04-02
+
+### Wallet Journal — Unified Table Views
+- **Unified 8-column layout** across all tabs (Date, Qty, Item, Buy/Sell, Amount, Balance, Description, Parties)
+- All tab merges ref_type into Item cell when no market transaction exists
+- Consistent row height (32px) across all tabs — badge padding no longer causes uneven rows
+- Fixed-height tab content container — no page jump when switching between Overview/Transactions/Market/All
+- Market Transactions tab gets "All loaded" button matching other tabs
+- Overview tab donut dynamically scales to fill container via ResizeObserver
+- Empty state shows clean message instead of empty box with +0 ISK
+
+### Wealth History Chart
+- **Trading platform range selector** — pill-style buttons: 1D, 1W, 1M, 3M, 6M, 1Y, MAX
+- **Unlimited history** — backend accepts up to 3650 days or 'all', no retention on financial data
+- **No layout jump** on range change — keeps old chart visible while fetching
+- **Adaptive X-axis labels** based on actual data span (hours for <2d, M/D+hour for <7d, M/D for <90d, Mon D for <1Y, Mon 'YY for MAX)
+- Min-height container prevents collapse during loading
+
+### Skill Queue — EVE-Style Overhaul
+- **Level indicator boxes** — 5 small squares per skill, filled gray up to trained level
+- **Currently training pulse** — yellow pulsing animation on the active level
+- **Training timeline bar** — two-tone gray blocks showing each skill's % of total training time
+- **Training Time label** — "Xd Xh Xm" displayed left of timeline bar
+- Hover tooltip on timeline blocks shows skill name + remaining time
+
+### UI Fixes
+- Top bar wallet ISK color matches character page (#f6c90e, no more dimming)
+
+---
+
 ## [v5.5.0] - 2026-04-01
 
 ### Wallet Journal Improvements
