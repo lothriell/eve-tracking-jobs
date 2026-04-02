@@ -303,10 +303,38 @@
 }
 
 /* Queue timeline bar */
+.queue-timeline-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.queue-timeline-label {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  min-width: 100px;
+}
+
+.queue-timeline-title {
+  font-size: 10px;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.queue-timeline-value {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'Consolas', monospace;
+  color: #e2e8f0;
+}
+
 .queue-timeline {
   display: flex;
-  height: 14px;
-  margin-top: 8px;
+  height: 16px;
+  flex: 1;
   border-radius: 3px;
   overflow: hidden;
   background: rgba(0, 0, 0, 0.3);
@@ -315,18 +343,21 @@
 
 .queue-timeline-block {
   height: 100%;
-  background: rgba(74, 158, 255, 0.3);
-  border-right: 1px solid rgba(0, 0, 0, 0.4);
+  border-right: 1px solid rgba(0, 0, 0, 0.5);
   min-width: 1px;
-  transition: background 0.15s;
+  transition: opacity 0.15s;
+}
+
+.queue-timeline-block.even {
+  background: rgba(99, 179, 237, 0.35);
+}
+
+.queue-timeline-block.odd {
+  background: rgba(99, 179, 237, 0.2);
 }
 
 .queue-timeline-block:hover {
-  background: rgba(74, 158, 255, 0.6);
-}
-
-.queue-timeline-block:first-child {
-  background: rgba(74, 158, 255, 0.5);
+  opacity: 0.7;
 }
 
 .queue-date {

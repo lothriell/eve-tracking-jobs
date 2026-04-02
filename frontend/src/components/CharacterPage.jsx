@@ -237,17 +237,30 @@ function CharacterPage({ characterId, onError, refreshKey }) {
                       </tbody>
                     </table>
                   </div>
-                  <div className="queue-timeline">
-                    {data.skill_queue.queue.map((s, i) => {
-                      const start = s.start_date ? new Date(s.start_date) : now;
-                      const finish = new Date(s.finish_date);
-                      const duration = Math.max(0, finish - start);
-                      const pct = totalTime > 0 ? (duration / totalTime) * 100 : 0;
-                      if (pct < 0.3) return null;
-                      return (
-                        <div key={i} className="queue-timeline-block" style={{ width: `${pct}%` }} title={`${s.skill_name} ${ROMAN[s.finished_level]} — ${formatTimeRemaining(s.finish_date)}`} />
-                      );
-                    })}
+                  <div className="queue-timeline-row">
+                    <span className="queue-timeline-label">
+                      <span className="queue-timeline-title">Training Time</span>
+                      <span className="queue-timeline-value">{(() => {
+                        const lastFinish = new Date(data.skill_queue.queue[data.skill_queue.queue.length - 1].finish_date);
+                        const rem = Math.max(0, lastFinish - now);
+                        const d = Math.floor(rem / 86400000);
+                        const h = Math.floor((rem % 86400000) / 3600000);
+                        const m = Math.floor((rem % 3600000) / 60000);
+                        return `${d}d ${h}h ${m}m`;
+                      })()}</span>
+                    </span>
+                    <div className="queue-timeline">
+                      {data.skill_queue.queue.map((s, i) => {
+                        const start = s.start_date ? new Date(s.start_date) : now;
+                        const finish = new Date(s.finish_date);
+                        const duration = Math.max(0, finish - start);
+                        const pct = totalTime > 0 ? (duration / totalTime) * 100 : 0;
+                        if (pct < 0.3) return null;
+                        return (
+                          <div key={i} className={`queue-timeline-block ${i % 2 === 0 ? 'even' : 'odd'}`} style={{ width: `${pct}%` }} title={`${s.skill_name} ${ROMAN[s.finished_level]} — ${formatTimeRemaining(s.finish_date)}`} />
+                        );
+                      })}
+                    </div>
                   </div>
                 </>
               );
