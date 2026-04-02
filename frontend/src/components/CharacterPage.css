@@ -270,9 +270,63 @@
 }
 
 .queue-level {
-  width: 40px;
-  text-align: center;
-  font-family: 'Consolas', monospace;
+  width: 70px;
+}
+
+/* EVE-style skill level boxes */
+.skill-level-boxes {
+  display: flex;
+  gap: 2px;
+}
+
+.skill-box {
+  width: 10px;
+  height: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+}
+
+.skill-box.filled {
+  background: #63b3ed;
+  border-color: #63b3ed;
+}
+
+.skill-box.training {
+  background: #f6c90e;
+  border-color: #f6c90e;
+  animation: skill-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes skill-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Queue timeline bar */
+.queue-timeline {
+  display: flex;
+  height: 14px;
+  margin-top: 8px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.queue-timeline-block {
+  height: 100%;
+  background: rgba(74, 158, 255, 0.3);
+  border-right: 1px solid rgba(0, 0, 0, 0.4);
+  min-width: 1px;
+  transition: background 0.15s;
+}
+
+.queue-timeline-block:hover {
+  background: rgba(74, 158, 255, 0.6);
+}
+
+.queue-timeline-block:first-child {
+  background: rgba(74, 158, 255, 0.5);
 }
 
 .queue-date {

@@ -196,37 +196,62 @@ function CharacterPage({ characterId, onError, refreshKey }) {
             <div className="charpage-queue-toggle" onClick={() => setQueueExpanded(!queueExpanded)}>
               {queueExpanded ? '▾' : '▸'} Full Queue ({data.skill_queue.queue.length} skill{data.skill_queue.queue.length !== 1 ? 's' : ''})
             </div>
-            {queueExpanded && (
-              <div className="charpage-queue-table-wrap">
-                <table className="charpage-queue-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Skill</th>
-                      <th>Level</th>
-                      <th>Finishes</th>
-                      <th>Remaining</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.skill_queue.queue.map((s, i) => {
-                      const start = s.start_date ? new Date(s.start_date) : null;
-                      const finish = new Date(s.finish_date);
-                      const isActive = start && start <= now && finish > now;
-                      return (
-                        <tr key={i} className={isActive ? 'queue-active' : ''}>
-                          <td className="queue-pos">{i + 1}</td>
-                          <td className="queue-name">{s.skill_name}</td>
-                          <td className="queue-level">{ROMAN[s.finished_level]}</td>
-                          <td className="queue-date">{formatDate(s.finish_date)}</td>
-                          <td className="queue-time">{finish > now ? formatTimeRemaining(s.finish_date) : 'Done'}</td>
+            {queueExpanded && (() => {
+              const totalTime = data.skill_queue.queue.reduce((sum, s) => {
+                const start = s.start_date ? new Date(s.start_date) : now;
+                const finish = new Date(s.finish_date);
+                return sum + Math.max(0, finish - start);
+              }, 0);
+              return (
+                <>
+                  <div className="charpage-queue-table-wrap">
+                    <table className="charpage-queue-table">
+                      <thead>
+                        <tr>
+                          <th>Level</th>
+                          <th>Skill</th>
+                          <th>Finishes</th>
+                          <th>Remaining</th>
                         </tr>
+                      </thead>
+                      <tbody>
+                        {data.skill_queue.queue.map((s, i) => {
+                          const start = s.start_date ? new Date(s.start_date) : null;
+                          const finish = new Date(s.finish_date);
+                          const isActive = start && start <= now && finish > now;
+                          return (
+                            <tr key={i} className={isActive ? 'queue-active' : ''}>
+                              <td className="queue-level">
+                                <div className="skill-level-boxes">
+                                  {[1,2,3,4,5].map(l => (
+                                    <span key={l} className={`skill-box ${l <= s.finished_level ? 'filled' : ''} ${l === s.finished_level && isActive ? 'training' : ''}`} />
+                                  ))}
+                                </div>
+                              </td>
+                              <td className="queue-name">{s.skill_name} {ROMAN[s.finished_level]}</td>
+                              <td className="queue-date">{formatDate(s.finish_date)}</td>
+                              <td className="queue-time">{finish > now ? formatTimeRemaining(s.finish_date) : 'Done'}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="queue-timeline">
+                    {data.skill_queue.queue.map((s, i) => {
+                      const start = s.start_date ? new Date(s.start_date) : now;
+                      const finish = new Date(s.finish_date);
+                      const duration = Math.max(0, finish - start);
+                      const pct = totalTime > 0 ? (duration / totalTime) * 100 : 0;
+                      if (pct < 0.3) return null;
+                      return (
+                        <div key={i} className="queue-timeline-block" style={{ width: `${pct}%` }} title={`${s.skill_name} ${ROMAN[s.finished_level]} — ${formatTimeRemaining(s.finish_date)}`} />
                       );
                     })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                  </div>
+                </>
+              );
+            })()}
           </>
         )}
       </div>
