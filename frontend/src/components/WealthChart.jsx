@@ -170,18 +170,25 @@ function WealthChart({ characterId, refreshKey }) {
   // Show hovered point or latest data point
   const displayData = (hover !== null && chartData[hover]) ? chartData[hover] : chartData[chartData.length - 1];
 
+  const RANGES = [
+    { days: 1, label: '1D' },
+    { days: 7, label: '1W' },
+    { days: 30, label: '1M' },
+    { days: 90, label: '3M' },
+  ];
+
   return (
     <div className="wealth-chart-container">
       <div className="wealth-chart-header">
         <div className="wealth-chart-legend">
-          <span className="legend-item"><span className="legend-dot" style={{ background: '#e2e8f0' }} /> Total: <span className="legend-val total">{hover !== null ? formatISKTooltip(displayData.total) : formatISKTooltip(displayData.total)}</span></span>
+          <span className="legend-item"><span className="legend-dot" style={{ background: '#e2e8f0' }} /> Total: <span className="legend-val total">{formatISKTooltip(displayData.total)}</span></span>
           <span className="legend-item"><span className="legend-dot" style={{ background: '#f6ad55' }} /> Assets: <span className="legend-val assets">{formatISKTooltip(displayData.assets)}</span></span>
           <span className="legend-item"><span className="legend-dot" style={{ background: '#f6c90e' }} /> Wallet: <span className="legend-val wallet">{formatISKTooltip(displayData.wallet)}</span></span>
           {hover !== null && <span className="legend-date">{new Date(displayData.date).toLocaleString()}</span>}
         </div>
         <div className="wealth-chart-range">
-          {[7, 30, 90].map(d => (
-            <button key={d} className={`range-btn ${days === d ? 'active' : ''}`} onClick={() => setDays(d)}>{d}d</button>
+          {RANGES.map(r => (
+            <button key={r.days} className={`range-btn ${days === r.days ? 'active' : ''}`} onClick={() => setDays(r.days)}>{r.label}</button>
           ))}
         </div>
       </div>

@@ -39,33 +39,6 @@
   display: inline-block;
 }
 
-.wealth-chart-range {
-  display: flex;
-  gap: 4px;
-}
-
-.range-btn {
-  padding: 3px 8px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
-  color: #718096;
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.range-btn:hover {
-  color: #a0aec0;
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.range-btn.active {
-  background: rgba(102, 126, 234, 0.15);
-  border-color: rgba(102, 126, 234, 0.5);
-  color: #a3bffa;
-}
-
 .legend-val {
   font-family: 'Consolas', monospace;
   font-weight: 600;
@@ -87,4 +60,35 @@
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.2);
   cursor: crosshair;
+}
+
+/* Trading platform style range selector */
+.wealth-chart-range {
+  display: flex;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.range-btn {
+  padding: 4px 12px;
+  background: none;
+  border: none;
+  color: #4a5568;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.5px;
+  border-radius: 4px;
+}
+
+.range-btn:hover {
+  color: #a0aec0;
+}
+
+.range-btn.active {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.08);
 }
