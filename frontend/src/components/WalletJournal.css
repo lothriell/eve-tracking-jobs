@@ -149,6 +149,8 @@
 .wj-table td {
   padding: 5px 10px;
   color: #a0aec0;
+  height: 32px;
+  line-height: 1.4;
 }
 
 .wj-date {
