@@ -99,21 +99,26 @@ function WealthChart({ characterId, refreshKey }) {
       ctx.fillText(formatISKAxis(maxVal - ((maxVal - minVal) * i) / 4), pad.left - 6, y + 4);
     }
 
-    // X-axis labels — adapt format to range
+    // X-axis labels — adapt format to actual data span
     ctx.fillStyle = '#4a5568';
     ctx.font = '9px Consolas, monospace';
     ctx.textAlign = 'center';
     const labelStep = Math.max(1, Math.floor(chartData.length / 6));
     const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const firstDate = new Date(chartData[0].date);
+    const lastDate = new Date(chartData[chartData.length - 1].date);
+    const spanDays = (lastDate - firstDate) / (1000 * 60 * 60 * 24);
     chartData.forEach((d, i) => {
       if (i % labelStep === 0 || i === chartData.length - 1) {
         const date = new Date(d.date);
         let label;
-        if (days <= 1) {
+        if (spanDays < 2) {
           label = `${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
-        } else if (days <= 30) {
+        } else if (spanDays < 7) {
+          label = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours().toString().padStart(2,'0')}:00`;
+        } else if (spanDays < 90) {
           label = `${date.getMonth() + 1}/${date.getDate()}`;
-        } else if (days <= 365) {
+        } else if (spanDays < 365) {
           label = `${MONTHS[date.getMonth()]} ${date.getDate()}`;
         } else {
           label = `${MONTHS[date.getMonth()]} '${date.getFullYear().toString().slice(2)}`;
