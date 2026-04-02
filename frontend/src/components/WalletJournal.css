@@ -115,14 +115,12 @@
   table-layout: fixed;
 }
 
-/* Unified column widths — percentages for flexible layout */
-.wj-col-date { width: 11%; }
-.wj-col-type { width: 11%; }
+/* Unified column widths — 8 columns, same across all table tabs */
+.wj-col-date { width: 12%; }
 .wj-col-qty { width: 4%; text-align: right; }
 .wj-col-item { width: auto; }
-.wj-col-amount { width: 10%; text-align: right; }
-.wj-col-balance { width: 8%; text-align: right; }
 .wj-col-badge { width: 6%; }
+.wj-col-amount { width: 10%; text-align: right; }
 .wj-col-desc { width: 16%; }
 .wj-col-parties { width: 14%; }
 
@@ -183,7 +181,6 @@
   white-space: nowrap;
 }
 
-/* Legacy col classes kept for compat */
 
 .wj-desc {
   overflow: hidden;
@@ -252,8 +249,12 @@
 .wj-overview {
   display: flex;
   gap: 30px;
-  align-items: flex-start;
-  padding: 10px 0;
+  align-items: center;
+  padding: 20px 0;
+  min-height: 340px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 20px 30px;
 }
 
 .wj-overview-chart {
@@ -286,7 +287,7 @@
 
 .wj-ov-value {
   font-family: 'Consolas', monospace;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
 }
 

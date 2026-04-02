@@ -69,13 +69,13 @@ function OverviewTab({ entries }) {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
-    const size = 180;
+    const size = 300;
     canvas.width = size * dpr;
     canvas.height = size * dpr;
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, size, size);
 
-    const cx = size / 2, cy = size / 2, r = 70, lineWidth = 18;
+    const cx = size / 2, cy = size / 2, r = 115, lineWidth = 28;
     const total = stats.income + stats.expenses;
     if (total === 0) return;
 
@@ -95,18 +95,18 @@ function OverviewTab({ entries }) {
 
     // Center text
     ctx.fillStyle = '#e2e8f0';
-    ctx.font = 'bold 18px Consolas, monospace';
+    ctx.font = 'bold 24px Consolas, monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(formatISKPlain(stats.income), cx, cy - 4);
+    ctx.fillText(formatISKPlain(stats.income), cx, cy - 6);
     ctx.fillStyle = '#718096';
-    ctx.font = '10px sans-serif';
-    ctx.fillText('30 Days Income', cx, cy + 12);
+    ctx.font = '12px sans-serif';
+    ctx.fillText('30 Days Income', cx, cy + 14);
   }, [stats]);
 
   return (
     <div className="wj-overview">
       <div className="wj-overview-chart">
-        <canvas ref={canvasRef} style={{ width: 180, height: 180 }} />
+        <canvas ref={canvasRef} style={{ width: 300, height: 300 }} />
       </div>
       <div className="wj-overview-stats">
         <div className="wj-overview-totals">
@@ -136,20 +136,19 @@ function OverviewTab({ entries }) {
 }
 
 // ===== JOURNAL TABLE (shared between All and Transactions tabs) =====
-function JournalTable({ entries, showItem }) {
+function JournalTable({ entries }) {
   return (
     <>
       <div className="wj-table-wrap">
-        <table className="wj-table wj-table-journal">
+        <table className="wj-table">
           <thead>
             <tr>
               <th className="wj-col-date">Date</th>
-              <th className="wj-col-type">Type</th>
-              {showItem && <th className="wj-col-qty">Qty</th>}
-              {showItem && <th className="wj-col-item">Item</th>}
-              {showItem && <th className="wj-col-badge">Buy/Sell</th>}
+              <th className="wj-col-qty">Qty</th>
+              <th className="wj-col-item">Item</th>
+              <th className="wj-col-badge">Buy/Sell</th>
               <th className="wj-col-amount">Amount</th>
-              <th className="wj-col-balance">Balance</th>
+              <th className="wj-col-amount">Balance</th>
               <th className="wj-col-desc">Description</th>
               <th className="wj-col-parties">Parties</th>
             </tr>
@@ -158,18 +157,11 @@ function JournalTable({ entries, showItem }) {
             {entries.map((e, i) => (
               <tr key={e.entry_id || i}>
                 <td className="wj-date">{formatDate(e.date)}</td>
-                <td className="wj-type">{(e.ref_type || '').replace(/_/g, ' ')}</td>
-                {showItem && (
-                  <td className="wj-qty">{e.transaction ? (e.transaction.quantity || 0).toLocaleString() : ''}</td>
-                )}
-                {showItem && (
-                  <td className="wj-typename">
-                    {e.transaction ? e.transaction.type_name : ''}
-                  </td>
-                )}
-                {showItem && (
-                  <td>{e.transaction ? <span className={`wj-bs-badge ${e.transaction.is_buy ? 'buy' : 'sell'}`}>{e.transaction.is_buy ? 'Buy' : 'Sell'}</span> : ''}</td>
-                )}
+                <td className="wj-qty">{e.transaction ? (e.transaction.quantity || 0).toLocaleString() : ''}</td>
+                <td className="wj-typename">
+                  {e.transaction ? e.transaction.type_name : <span className="wj-type">{(e.ref_type || '').replace(/_/g, ' ')}</span>}
+                </td>
+                <td>{e.transaction ? <span className={`wj-bs-badge ${e.transaction.is_buy ? 'buy' : 'sell'}`}>{e.transaction.is_buy ? 'Buy' : 'Sell'}</span> : ''}</td>
                 <td className={`wj-amount ${e.amount > 0 ? 'positive' : e.amount < 0 ? 'negative' : ''}`}>
                   {formatISK(e.amount)}
                 </td>
@@ -196,7 +188,7 @@ function MarketTransactionsTab({ filtered, loading }) {
 
   return (
     <div className="wj-table-wrap">
-      <table className="wj-table wj-table-market">
+      <table className="wj-table">
         <thead>
           <tr>
             <th className="wj-col-date">Date</th>
@@ -379,7 +371,7 @@ function WalletJournal({ characterId, refreshKey }) {
 
           {activeTab === 'transactions' && (
             <>
-              <JournalTable entries={entries} showItem={false}  />
+              <JournalTable entries={entries} />
               {hasMore && <button className="wj-load-more" onClick={() => loadJournal(true)} disabled={loading}>{loading ? 'Loading...' : 'Load more'}</button>}
             </>
           )}
