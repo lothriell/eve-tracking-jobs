@@ -117,6 +117,14 @@ function OverviewTab({ entries }) {
     ctx.fillText('30 Days Income', cx, cy + fontSize * 0.6);
   }, [stats, canvasSize]);
 
+  if (entries.length === 0 || (stats.income === 0 && stats.expenses === 0)) {
+    return (
+      <div className="wj-overview wj-overview-empty" ref={containerRef}>
+        <span className="wj-empty">No wallet journal data yet. Data will appear after the first ESI sync.</span>
+      </div>
+    );
+  }
+
   return (
     <div className="wj-overview" ref={containerRef}>
       <div className="wj-overview-chart">
