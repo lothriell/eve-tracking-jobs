@@ -51,6 +51,8 @@ function getCategory(refType) {
 // ===== OVERVIEW TAB (Donut Chart) =====
 function OverviewTab({ entries }) {
   const canvasRef = useRef(null);
+  const containerRef = useRef(null);
+  const [canvasSize, setCanvasSize] = useState(300);
 
   const stats = React.useMemo(() => {
     let income = 0, expenses = 0;
@@ -64,18 +66,29 @@ function OverviewTab({ entries }) {
     return { income, expenses, byCategory };
   }, [entries]);
 
+  // Size canvas to fill container
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const h = entry.contentRect.height - 40; // padding
+      if (h > 100) setCanvasSize(Math.min(h, 500));
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
   useEffect(() => {
     if (!canvasRef.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
-    const size = 300;
+    const size = canvasSize;
     canvas.width = size * dpr;
     canvas.height = size * dpr;
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, size, size);
 
-    const cx = size / 2, cy = size / 2, r = 115, lineWidth = 28;
+    const cx = size / 2, cy = size / 2, r = size * 0.38, lineWidth = size * 0.09;
     const total = stats.income + stats.expenses;
     if (total === 0) return;
 
@@ -94,19 +107,20 @@ function OverviewTab({ entries }) {
     });
 
     // Center text
+    const fontSize = Math.max(16, size * 0.08);
     ctx.fillStyle = '#e2e8f0';
-    ctx.font = 'bold 24px Consolas, monospace';
+    ctx.font = `bold ${fontSize}px Consolas, monospace`;
     ctx.textAlign = 'center';
     ctx.fillText(formatISKPlain(stats.income), cx, cy - 6);
     ctx.fillStyle = '#718096';
-    ctx.font = '12px sans-serif';
-    ctx.fillText('30 Days Income', cx, cy + 14);
-  }, [stats]);
+    ctx.font = `${Math.max(10, fontSize * 0.5)}px sans-serif`;
+    ctx.fillText('30 Days Income', cx, cy + fontSize * 0.6);
+  }, [stats, canvasSize]);
 
   return (
-    <div className="wj-overview">
+    <div className="wj-overview" ref={containerRef}>
       <div className="wj-overview-chart">
-        <canvas ref={canvasRef} style={{ width: 300, height: 300 }} />
+        <canvas ref={canvasRef} style={{ width: canvasSize, height: canvasSize }} />
       </div>
       <div className="wj-overview-stats">
         <div className="wj-overview-totals">
