@@ -99,15 +99,26 @@ function WealthChart({ characterId, refreshKey }) {
       ctx.fillText(formatISKAxis(maxVal - ((maxVal - minVal) * i) / 4), pad.left - 6, y + 4);
     }
 
-    // X-axis labels
+    // X-axis labels — adapt format to range
     ctx.fillStyle = '#4a5568';
     ctx.font = '9px Consolas, monospace';
     ctx.textAlign = 'center';
     const labelStep = Math.max(1, Math.floor(chartData.length / 6));
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     chartData.forEach((d, i) => {
       if (i % labelStep === 0 || i === chartData.length - 1) {
         const date = new Date(d.date);
-        ctx.fillText(`${date.getMonth() + 1}/${date.getDate()}`, scaleX(i), h - 4);
+        let label;
+        if (days <= 1) {
+          label = `${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+        } else if (days <= 30) {
+          label = `${date.getMonth() + 1}/${date.getDate()}`;
+        } else if (days <= 365) {
+          label = `${MONTHS[date.getMonth()]} ${date.getDate()}`;
+        } else {
+          label = `${MONTHS[date.getMonth()]} '${date.getFullYear().toString().slice(2)}`;
+        }
+        ctx.fillText(label, scaleX(i), h - 4);
       }
     });
 
@@ -143,7 +154,7 @@ function WealthChart({ characterId, refreshKey }) {
         ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
       });
     }
-  }, [chartData, hover]);
+  }, [chartData, hover, days]);
 
   const handleMouseMove = (e) => {
     if (chartData.length === 0) return;
@@ -157,9 +168,9 @@ function WealthChart({ characterId, refreshKey }) {
     else setHover(null);
   };
 
-  if (loading) return <div className="wealth-chart-loading">Loading wealth history...</div>;
+  if (loading && snapshots.length === 0) return <div className="wealth-chart-loading">Loading wealth history...</div>;
 
-  if (chartData.length < 2) {
+  if (!loading && chartData.length < 2) {
     return (
       <div className="wealth-chart-empty">
         Wealth history will appear after the first few snapshots (taken hourly).

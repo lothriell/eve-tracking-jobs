@@ -1,5 +1,6 @@
 .wealth-chart-container {
   position: relative;
+  min-height: 220px;
 }
 
 .wealth-chart-loading,
