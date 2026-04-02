@@ -287,8 +287,8 @@
 }
 
 .skill-box.filled {
-  background: #63b3ed;
-  border-color: #63b3ed;
+  background: #718096;
+  border-color: #718096;
 }
 
 .skill-box.training {
@@ -349,11 +349,11 @@
 }
 
 .queue-timeline-block.even {
-  background: rgba(99, 179, 237, 0.35);
+  background: rgba(113, 128, 150, 0.45);
 }
 
 .queue-timeline-block.odd {
-  background: rgba(99, 179, 237, 0.2);
+  background: rgba(113, 128, 150, 0.25);
 }
 
 .queue-timeline-block:hover {
