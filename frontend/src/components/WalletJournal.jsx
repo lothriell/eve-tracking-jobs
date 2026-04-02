@@ -353,32 +353,39 @@ function WalletJournal({ characterId, refreshKey }) {
         </span>
       </div>
 
-      {loading && entries.length === 0 ? (
-        <div className="wj-loading">Loading wallet data...</div>
-      ) : (
-        <>
-          {activeTab === 'overview' && <OverviewTab entries={entries} />}
+      <div className="wj-tab-content">
+        {loading && entries.length === 0 ? (
+          <div className="wj-loading">Loading wallet data...</div>
+        ) : (
+          <>
+            {activeTab === 'overview' && <OverviewTab entries={entries} />}
 
-          {activeTab === 'all' && (
-            <>
-              <JournalTable entries={journalBuySell === 'all' ? entries : entries.filter(e => {
-                if (!e.transaction) return journalBuySell === 'all';
-                return journalBuySell === 'buy' ? e.transaction.is_buy : !e.transaction.is_buy;
-              })} showItem={true} />
-              {hasMore && <button className="wj-load-more" onClick={() => loadJournal(true)} disabled={loading}>{loading ? 'Loading...' : 'Load more'}</button>}
-            </>
-          )}
+            {activeTab === 'all' && (
+              <>
+                <JournalTable entries={journalBuySell === 'all' ? entries : entries.filter(e => {
+                  if (!e.transaction) return journalBuySell === 'all';
+                  return journalBuySell === 'buy' ? e.transaction.is_buy : !e.transaction.is_buy;
+                })} />
+                <button className="wj-load-more" onClick={() => loadJournal(true)} disabled={loading || !hasMore}>{loading ? 'Loading...' : hasMore ? 'Load more' : 'All loaded'}</button>
+              </>
+            )}
 
-          {activeTab === 'transactions' && (
-            <>
-              <JournalTable entries={entries} />
-              {hasMore && <button className="wj-load-more" onClick={() => loadJournal(true)} disabled={loading}>{loading ? 'Loading...' : 'Load more'}</button>}
-            </>
-          )}
+            {activeTab === 'transactions' && (
+              <>
+                <JournalTable entries={entries} />
+                <button className="wj-load-more" onClick={() => loadJournal(true)} disabled={loading || !hasMore}>{loading ? 'Loading...' : hasMore ? 'Load more' : 'All loaded'}</button>
+              </>
+            )}
 
-          {activeTab === 'market' && <MarketTransactionsTab filtered={filteredMarketTx} loading={marketLoading} />}
-        </>
-      )}
+            {activeTab === 'market' && (
+              <>
+                <MarketTransactionsTab filtered={filteredMarketTx} loading={marketLoading} />
+                <button className="wj-load-more" disabled>All loaded</button>
+              </>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
