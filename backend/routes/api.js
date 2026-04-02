@@ -145,7 +145,7 @@ router.get('/wealth', requireAuth, async (req, res) => {
 router.get('/wealth/history', requireAuth, (req, res) => {
   const db = require('../database/db');
   try {
-    const days = Math.min(parseInt(req.query.days) || 30, 90);
+    const days = req.query.days === 'all' ? 99999 : Math.min(parseInt(req.query.days) || 30, 3650);
     // Clean up bad snapshots (0 asset value = no real data)
     try { db.db.prepare('DELETE FROM wealth_snapshots WHERE asset_value = 0 AND wallet_balance = 0').run(); } catch {}
     const snapshots = db.getWealthHistory(req.session.userId, days);

@@ -175,6 +175,9 @@ function WealthChart({ characterId, refreshKey }) {
     { days: 7, label: '1W' },
     { days: 30, label: '1M' },
     { days: 90, label: '3M' },
+    { days: 180, label: '6M' },
+    { days: 365, label: '1Y' },
+    { days: 'all', label: 'MAX' },
   ];
 
   return (
