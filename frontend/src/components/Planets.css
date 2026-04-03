@@ -1023,12 +1023,8 @@
 }
 
 .colony-card-product-name {
-  font-size: 10px;
+  font-size: 11px;
   color: #cbd5e0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100px;
 }
 
 /* Card info */
@@ -1041,13 +1037,10 @@
   font-size: 12px;
   font-weight: 600;
   color: #e2e8f0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .colony-card-type-badge {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -1122,9 +1115,6 @@
 .colony-card-character {
   font-size: 10px;
   color: #4a5568;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   width: 100%;
   text-align: center;
 }
