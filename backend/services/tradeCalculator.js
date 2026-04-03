@@ -34,8 +34,10 @@ function calculateSalesTax(accountingLevel = 0) {
  * @returns {Array} sorted trade opportunities
  */
 function findTradeOpportunities(sourcePrices, destPrices, settings = {}, tradeType = 'B', filters = {}) {
-  const brokerFee = (settings.brokerFee || 3.0) / 100;
-  const salesTax = (settings.salesTax || 3.6) / 100;
+  // Support separate buyer/seller fees (different characters at different hubs)
+  const buyBrokerPct = (settings.buyBrokerFee ?? settings.brokerFee ?? 3.0) / 100;
+  const sellBrokerPct = (settings.sellBrokerFee ?? settings.brokerFee ?? 3.0) / 100;
+  const salesTax = (settings.sellSalesTax ?? settings.salesTax ?? 3.6) / 100;
   const opportunities = [];
 
   // Find types present in both hubs
@@ -64,9 +66,9 @@ function findTradeOpportunities(sourcePrices, destPrices, settings = {}, tradeTy
     if (!buyPrice || buyPrice <= 0 || !sellPrice || sellPrice <= 0) continue;
     if (buyPrice >= sellPrice) continue; // No margin
 
-    // Calculate fees
-    const buyBrokerFee = buyPrice * brokerFee;
-    const sellBrokerFee = sellPrice * brokerFee;
+    // Calculate fees (buyer's broker at source, seller's broker + tax at dest)
+    const buyBrokerFee = buyPrice * buyBrokerPct;
+    const sellBrokerFee = sellPrice * sellBrokerPct;
     const sellTax = sellPrice * salesTax;
 
     const grossMargin = sellPrice - buyPrice;

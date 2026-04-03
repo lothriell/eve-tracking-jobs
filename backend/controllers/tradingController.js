@@ -160,13 +160,20 @@ async function findTrades(req, res) {
       limit: Math.min(parseInt(req.query.limit) || 100, 500),
     };
 
-    // Get trade settings for fee calculation
-    const characterId = parseInt(req.query.characterId);
-    const settings = characterId ? db.getTradeSettings(characterId) : null;
-    const brokerFee = settings
-      ? calculateBrokerFee(settings.broker_relations_level, settings.advanced_broker_level, settings.faction_standing, settings.corp_standing)
+    // Get trade settings for fee calculation — support separate buyer/seller characters
+    const buyerCharId = parseInt(req.query.buyerCharId) || parseInt(req.query.characterId) || null;
+    const sellerCharId = parseInt(req.query.sellerCharId) || buyerCharId;
+
+    const buyerSettings = buyerCharId ? db.getTradeSettings(buyerCharId) : null;
+    const sellerSettings = sellerCharId ? db.getTradeSettings(sellerCharId) : null;
+
+    const buyBrokerFee = buyerSettings
+      ? calculateBrokerFee(buyerSettings.broker_relations_level, buyerSettings.advanced_broker_level, buyerSettings.faction_standing, buyerSettings.corp_standing)
       : 3.0;
-    const salesTax = settings ? calculateSalesTax(settings.accounting_level) : 3.6;
+    const sellBrokerFee = sellerSettings
+      ? calculateBrokerFee(sellerSettings.broker_relations_level, sellerSettings.advanced_broker_level, sellerSettings.faction_standing, sellerSettings.corp_standing)
+      : 3.0;
+    const sellSalesTax = sellerSettings ? calculateSalesTax(sellerSettings.accounting_level) : 3.6;
 
     // Load source hub prices (all types)
     const sourcePricesRaw = db.getHubPrices(sourceHub.station_id, null);
@@ -201,7 +208,7 @@ async function findTrades(req, res) {
         destPrices[row.type_id] = row;
       }
 
-      const opps = findTradeOpportunities(sourcePrices, destPrices, { brokerFee, salesTax }, tradeType, filters);
+      const opps = findTradeOpportunities(sourcePrices, destPrices, { buyBrokerFee, sellBrokerFee, sellSalesTax }, tradeType, filters);
       // Tag with destination hub info
       for (const opp of opps) {
         opp.dest_hub_id = dHub.id;
@@ -225,8 +232,9 @@ async function findTrades(req, res) {
     res.json({
       source_hub: { id: sourceHub.id, name: sourceHub.name },
       trade_type: tradeType,
-      broker_fee_pct: brokerFee,
-      sales_tax_pct: salesTax,
+      buy_broker_fee_pct: buyBrokerFee,
+      sell_broker_fee_pct: sellBrokerFee,
+      sales_tax_pct: sellSalesTax,
       filters,
       total: allOpportunities.length,
       opportunities: allOpportunities
