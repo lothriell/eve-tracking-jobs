@@ -394,10 +394,6 @@
 .planet-product-name {
   font-size: 12px;
   color: #cbd5e0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 120px;
 }
 
 /* Status cell in list view */
