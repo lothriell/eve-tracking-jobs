@@ -682,7 +682,6 @@ function CharacterColonies({ characterData, alertMode }) {
               <th className="col-planet">Planet</th>
               <th className="col-type">Type</th>
               <th className="col-product">Product</th>
-              <th className="col-pins text-right">Pins</th>
               <th className="col-rate text-right">Rate</th>
               <th className="col-storage">Storage</th>
               <th className="col-expiry">Expiry</th>
@@ -746,7 +745,6 @@ function CharacterColonies({ characterData, alertMode }) {
                         </div>
                       ) : <span className="date-muted">—</span>}
                     </td>
-                    <td className="text-right" style={{ color: '#a0aec0' }}>{colony.num_pins || '—'}</td>
                     <td className="text-right">
                       {loadingLayouts[colony.planet_id] ? (
                         <span className="spinner-small" style={{ width: 12, height: 12 }}></span>
@@ -781,7 +779,7 @@ function CharacterColonies({ characterData, alertMode }) {
                   </tr>
                   {openColony === colony.planet_id && (
                     <tr>
-                      <td colSpan={10} style={{ padding: '4px 8px 8px' }}>
+                      <td colSpan={9} style={{ padding: '4px 8px 8px' }}>
                         <ColonyDetail
                           characterId={character_id}
                           planetId={colony.planet_id}
