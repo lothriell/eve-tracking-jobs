@@ -377,6 +377,77 @@
   flex-shrink: 0;
 }
 
+/* Product cell in list view */
+.planet-product-cell {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.planet-product-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.planet-product-name {
+  font-size: 12px;
+  color: #cbd5e0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+/* Status cell in list view */
+.colony-status-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.colony-status-badge {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.colony-status-badge.status-active,
+.colony-status-badge.status-extracting {
+  color: #68d391;
+}
+
+.colony-status-badge.status-producing {
+  color: #63b3ed;
+}
+
+.colony-status-badge.status-stopped {
+  color: #a0784c;
+}
+
+.colony-status-badge.status-attention {
+  color: #AB324A;
+}
+
+.colony-status-badge.status-setup {
+  color: #ecc94b;
+}
+
+.colony-status-badge.status-idle {
+  color: #4a5568;
+}
+
+.colony-status-reason {
+  font-size: 9px;
+  color: #718096;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
 /* ============== UPGRADE STARS ============== */
 
 .upgrade-stars {

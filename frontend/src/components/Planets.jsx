@@ -629,14 +629,20 @@ function CharacterColonies({ characterData, alertMode }) {
     );
   }
 
-  // Build alert states per colony
+  // Build status + alert states per colony
+  const colonyStatuses = {};
   const colonyAlerts = {};
+  const colonyProducts = {};
   colonies.forEach(colony => {
     const layout = colonyLayouts[colony.planet_id];
     if (layout?.pins) {
       colonyAlerts[colony.planet_id] = getAlertState(layout.pins, colony.expiry_date);
+      colonyStatuses[colony.planet_id] = getColonyStatus(layout.pins, layout.routes || [], Date.now());
+      colonyProducts[colony.planet_id] = getFinalProducts(layout.pins);
     } else {
       colonyAlerts[colony.planet_id] = { expired: false, hasLowExtraction: false, hasOffBalance: false, hasLowStorage: false };
+      colonyStatuses[colony.planet_id] = { label: 'Idle', class: 'status-idle', reason: null };
+      colonyProducts[colony.planet_id] = [];
     }
   });
 
@@ -669,6 +675,7 @@ function CharacterColonies({ characterData, alertMode }) {
             <tr>
               <th className="col-planet">Planet</th>
               <th className="col-type">Type</th>
+              <th className="col-product">Product</th>
               <th className="col-level text-right">Level</th>
               <th className="col-pins text-right">Pins</th>
               <th className="col-rate text-right">Rate</th>
@@ -682,6 +689,8 @@ function CharacterColonies({ characterData, alertMode }) {
             {filteredColonies.map(colony => {
               const style = getPlanetStyle(colony.planet_type);
               const alerts = colonyAlerts[colony.planet_id] || {};
+              const status = colonyStatuses[colony.planet_id] || { label: 'Idle', class: 'status-idle', reason: null };
+              const products = colonyProducts[colony.planet_id] || [];
               const layout = colonyLayouts[colony.planet_id];
               const layoutPins = layout?.pins || [];
               const extractorPins = layoutPins.filter(p => p.extractor_details);
@@ -714,6 +723,23 @@ function CharacterColonies({ characterData, alertMode }) {
                         {(colony.planet_type || 'unknown').charAt(0).toUpperCase() + (colony.planet_type || '').slice(1)}
                       </span>
                     </td>
+                    <td>
+                      {loadingLayouts[colony.planet_id] ? (
+                        <span className="spinner-small" style={{ width: 12, height: 12 }}></span>
+                      ) : products.length > 0 ? (
+                        <div className="planet-product-cell">
+                          <img
+                            src={`https://images.evetech.net/types/${products[0].type_id}/icon?size=32`}
+                            alt={products[0].name}
+                            className="planet-product-icon"
+                          />
+                          <span className={`colony-card-tier-badge tier-${(products[0].tier || '').toLowerCase()}`}>
+                            {products[0].tier || '?'}
+                          </span>
+                          <span className="planet-product-name" title={products[0].name}>{products[0].name}</span>
+                        </div>
+                      ) : <span className="date-muted">—</span>}
+                    </td>
                     <td className="text-right">
                       <UpgradeStars level={colony.upgrade_level || 0} />
                     </td>
@@ -736,7 +762,10 @@ function CharacterColonies({ characterData, alertMode }) {
                       <LiveCountdown expiryTime={earliestExpiry} />
                     </td>
                     <td>
-                      <AlertBadges alerts={alerts} />
+                      <div className="colony-status-cell">
+                        <span className={`colony-status-badge ${status.class}`}>{status.label}</span>
+                        {status.reason && <span className="colony-status-reason" title={status.reason}>{status.reason}</span>}
+                      </div>
                     </td>
                     <td>
                       <button className="detail-btn" onClick={() => toggleColony(colony.planet_id)}>
@@ -746,7 +775,7 @@ function CharacterColonies({ characterData, alertMode }) {
                   </tr>
                   {openColony === colony.planet_id && (
                     <tr>
-                      <td colSpan={9} style={{ padding: '4px 8px 8px' }}>
+                      <td colSpan={10} style={{ padding: '4px 8px 8px' }}>
                         <ColonyDetail
                           characterId={character_id}
                           planetId={colony.planet_id}
