@@ -162,40 +162,96 @@
   background: rgba(245, 101, 101, 0.3);
 }
 
-.hub-add-form {
-  display: flex;
-  gap: 6px;
-  align-items: center;
+/* Hub Add — Station Search */
+.hub-add-search {
+  position: relative;
 }
 
-.hub-add-form input {
-  padding: 6px 10px;
+.hub-search-input-wrap {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.hub-search-input-wrap input {
+  width: 100%;
+  padding: 8px 12px;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 6px;
   color: #e2e8f0;
-  font-size: 12px;
-  flex: 1;
+  font-size: 13px;
 }
 
-.hub-add-form input::placeholder {
+.hub-search-input-wrap input::placeholder {
   color: #4a5568;
 }
 
-.hub-add-form button {
-  padding: 6px 14px;
-  background: rgba(99, 179, 237, 0.2);
-  border: 1px solid rgba(99, 179, 237, 0.4);
-  border-radius: 6px;
-  color: #90cdf4;
-  cursor: pointer;
-  font-size: 12px;
-  white-space: nowrap;
+.hub-search-input-wrap input:focus {
+  outline: none;
+  border-color: rgba(99, 179, 237, 0.5);
 }
 
-.hub-add-form button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.search-spinner {
+  position: absolute;
+  right: 10px;
+  color: #718096;
+  font-size: 12px;
+}
+
+.hub-search-results {
+  margin-top: 4px;
+  background: rgba(26, 32, 44, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.hub-search-result {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.hub-search-result:last-child {
+  border-bottom: none;
+}
+
+.hub-search-result:hover {
+  background: rgba(99, 179, 237, 0.1);
+}
+
+.result-name {
+  color: #e2e8f0;
+  font-size: 12px;
+}
+
+.result-type {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.result-type.station {
+  background: rgba(99, 179, 237, 0.15);
+  color: #90cdf4;
+}
+
+.result-type.structure {
+  background: rgba(237, 137, 54, 0.15);
+  color: #fbd38d;
+}
+
+.hub-search-empty {
+  padding: 12px;
+  text-align: center;
+  color: #718096;
+  font-size: 12px;
 }
 
 /* Search */

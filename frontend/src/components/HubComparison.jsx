@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { getTradeHubs, getHubComparison, addTradeHub, removeTradeHub, toggleTradeHub } from '../services/api';
+import { getTradeHubs, getHubComparison, addTradeHub, removeTradeHub, toggleTradeHub, searchStations } from '../services/api';
 import ExportButton from './ExportButton';
 import './HubComparison.css';
 
@@ -36,8 +36,11 @@ function HubComparison({ onError, refreshKey }) {
   const [comparison, setComparison] = useState(null);
   const [comparing, setComparing] = useState(false);
   const [showManager, setShowManager] = useState(false);
-  const [newHub, setNewHub] = useState({ name: '', stationId: '', regionId: '' });
   const [addingHub, setAddingHub] = useState(false);
+  const [stationSearch, setStationSearch] = useState('');
+  const [stationResults, setStationResults] = useState([]);
+  const [searchingStations, setSearchingStations] = useState(false);
+  const [searchTimeout, setSearchTimeout] = useState(null);
 
   const loadHubs = useCallback(async () => {
     try {
@@ -84,12 +87,33 @@ function HubComparison({ onError, refreshKey }) {
     }
   };
 
-  const handleAddHub = async () => {
-    if (!newHub.name || !newHub.stationId || !newHub.regionId) return;
+  const handleStationSearch = (query) => {
+    setStationSearch(query);
+    if (searchTimeout) clearTimeout(searchTimeout);
+    if (query.length < 2) {
+      setStationResults([]);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      try {
+        setSearchingStations(true);
+        const resp = await searchStations(query);
+        setStationResults(resp.data.results || []);
+      } catch {
+        setStationResults([]);
+      } finally {
+        setSearchingStations(false);
+      }
+    }, 300);
+    setSearchTimeout(timeout);
+  };
+
+  const handleAddFromSearch = async (station) => {
     try {
       setAddingHub(true);
-      await addTradeHub(newHub.name, parseInt(newHub.stationId), parseInt(newHub.regionId));
-      setNewHub({ name: '', stationId: '', regionId: '' });
+      await addTradeHub(station.name, station.station_id, station.region_id);
+      setStationSearch('');
+      setStationResults([]);
       await loadHubs();
     } catch (err) {
       onError?.(err.response?.data?.error || 'Failed to add hub');
@@ -202,28 +226,35 @@ function HubComparison({ onError, refreshKey }) {
               </div>
             ))}
           </div>
-          <div className="hub-add-form">
-            <input
-              type="text"
-              placeholder="Hub name"
-              value={newHub.name}
-              onChange={e => setNewHub({ ...newHub, name: e.target.value })}
-            />
-            <input
-              type="number"
-              placeholder="Station ID"
-              value={newHub.stationId}
-              onChange={e => setNewHub({ ...newHub, stationId: e.target.value })}
-            />
-            <input
-              type="number"
-              placeholder="Region ID"
-              value={newHub.regionId}
-              onChange={e => setNewHub({ ...newHub, regionId: e.target.value })}
-            />
-            <button onClick={handleAddHub} disabled={addingHub || !newHub.name || !newHub.stationId || !newHub.regionId}>
-              {addingHub ? '...' : '+ Add'}
-            </button>
+          <div className="hub-add-search">
+            <div className="hub-search-input-wrap">
+              <input
+                type="text"
+                placeholder="Search station or structure name..."
+                value={stationSearch}
+                onChange={e => handleStationSearch(e.target.value)}
+              />
+              {searchingStations && <span className="search-spinner">...</span>}
+            </div>
+            {stationResults.length > 0 && (
+              <div className="hub-search-results">
+                {stationResults.map(s => (
+                  <div
+                    key={s.station_id}
+                    className="hub-search-result"
+                    onClick={() => !addingHub && handleAddFromSearch(s)}
+                  >
+                    <span className="result-name">{s.name}</span>
+                    <span className={`result-type ${s.type}`}>{s.type === 'structure' ? 'Player Structure' : 'NPC Station'}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {stationSearch.length >= 2 && stationResults.length === 0 && !searchingStations && (
+              <div className="hub-search-results">
+                <div className="hub-search-empty">No stations found matching "{stationSearch}"</div>
+              </div>
+            )}
           </div>
         </div>
       )}

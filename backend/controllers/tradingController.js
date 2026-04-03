@@ -356,9 +356,37 @@ async function autoDetectSkills(req, res) {
   }
 }
 
+async function searchStations(req, res) {
+  try {
+    const query = (req.query.q || '').trim();
+    if (query.length < 2) return res.json({ results: [] });
+
+    const rows = db.searchStations(query, 20);
+
+    // Resolve system_id → region_id for each result
+    const results = rows.map(row => {
+      const systemId = row.extra_data ? parseInt(row.extra_data) : null;
+      const regionId = systemId ? db.getSystemRegion(systemId) : null;
+      return {
+        station_id: row.id,
+        name: row.name,
+        type: row.category, // 'station' or 'structure'
+        system_id: systemId,
+        region_id: regionId,
+      };
+    }).filter(r => r.region_id); // Only return results we can resolve a region for
+
+    res.json({ results });
+  } catch (error) {
+    console.error('Station search error:', error.message);
+    res.status(500).json({ error: 'Failed to search stations' });
+  }
+}
+
 module.exports = {
   requireTradeAccess,
   ensureHubsSeeded,
+  searchStations,
   getHubs,
   addHub,
   removeHub,

@@ -422,6 +422,31 @@ class DB {
     ).all(characterId, ...dates);
   }
 
+  // ===== STATION/STRUCTURE SEARCH =====
+
+  searchStations(query, limit = 20) {
+    // Search both stations and structures in name_cache
+    const rows = this.db.prepare(
+      `SELECT id, name, category, extra_data FROM name_cache
+       WHERE category IN ('station', 'structure') AND name LIKE ?
+       ORDER BY category ASC, name ASC LIMIT ?`
+    ).all(`%${query}%`, limit);
+    return rows;
+  }
+
+  getSystemRegion(systemId) {
+    const row = this.db.prepare(
+      'SELECT extra_data FROM name_cache WHERE id = ? AND category = ?'
+    ).get(systemId, 'system');
+    if (!row?.extra_data) return null;
+    try {
+      const data = JSON.parse(row.extra_data);
+      return data.regionId || null;
+    } catch {
+      return null;
+    }
+  }
+
   // ===== TRADE HUBS =====
 
   // Default hubs seeded per-user on first trading access
