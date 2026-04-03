@@ -90,9 +90,27 @@ function calcExtractorUPH(extractor) {
   return Math.round((qty_per_cycle / cycle_time) * 3600);
 }
 
+// Classify PI tier by item volume (reliable SDE values)
+function getItemTier(volume) {
+  if (!volume || volume <= 0.05) return 'P0';   // 0.01 m³
+  if (volume <= 0.5)  return 'P1';               // 0.38 m³
+  if (volume <= 3.0)  return 'P2';               // 1.50 m³
+  if (volume <= 20.0) return 'P3';               // 6.00 m³
+  return 'P4';                                    // 100.00 m³
+}
+
+const TIER_COLORS = {
+  P0: '#718096',  // gray
+  P1: '#4a9eff',  // blue
+  P2: '#4fd1c5',  // teal
+  P3: '#ecc94b',  // gold
+  P4: '#68d391',  // green
+};
+
 function calcStorageFill(pins) {
   let totalUsed = 0;
   let totalCapacity = 0;
+  const tierUsed = { P0: 0, P1: 0, P2: 0, P3: 0, P4: 0 };
 
   for (const pin of pins) {
     const cap = getStorageCapacity(pin);
@@ -101,15 +119,30 @@ function calcStorageFill(pins) {
     totalCapacity += cap;
     if (pin.contents?.length) {
       for (const item of pin.contents) {
-        // Use volume from backend (SDE data), fallback to DEFAULT_VOLUME
         const vol = item.volume || DEFAULT_VOLUME;
-        totalUsed += vol * item.amount;
+        const used = vol * item.amount;
+        totalUsed += used;
+        tierUsed[getItemTier(vol)] += used;
       }
     }
   }
 
   if (totalCapacity <= 0) return null;
-  return { used: totalUsed, capacity: totalCapacity, pct: Math.min(100, (totalUsed / totalCapacity) * 100) };
+
+  // Build tier segments as percentages of capacity
+  const tiers = [];
+  for (const tier of ['P0', 'P1', 'P2', 'P3', 'P4']) {
+    if (tierUsed[tier] > 0) {
+      tiers.push({
+        tier,
+        used: tierUsed[tier],
+        pct: Math.min(100, (tierUsed[tier] / totalCapacity) * 100),
+        color: TIER_COLORS[tier],
+      });
+    }
+  }
+
+  return { used: totalUsed, capacity: totalCapacity, pct: Math.min(100, (totalUsed / totalCapacity) * 100), tiers };
 }
 
 function getAlertState(pins, expiryDate) {
@@ -403,14 +436,18 @@ function StorageBar({ storage }) {
   if (!storage) return <span className="date-muted">—</span>;
 
   const pct = Math.round(storage.pct);
-  const barColor = pct > 80 ? '#AB324A' : pct > 60 ? '#fbd38d' : '#68d391';
+  const tierTitle = (storage.tiers || []).map(t => `${t.tier}: ${t.pct.toFixed(1)}%`).join(', ');
+  const title = `${storage.used.toFixed(0)} / ${storage.capacity.toFixed(0)} m³${tierTitle ? ' — ' + tierTitle : ''}`;
+  const labelColor = pct > 80 ? '#AB324A' : pct > 60 ? '#fbd38d' : '#68d391';
 
   return (
-    <div className="storage-bar-container" title={`${storage.used.toFixed(0)} / ${storage.capacity.toFixed(0)} m³`}>
+    <div className="storage-bar-container" title={title}>
       <div className="storage-bar-track">
-        <div className="storage-bar-fill" style={{ width: `${pct}%`, backgroundColor: barColor }} />
+        {(storage.tiers || []).map((t, i) => (
+          <div key={t.tier} className="storage-bar-segment" style={{ width: `${t.pct}%`, backgroundColor: t.color }} title={`${t.tier}: ${t.pct.toFixed(1)}%`} />
+        ))}
       </div>
-      <span className="storage-bar-label" style={{ color: barColor }}>{pct}%</span>
+      <span className="storage-bar-label" style={{ color: labelColor }}>{pct}%</span>
     </div>
   );
 }
@@ -985,11 +1022,10 @@ function ColonyCard({ colony, characterName, characterId }) {
   const statusClass = colonyStatus.class;
   const needsAttention = statusClass === 'status-attention' || statusClass === 'status-setup';
 
-  // Fill gauge SVG
-  const fillPct = storage ? storage.pct : 0;
+  // Fill gauge SVG — multi-tier segments
   const radius = 32;
   const circumference = 2 * Math.PI * radius;
-  const fillArc = (fillPct / 100) * circumference;
+  const tierSegments = storage?.tiers || [];
 
   return (
     <div className={`colony-card ${statusClass}`} title={`${characterName} — ${colony.system_name || ''} — ${(colony.planet_type || '').charAt(0).toUpperCase() + (colony.planet_type || '').slice(1)}`}>
@@ -997,15 +1033,18 @@ function ColonyCard({ colony, characterName, characterId }) {
       <div className="colony-card-planet">
         <svg className="colony-card-gauge" viewBox="0 0 80 80">
           <circle cx="40" cy="40" r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
-          {fillPct > 0 && (
-            <circle cx="40" cy="40" r={radius} fill="none"
-              stroke={fillPct > 80 ? '#AB324A' : fillPct > 60 ? '#fbd38d' : '#4a9eff'}
-              strokeWidth="4"
-              strokeDasharray={`${fillArc} ${circumference - fillArc}`}
-              strokeDashoffset={circumference * 0.25}
-              strokeLinecap="round"
-            />
-          )}
+          {tierSegments.map((t, i) => {
+            const arcLen = (t.pct / 100) * circumference;
+            const preceding = tierSegments.slice(0, i).reduce((s, seg) => s + (seg.pct / 100) * circumference, 0);
+            return (
+              <circle key={t.tier} cx="40" cy="40" r={radius} fill="none"
+                stroke={t.color}
+                strokeWidth="4"
+                strokeDasharray={`${arcLen} ${circumference - arcLen}`}
+                strokeDashoffset={circumference * 0.25 - preceding}
+              />
+            );
+          })}
         </svg>
         {getPlanetImageUrl(colony.planet_type) ? (
           <img
