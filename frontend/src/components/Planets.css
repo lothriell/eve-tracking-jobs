@@ -319,6 +319,7 @@
   color: #e2e8f0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   vertical-align: middle;
+  height: 48px;
 }
 
 .colonies-table tbody tr {
@@ -391,9 +392,14 @@
   flex-shrink: 0;
 }
 
+.col-product {
+  min-width: 200px;
+}
+
 .planet-product-name {
   font-size: 12px;
   color: #cbd5e0;
+  white-space: nowrap;
 }
 
 /* Status cell in list view */
