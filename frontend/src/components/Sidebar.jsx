@@ -22,7 +22,8 @@ function applySavedOrder(chars) {
   }
 }
 
-function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, currentView, onViewChange, onCharactersChange, collapsed, onCollapsedChange }) {
+function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, currentView, onViewChange, onCharactersChange, collapsed, onCollapsedChange, characterName }) {
+  const isTradeEnabled = characterName === 'Lothriell';
   const [characters, setCharacters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [linking, setLinking] = useState(false);
@@ -242,6 +243,25 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
             >
               🪐
             </div>
+            {isTradeEnabled && (
+              <>
+                <div className="collapsed-nav-divider" />
+                <div
+                  className={`collapsed-nav-item ${currentView === 'hub-compare' ? 'active' : ''}`}
+                  onClick={() => onViewChange('hub-compare')}
+                  title="Hub Compare"
+                >
+                  📈
+                </div>
+                <div
+                  className={`collapsed-nav-item ${currentView === 'trade-finder' ? 'active' : ''}`}
+                  onClick={() => onViewChange('trade-finder')}
+                  title="Trade Finder"
+                >
+                  💰
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -362,6 +382,25 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
               <span className="nav-icon">🪐</span>
               <span>Planets</span>
             </div>
+            {isTradeEnabled && (
+              <>
+                <div className="nav-header">Trading</div>
+                <div
+                  className={`nav-item ${currentView === 'hub-compare' ? 'active' : ''}`}
+                  onClick={() => onViewChange('hub-compare')}
+                >
+                  <span className="nav-icon">📈</span>
+                  <span>Hub Compare</span>
+                </div>
+                <div
+                  className={`nav-item ${currentView === 'trade-finder' ? 'active' : ''}`}
+                  onClick={() => onViewChange('trade-finder')}
+                >
+                  <span className="nav-icon">💰</span>
+                  <span>Trade Finder</span>
+                </div>
+              </>
+            )}
           </div>
         </>
       )}

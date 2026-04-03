@@ -7,6 +7,8 @@ import CorporationJobs from '../components/CorporationJobs';
 import Assets from '../components/Assets';
 import Planets from '../components/Planets';
 import CharacterPage from '../components/CharacterPage';
+import HubComparison from '../components/HubComparison';
+import TradeFinder from '../components/TradeFinder';
 import './Main.css';
 
 function ServerStatus() {
@@ -101,7 +103,7 @@ function WealthIndicator() {
   );
 }
 
-function Main({ onLogout }) {
+function Main({ onLogout, characterName }) {
   const [error, setError] = useState('');
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
@@ -222,6 +224,10 @@ function Main({ onLogout }) {
         return <Assets onError={setError} refreshKey={refreshKey} />;
       case 'planets':
         return <Planets onError={setError} refreshKey={refreshKey} />;
+      case 'hub-compare':
+        return <HubComparison onError={setError} refreshKey={refreshKey} />;
+      case 'trade-finder':
+        return <TradeFinder onError={setError} refreshKey={refreshKey} />;
       case 'dashboard':
       default:
         return <Dashboard onError={setError} refreshKey={refreshKey} />;
@@ -238,6 +244,7 @@ function Main({ onLogout }) {
         onViewChange={handleViewChange}
         collapsed={sidebarCollapsed}
         onCollapsedChange={setSidebarCollapsed}
+        characterName={characterName}
       />
 
       <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>

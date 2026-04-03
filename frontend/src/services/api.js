@@ -169,4 +169,42 @@ export const getCustomsOffices = (characterId) => {
   return api.get(`/api/planets/customs?characterId=${characterId}`);
 };
 
+// ===== TRADING ENDPOINTS =====
+
+export const getTradeHubs = () => {
+  return api.get('/api/trading/hubs');
+};
+
+export const addTradeHub = (name, stationId, regionId) => {
+  return api.post('/api/trading/hubs', { name, stationId, regionId });
+};
+
+export const removeTradeHub = (hubId) => {
+  return api.delete(`/api/trading/hubs/${hubId}`);
+};
+
+export const toggleTradeHub = (hubId, enabled) => {
+  return api.put(`/api/trading/hubs/${hubId}`, { enabled });
+};
+
+export const getHubComparison = (typeId) => {
+  return api.get(`/api/trading/compare/${typeId}`);
+};
+
+export const findTrades = (params) => {
+  return api.get('/api/trading/find', { params });
+};
+
+export const getTradeSettings = (characterId) => {
+  return api.get(`/api/trading/settings?characterId=${characterId}`);
+};
+
+export const updateTradeSettings = (settings) => {
+  return api.put('/api/trading/settings', settings);
+};
+
+export const autoDetectTradeSkills = (characterId) => {
+  return api.get(`/api/trading/settings/auto?characterId=${characterId}`);
+};
+
 export default api;

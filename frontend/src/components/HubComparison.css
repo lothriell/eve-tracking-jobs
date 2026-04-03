@@ -1,0 +1,353 @@
+.hub-comparison-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.hub-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #a0aec0;
+}
+
+.hub-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  margin-bottom: 10px;
+}
+
+.hub-toolbar h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #e2e8f0;
+}
+
+.hub-toolbar-left, .hub-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hub-manager-btn {
+  padding: 5px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #a0aec0;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.hub-manager-btn:hover, .hub-manager-btn.active {
+  background: rgba(99, 179, 237, 0.15);
+  border-color: rgba(99, 179, 237, 0.4);
+  color: #90cdf4;
+}
+
+/* Hub Manager Panel */
+.hub-manager-panel {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.hub-manager-header h3 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #a0aec0;
+}
+
+.hub-manager-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.hub-manager-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+}
+
+.hub-manager-item.disabled {
+  opacity: 0.5;
+}
+
+.hub-manager-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hub-name {
+  color: #e2e8f0;
+  font-size: 13px;
+}
+
+.hub-badge {
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.hub-badge.default {
+  background: rgba(99, 179, 237, 0.2);
+  color: #90cdf4;
+}
+
+.hub-badge.structure {
+  background: rgba(237, 137, 54, 0.2);
+  color: #fbd38d;
+}
+
+.hub-status {
+  font-size: 11px;
+  color: #718096;
+}
+
+.hub-status.ok { color: #68d391; }
+.hub-status.error { color: #fc8181; }
+.hub-status.pending { color: #a0aec0; }
+
+.hub-manager-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.hub-toggle-btn {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid;
+}
+
+.hub-toggle-btn.on {
+  background: rgba(72, 187, 120, 0.2);
+  border-color: rgba(72, 187, 120, 0.4);
+  color: #68d391;
+}
+
+.hub-toggle-btn.off {
+  background: rgba(160, 174, 192, 0.1);
+  border-color: rgba(160, 174, 192, 0.3);
+  color: #718096;
+}
+
+.hub-remove-btn {
+  padding: 2px 8px;
+  background: rgba(245, 101, 101, 0.15);
+  border: 1px solid rgba(245, 101, 101, 0.3);
+  border-radius: 4px;
+  color: #fc8181;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.hub-remove-btn:hover {
+  background: rgba(245, 101, 101, 0.3);
+}
+
+.hub-add-form {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.hub-add-form input {
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 12px;
+  flex: 1;
+}
+
+.hub-add-form input::placeholder {
+  color: #4a5568;
+}
+
+.hub-add-form button {
+  padding: 6px 14px;
+  background: rgba(99, 179, 237, 0.2);
+  border: 1px solid rgba(99, 179, 237, 0.4);
+  border-radius: 6px;
+  color: #90cdf4;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.hub-add-form button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Search */
+.hub-search {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.hub-search input {
+  flex: 1;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 14px;
+}
+
+.hub-search input::placeholder {
+  color: #4a5568;
+}
+
+.hub-search input:focus {
+  outline: none;
+  border-color: rgba(99, 179, 237, 0.5);
+}
+
+.hub-search button {
+  padding: 10px 20px;
+  background: rgba(99, 179, 237, 0.2);
+  border: 1px solid rgba(99, 179, 237, 0.4);
+  border-radius: 8px;
+  color: #90cdf4;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.hub-search button:hover:not(:disabled) {
+  background: rgba(99, 179, 237, 0.3);
+}
+
+.hub-search button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Quick search */
+.hub-quick-search {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.quick-btn {
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #a0aec0;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.quick-btn:hover, .quick-btn.active {
+  background: rgba(99, 179, 237, 0.15);
+  border-color: rgba(99, 179, 237, 0.4);
+  color: #90cdf4;
+}
+
+/* Results Table */
+.hub-comparison-results h3 {
+  margin: 0 0 12px 0;
+  color: #e2e8f0;
+  font-size: 16px;
+}
+
+.type-id-label {
+  font-size: 12px;
+  color: #718096;
+  font-weight: normal;
+}
+
+.hub-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.hub-table th {
+  padding: 10px 12px;
+  text-align: left;
+  color: #a0aec0;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hub-table th.num, .hub-table td.num {
+  text-align: right;
+}
+
+.hub-table td {
+  padding: 10px 12px;
+  color: #e2e8f0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.hub-table tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.hub-name-cell {
+  font-weight: 500;
+}
+
+.best-price {
+  color: #68d391 !important;
+  font-weight: 600;
+}
+
+.refresh-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.refresh-badge.ok {
+  background: rgba(72, 187, 120, 0.15);
+  color: #68d391;
+}
+
+.refresh-badge.error {
+  background: rgba(245, 101, 101, 0.15);
+  color: #fc8181;
+}
+
+.refresh-badge.pending {
+  background: rgba(160, 174, 192, 0.1);
+  color: #a0aec0;
+}
+
+.hub-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #718096;
+}
+
+.hub-empty p {
+  font-size: 14px;
+}

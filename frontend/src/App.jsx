@@ -6,6 +6,7 @@ import './App.css';
 
 function App() {
   const [authenticated, setAuthenticated] = useState(false);
+  const [characterName, setCharacterName] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -16,6 +17,7 @@ function App() {
     try {
       const response = await checkAuth();
       setAuthenticated(response.data.authenticated);
+      if (response.data.characterName) setCharacterName(response.data.characterName);
     } catch (error) {
       console.error('Auth check failed:', error);
       setAuthenticated(false);
@@ -37,7 +39,7 @@ function App() {
     return <Login />;
   }
 
-  return <Main onLogout={() => setAuthenticated(false)} />;
+  return <Main onLogout={() => setAuthenticated(false)} characterName={characterName} />;
 }
 
 export default App;
