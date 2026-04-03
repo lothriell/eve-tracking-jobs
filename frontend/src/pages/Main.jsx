@@ -112,18 +112,27 @@ function Main({ onLogout }) {
     return saved && saved !== 'null' ? parseInt(saved) : null;
   });
   const [autoRefreshDropdown, setAutoRefreshDropdown] = useState(false);
+  const [countdown, setCountdown] = useState(null);
   const autoRefreshTimerRef = useRef(null);
+  const nextRefreshRef = useRef(null);
 
   const handleRefresh = useCallback(() => {
     setRefreshKey(k => k + 1);
-  }, []);
+    // Reset countdown on manual refresh
+    if (autoRefreshInterval) {
+      nextRefreshRef.current = Date.now() + autoRefreshInterval * 60 * 1000;
+    }
+  }, [autoRefreshInterval]);
 
   const handleAutoRefreshChange = (minutes) => {
     setAutoRefreshInterval(minutes);
     if (minutes) {
       localStorage.setItem('globalAutoRefresh', minutes.toString());
+      nextRefreshRef.current = Date.now() + minutes * 60 * 1000;
     } else {
       localStorage.removeItem('globalAutoRefresh');
+      nextRefreshRef.current = null;
+      setCountdown(null);
     }
     setAutoRefreshDropdown(false);
   };
@@ -131,10 +140,26 @@ function Main({ onLogout }) {
   useEffect(() => {
     if (autoRefreshTimerRef.current) clearInterval(autoRefreshTimerRef.current);
     if (!autoRefreshInterval) return;
+    nextRefreshRef.current = Date.now() + autoRefreshInterval * 60 * 1000;
     autoRefreshTimerRef.current = setInterval(() => {
       setRefreshKey(k => k + 1);
+      nextRefreshRef.current = Date.now() + autoRefreshInterval * 60 * 1000;
     }, autoRefreshInterval * 60 * 1000);
     return () => clearInterval(autoRefreshTimerRef.current);
+  }, [autoRefreshInterval]);
+
+  // Countdown tick
+  useEffect(() => {
+    if (!autoRefreshInterval) return;
+    const tick = setInterval(() => {
+      if (nextRefreshRef.current) {
+        const remaining = Math.max(0, nextRefreshRef.current - Date.now());
+        const m = Math.floor(remaining / 60000);
+        const s = Math.floor((remaining % 60000) / 1000);
+        setCountdown(`${m}:${s.toString().padStart(2, '0')}`);
+      }
+    }, 1000);
+    return () => clearInterval(tick);
   }, [autoRefreshInterval]);
 
   useEffect(() => {
@@ -234,7 +259,7 @@ function Main({ onLogout }) {
                 onClick={() => setAutoRefreshDropdown(!autoRefreshDropdown)}
               >
                 <span className={`refresh-icon ${autoRefreshInterval ? 'spinning' : ''}`}>⟳</span>
-                {autoRefreshInterval ? `${autoRefreshInterval}m` : 'Off'}
+                {autoRefreshInterval ? <><span className="auto-refresh-interval">{autoRefreshInterval}m</span><span className="auto-refresh-countdown">{countdown}</span></> : 'Off'}
               </button>
               {autoRefreshDropdown && (
                 <div className="auto-refresh-dropdown">

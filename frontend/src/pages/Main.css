@@ -195,7 +195,7 @@
 .auto-refresh-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   padding: 6px 12px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -204,6 +204,18 @@
   font-size: 12px;
   cursor: pointer;
   transition: all 0.2s;
+  min-width: 105px;
+  justify-content: center;
+}
+
+.auto-refresh-interval {
+  color: #a3bffa;
+}
+
+.auto-refresh-countdown {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 11px;
+  color: #718096;
 }
 
 .auto-refresh-btn:hover {
