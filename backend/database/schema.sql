@@ -179,6 +179,26 @@ CREATE TABLE IF NOT EXISTS trade_settings (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Blueprint manufacturing products (blueprint_id → product_id)
+CREATE TABLE IF NOT EXISTS blueprint_products (
+    blueprint_id INTEGER NOT NULL,
+    activity_id INTEGER NOT NULL,
+    product_type_id INTEGER NOT NULL,
+    quantity INTEGER DEFAULT 1,
+    PRIMARY KEY (blueprint_id, activity_id, product_type_id)
+);
+CREATE INDEX IF NOT EXISTS idx_bp_product ON blueprint_products(product_type_id, activity_id);
+
+-- Blueprint manufacturing materials (blueprint_id → required materials)
+CREATE TABLE IF NOT EXISTS blueprint_materials (
+    blueprint_id INTEGER NOT NULL,
+    activity_id INTEGER NOT NULL,
+    material_type_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL,
+    PRIMARY KEY (blueprint_id, activity_id, material_type_id)
+);
+CREATE INDEX IF NOT EXISTS idx_bp_materials ON blueprint_materials(blueprint_id, activity_id);
+
 -- Hub refresh tracking (keyed by station_id, shared globally)
 CREATE TABLE IF NOT EXISTS hub_refresh_status (
     station_id INTEGER PRIMARY KEY,

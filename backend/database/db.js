@@ -422,6 +422,51 @@ class DB {
     ).all(characterId, ...dates);
   }
 
+  // ===== BLUEPRINTS =====
+
+  saveBlueprintProducts(entries) {
+    const stmt = this.db.prepare(
+      'INSERT OR REPLACE INTO blueprint_products (blueprint_id, activity_id, product_type_id, quantity) VALUES (?, ?, ?, ?)'
+    );
+    const batch = this.db.transaction((items) => {
+      for (const item of items) {
+        stmt.run(item.blueprint_id, item.activity_id, item.product_type_id, item.quantity);
+      }
+    });
+    batch(entries);
+    return entries.length;
+  }
+
+  saveBlueprintMaterials(entries) {
+    const stmt = this.db.prepare(
+      'INSERT OR REPLACE INTO blueprint_materials (blueprint_id, activity_id, material_type_id, quantity) VALUES (?, ?, ?, ?)'
+    );
+    const batch = this.db.transaction((items) => {
+      for (const item of items) {
+        stmt.run(item.blueprint_id, item.activity_id, item.material_type_id, item.quantity);
+      }
+    });
+    batch(entries);
+    return entries.length;
+  }
+
+  getBlueprintForProduct(productTypeId, activityId = 1) {
+    return this.db.prepare(
+      'SELECT blueprint_id, quantity FROM blueprint_products WHERE product_type_id = ? AND activity_id = ?'
+    ).get(productTypeId, activityId);
+  }
+
+  getBlueprintMaterials(blueprintId, activityId = 1) {
+    return this.db.prepare(
+      'SELECT material_type_id, quantity FROM blueprint_materials WHERE blueprint_id = ? AND activity_id = ?'
+    ).all(blueprintId, activityId);
+  }
+
+  getBlueprintProductsCount() {
+    const row = this.db.prepare('SELECT COUNT(*) as count FROM blueprint_products').get();
+    return row?.count || 0;
+  }
+
   // ===== TYPE SEARCH =====
 
   searchTypes(query, limit = 20) {

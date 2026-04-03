@@ -403,6 +403,135 @@ async function searchStations(req, res) {
   }
 }
 
+async function buildVsBuy(req, res) {
+  try {
+    const productTypeId = parseInt(req.query.typeId);
+    const quantity = parseInt(req.query.quantity) || 1;
+    const shippingFlatFee = parseFloat(req.query.shippingFee) || 25000000;
+    const collateralPct = parseFloat(req.query.collateralPct) || 0;
+    const jfCapacity = parseFloat(req.query.jfCapacity) || 225000;
+    const destSellPrice = parseFloat(req.query.destPrice) || 0;
+
+    if (!productTypeId) return res.status(400).json({ error: 'typeId required' });
+
+    // Find the blueprint that makes this product
+    const bp = db.getBlueprintForProduct(productTypeId);
+    if (!bp) return res.status(404).json({ error: 'No manufacturing blueprint found for this item' });
+
+    // Get materials needed
+    const materials = db.getBlueprintMaterials(bp.blueprint_id);
+    if (!materials || materials.length === 0) {
+      return res.status(404).json({ error: 'No material requirements found' });
+    }
+
+    // Get all type IDs we need prices and names for
+    const allTypeIds = [productTypeId, ...materials.map(m => m.material_type_id)];
+    const typeNames = await getTypeNames(allTypeIds);
+
+    // Get Jita prices for product + all materials
+    const jitaPrices = {};
+    for (const typeId of allTypeIds) {
+      const p = db.getHubPrices(60003760, [typeId]); // Jita
+      jitaPrices[typeId] = p[typeId] || null;
+    }
+
+    // Get volumes from SDE
+    const volumes = {};
+    const volRows = db.db.prepare(
+      `SELECT id, extra_data FROM name_cache WHERE category = 'type' AND id IN (${allTypeIds.map(() => '?').join(',')})`
+    ).all(...allTypeIds);
+    for (const row of volRows) {
+      volumes[row.id] = row.extra_data ? parseFloat(row.extra_data) : 0;
+    }
+
+    const productJitaPrice = jitaPrices[productTypeId]?.sell_min || 0;
+    const productVolume = volumes[productTypeId] || 0;
+
+    // === PATH A: Import finished product ===
+    const importTotalM3 = productVolume * quantity;
+    const importJfLoads = Math.ceil(importTotalM3 / jfCapacity);
+    const importShipping = importJfLoads * shippingFlatFee;
+    const importCollateral = productJitaPrice * quantity * collateralPct / 100;
+    const importBuyCost = productJitaPrice * quantity;
+    const importTotalCost = importBuyCost + importShipping + importCollateral;
+
+    // === PATH B: Import components, build locally ===
+    const materialDetails = materials.map(m => {
+      const qtyNeeded = m.quantity * quantity;
+      const price = jitaPrices[m.material_type_id]?.sell_min || 0;
+      const vol = volumes[m.material_type_id] || 0;
+      return {
+        type_id: m.material_type_id,
+        type_name: typeNames[m.material_type_id] || `Type ${m.material_type_id}`,
+        quantity_per_unit: m.quantity,
+        quantity_total: qtyNeeded,
+        unit_price: price,
+        total_price: price * qtyNeeded,
+        volume_per_unit: vol,
+        total_volume: vol * qtyNeeded,
+      };
+    });
+
+    const buildMaterialCost = materialDetails.reduce((s, m) => s + m.total_price, 0);
+    const buildTotalM3 = materialDetails.reduce((s, m) => s + m.total_volume, 0);
+    const buildJfLoads = Math.ceil(buildTotalM3 / jfCapacity);
+    const buildShipping = buildJfLoads * shippingFlatFee;
+    const buildCollateral = buildMaterialCost * collateralPct / 100;
+    const buildTotalCost = buildMaterialCost + buildShipping + buildCollateral;
+
+    // === COMPARISON ===
+    const savings = importTotalCost - buildTotalCost;
+    const sellRevenue = destSellPrice > 0 ? destSellPrice * quantity : 0;
+    const importProfit = sellRevenue > 0 ? sellRevenue - importTotalCost : null;
+    const buildProfit = sellRevenue > 0 ? sellRevenue - buildTotalCost : null;
+
+    res.json({
+      product: {
+        type_id: productTypeId,
+        type_name: typeNames[productTypeId] || `Type ${productTypeId}`,
+        quantity,
+        jita_price: productJitaPrice,
+        volume_m3: productVolume,
+        dest_sell_price: destSellPrice || null,
+      },
+      import_finished: {
+        buy_cost: importBuyCost,
+        total_m3: importTotalM3,
+        jf_loads: importJfLoads,
+        shipping: importShipping,
+        collateral: importCollateral,
+        total_cost: importTotalCost,
+        cost_per_unit: importTotalCost / quantity,
+        profit: importProfit,
+        profit_per_unit: importProfit !== null ? importProfit / quantity : null,
+      },
+      build_locally: {
+        material_cost: buildMaterialCost,
+        total_m3: buildTotalM3,
+        jf_loads: buildJfLoads,
+        shipping: buildShipping,
+        collateral: buildCollateral,
+        total_cost: buildTotalCost,
+        cost_per_unit: buildTotalCost / quantity,
+        profit: buildProfit,
+        profit_per_unit: buildProfit !== null ? buildProfit / quantity : null,
+        materials: materialDetails,
+      },
+      comparison: {
+        savings_from_building: savings,
+        savings_per_unit: savings / quantity,
+        m3_saved: importTotalM3 - buildTotalM3,
+        jf_loads_saved: importJfLoads - buildJfLoads,
+        recommendation: savings > 0 ? 'BUILD' : 'IMPORT',
+      },
+      config: { shippingFlatFee, collateralPct, jfCapacity },
+    });
+  } catch (error) {
+    console.error('Build vs Buy error:', error.message);
+    res.status(500).json({ error: 'Failed to calculate build vs buy' });
+  }
+}
+
 async function stockAnalysis(req, res) {
   try {
     const sourceHubId = parseInt(req.query.source);
@@ -546,6 +675,7 @@ module.exports = {
   ensureHubsSeeded,
   searchTypes,
   searchStations,
+  buildVsBuy,
   stockAnalysis,
   getHubs,
   addHub,

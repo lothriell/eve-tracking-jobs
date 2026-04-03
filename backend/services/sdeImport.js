@@ -263,6 +263,60 @@ async function importPlanetSchematics() {
   }
 }
 
+// Import blueprint products + materials (manufacturing data)
+async function importBlueprints() {
+  try {
+    // Products: blueprint_id → what it produces
+    const productsCsv = await downloadCSV('industryActivityProducts.csv');
+    const productRows = parseCSV(productsCsv);
+
+    const productEntries = [];
+    for (const row of productRows) {
+      const blueprintId = parseInt(row.typeID);
+      const activityId = parseInt(row.activityID);
+      const productTypeId = parseInt(row.productTypeID);
+      const quantity = parseInt(row.quantity) || 1;
+      if (blueprintId && activityId && productTypeId) {
+        productEntries.push({ blueprint_id: blueprintId, activity_id: activityId, product_type_id: productTypeId, quantity });
+      }
+    }
+
+    if (productEntries.length > 0) {
+      for (let i = 0; i < productEntries.length; i += 5000) {
+        db.saveBlueprintProducts(productEntries.slice(i, i + 5000));
+      }
+      console.log(`[SDE] Blueprint products: ${productEntries.length} entries imported`);
+    }
+
+    // Materials: blueprint_id → what it requires
+    const materialsCsv = await downloadCSV('industryActivityMaterials.csv');
+    const materialRows = parseCSV(materialsCsv);
+
+    const materialEntries = [];
+    for (const row of materialRows) {
+      const blueprintId = parseInt(row.typeID);
+      const activityId = parseInt(row.activityID);
+      const materialTypeId = parseInt(row.materialTypeID);
+      const quantity = parseInt(row.quantity) || 0;
+      if (blueprintId && activityId && materialTypeId && quantity > 0) {
+        materialEntries.push({ blueprint_id: blueprintId, activity_id: activityId, material_type_id: materialTypeId, quantity });
+      }
+    }
+
+    if (materialEntries.length > 0) {
+      for (let i = 0; i < materialEntries.length; i += 5000) {
+        db.saveBlueprintMaterials(materialEntries.slice(i, i + 5000));
+      }
+      console.log(`[SDE] Blueprint materials: ${materialEntries.length} entries imported`);
+    }
+
+    return productEntries.length + materialEntries.length;
+  } catch (error) {
+    console.error('[SDE] Failed to import blueprints:', error.message);
+    return 0;
+  }
+}
+
 // ===== MAIN IMPORT FUNCTION =====
 
 async function importSDE() {
@@ -274,11 +328,19 @@ async function importSDE() {
   const sampleType = db.getCachedName(11, 'type'); // Planet (Temperate)
   const hasVolumes = sampleType && sampleType.extra_data;
 
-  // Check if planet schematics need importing
+  // Check if planet schematics and blueprints need importing
   const schematicsCount = db.getPlanetSchematicsCount();
+  const blueprintsCount = db.getBlueprintProductsCount();
 
-  if (typeCount > 50000 && hasVolumes && schematicsCount > 0) {
-    console.log(`[SDE] Already have ${typeCount} types cached with volumes + ${schematicsCount} schematic entries, skipping SDE import`);
+  if (typeCount > 50000 && hasVolumes && schematicsCount > 0 && blueprintsCount > 0) {
+    console.log(`[SDE] Already have ${typeCount} types + ${schematicsCount} schematics + ${blueprintsCount} blueprints, skipping SDE import`);
+    return;
+  }
+
+  if (typeCount > 50000 && hasVolumes && schematicsCount > 0 && blueprintsCount === 0) {
+    console.log(`[SDE] Types + schematics exist but blueprints missing — importing blueprints only`);
+    const count = await importBlueprints();
+    console.log(`[SDE] Blueprints: ${count} entries imported`);
     return;
   }
 
@@ -302,7 +364,8 @@ async function importSDE() {
     systems: await importSystems(),
     regions: await importRegions(),
     constellations: await importConstellations(),
-    schematics: await importPlanetSchematics()
+    schematics: await importPlanetSchematics(),
+    blueprints: await importBlueprints()
   };
 
   const elapsed = ((Date.now() - start) / 1000).toFixed(1);
@@ -313,6 +376,7 @@ async function importSDE() {
   console.log(`[SDE]   Regions: ${results.regions}`);
   console.log(`[SDE]   Constellations: ${results.constellations}`);
   console.log(`[SDE]   Planet schematics: ${results.schematics}`);
+  console.log(`[SDE]   Blueprints: ${results.blueprints}`);
 
   return results;
 }
@@ -324,5 +388,6 @@ module.exports = {
   importSystems,
   importRegions,
   importConstellations,
-  importPlanetSchematics
+  importPlanetSchematics,
+  importBlueprints
 };
