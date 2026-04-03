@@ -377,6 +377,12 @@
   font-size: 16px;
 }
 
+.comparison-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .type-id-label {
   font-size: 12px;
   color: #718096;

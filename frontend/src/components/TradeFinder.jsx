@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { getTradeHubs, findTrades, getAllCharacters, autoDetectTradeSkills, getTradeSettings, updateTradeSettings } from '../services/api';
 import ExportButton from './ExportButton';
+import ExternalLinks from './ExternalLinks';
 import './TradeFinder.css';
 
 function formatISK(value) {
@@ -326,6 +327,7 @@ function TradeFinder({ onError, refreshKey }) {
                 <tr key={`${opp.type_id}-${opp.dest_hub_id || i}`}>
                   <td className="item-name">
                     <span>{opp.type_name}</span>
+                    <ExternalLinks type="item" typeId={opp.type_id} />
                     <span className="type-id-small">{opp.type_id}</span>
                   </td>
                   {destHub === 'all' && <td className="dest-hub">{opp.dest_hub_name}</td>}

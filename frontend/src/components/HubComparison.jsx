@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { getTradeHubs, getHubComparison, addTradeHub, removeTradeHub, toggleTradeHub, searchStations, searchTypes } from '../services/api';
 import ExportButton from './ExportButton';
+import ExternalLinks from './ExternalLinks';
 import './HubComparison.css';
 
 function formatISK(value) {
@@ -335,9 +336,10 @@ function HubComparison({ onError, refreshKey }) {
       {/* Comparison Table */}
       {comparison && (
         <div className="hub-comparison-results">
-          <h3>
+          <h3 className="comparison-title">
             {comparison.type_name}
             <span className="type-id-label"> (ID: {comparison.type_id})</span>
+            <ExternalLinks type="item" typeId={comparison.type_id} />
           </h3>
           <table className="hub-table">
             <thead>
