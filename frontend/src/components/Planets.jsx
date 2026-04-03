@@ -237,8 +237,15 @@ function ExtractionGraph({ extractor }) {
     const { outputs, totalCycles, currentCycle } = prediction;
     const maxVal = Math.max(...outputs, 1);
 
-    const w = canvas.width;
-    const h = canvas.height;
+    // Scale canvas for sharp rendering on HiDPI displays
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+
+    const w = rect.width;
+    const h = rect.height;
     const leftPad = 50;
     const bottomPad = 4;
     const graphW = w - leftPad;
@@ -304,7 +311,7 @@ function ExtractionGraph({ extractor }) {
     const rect = canvasRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const leftPad = 50;
-    const graphW = canvasRef.current.width - leftPad;
+    const graphW = rect.width - leftPad;
     const barW = graphW / prediction.totalCycles;
     const idx = Math.floor((x - leftPad) / barW);
     if (idx >= 0 && idx < prediction.totalCycles) {
@@ -322,8 +329,6 @@ function ExtractionGraph({ extractor }) {
     <div className="extraction-graph-container">
       <canvas
         ref={canvasRef}
-        width={400}
-        height={120}
         className="extraction-graph-canvas"
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setHover(null)}
