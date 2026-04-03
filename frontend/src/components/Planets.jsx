@@ -781,7 +781,7 @@ function getFactoryTier(pinTypeName, hasBasicFactories) {
 function getFinalProducts(pins) {
   if (!pins || pins.length === 0) return [];
 
-  const factoryPins = pins.filter(p => p.factory_details?.output_type_id);
+  const factoryPins = pins.filter(p => p.factory_details?.output_type_id || p.schematic_id);
   if (factoryPins.length === 0) return [];
 
   // Check if colony has Basic factories (P0→P1 chain, meaning Advanced = P2)
@@ -790,8 +790,9 @@ function getFinalProducts(pins) {
   // Collect unique outputs with tier info
   const outputs = {};
   for (const pin of factoryPins) {
-    const fd = pin.factory_details;
+    const fd = pin.factory_details || {};
     const typeId = fd.output_type_id;
+    if (!typeId) continue; // Skip if no output resolved
     const tier = getFactoryTier(pin.type_name, hasBasicFactories);
     if (!outputs[typeId] || tierRank(tier) > tierRank(outputs[typeId].tier)) {
       outputs[typeId] = {
@@ -834,9 +835,9 @@ function getPinStatus(pin, routes, now) {
     return 'inactive';
   }
 
-  if (pin.factory_details) {
+  if (pin.factory_details || pin.schematic_id) {
     // Factory pin
-    if (!pin.factory_details.schematic_id) return 'not-setup';
+    if (!pin.schematic_id && !pin.factory_details?.schematic_id) return 'not-setup';
     // Check input routing — factory needs at least one incoming route
     const hasInput = routes.some(r => r.destination_pin_id === pinId);
     if (!hasInput) return 'input-not-routed';
@@ -934,7 +935,7 @@ function ColonyCard({ colony, characterName, characterId }) {
   const pins = layout?.pins || [];
   const routes = layout?.routes || [];
   const extractorPins = pins.filter(p => p.extractor_details);
-  const factoryPins = pins.filter(p => p.factory_details);
+  const factoryPins = pins.filter(p => p.factory_details || p.schematic_id);
   const storage = pins.length > 0 ? calcStorageFill(pins) : null;
   const totalUPH = extractorPins.reduce((s, p) => s + calcExtractorUPH(p), 0);
   const finalProducts = getFinalProducts(pins);

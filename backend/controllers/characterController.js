@@ -1297,14 +1297,16 @@ exports.getColonyLayout = async (req, res) => {
         typeIds.add(pin.extractor_details.product_type_id);
       }
       // Resolve factory schematic output type + cycle time
-      if (pin.factory_details?.schematic_id) {
-        const output = db.getSchematicOutput(pin.factory_details.schematic_id);
+      // ESI puts schematic_id at pin top level (not in factory_details)
+      if (pin.schematic_id) {
+        if (!pin.factory_details) pin.factory_details = { schematic_id: pin.schematic_id };
+        const output = db.getSchematicOutput(pin.schematic_id);
         if (output) {
           pin.factory_details.output_type_id = output.type_id;
           pin.factory_details.output_quantity = output.quantity;
           typeIds.add(output.type_id);
         }
-        const info = db.getSchematicInfo(pin.factory_details.schematic_id);
+        const info = db.getSchematicInfo(pin.schematic_id);
         if (info) {
           pin.factory_details.cycle_time = info.cycle_time;
           pin.factory_details.schematic_name = info.schematic_name;
@@ -1339,7 +1341,7 @@ exports.getColonyLayout = async (req, res) => {
         pin.extractor_details.product_name = typeNames[pin.extractor_details.product_type_id] || null;
       }
       if (pin.factory_details?.output_type_id) {
-        pin.factory_details.output_name = typeNames[pin.factory_details.output_type_id] || null;
+        pin.factory_details.output_name = typeNames[pin.factory_details.output_type_id] || `Type ${pin.factory_details.output_type_id}`;
       }
     });
 
