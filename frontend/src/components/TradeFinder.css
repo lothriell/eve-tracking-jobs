@@ -47,6 +47,24 @@
   background: rgba(72, 187, 120, 0.3);
 }
 
+/* Freshness */
+.trade-freshness {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  margin-bottom: 10px;
+}
+
+.trade-freshness.fresh {
+  background: rgba(72, 187, 120, 0.08);
+  color: #68d391;
+}
+
+.trade-freshness.stale {
+  background: rgba(237, 137, 54, 0.12);
+  color: #fbd38d;
+}
+
 /* Controls */
 .trade-controls {
   background: rgba(0, 0, 0, 0.2);

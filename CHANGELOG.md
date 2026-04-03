@@ -2,6 +2,25 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.8.0] - 2026-04-04
+
+### Trading Feature — Hub Comparison + Trade Finder (owner-locked)
+- **Multi-hub market data** — fetches orders for all configured trade hubs across 5+ regions every 30 minutes
+- **Configurable hubs** — 5 default NPC trade hubs (Jita, Amarr, Dodixie, Rens, Hek) + add custom player structures (nullsec alliance hubs)
+- **Station search** — search by name with auto-resolve of station → system → region chain, no manual ID entry
+- **Hub Comparison view** — compare item prices across all hubs with best-price highlighting, spread calculation
+- **Item name search** — type-ahead autocomplete for 50K+ EVE item types
+- **Trade Finder** — find arbitrage opportunities between hub pairs (Type A buy-order / Type B instant-relist)
+- **Trade calculator** — broker fee + sales tax calculation with EVE-accurate skill formulas
+- **Auto-detect skills** — pull Accounting/Broker Relations/Advanced Broker Relations levels from ESI
+- **Multi-buy export** — copy item list to clipboard in EVE in-game multi-buy format
+- **CSV/JSON export** — export trade opportunities and hub comparisons
+- **Filters** — min ROI%, min profit, max buy price, min volume, sortable columns
+- **Data freshness** — per-hub refresh status indicators, stale data warnings (>1h)
+- **Access control** — entire trading feature locked to Lothriell (403 for all other users, hidden from sidebar)
+- New DB tables: trade_hubs, hub_prices, hub_refresh_status, trade_settings
+- New backend: tradeCalculator.js, tradingController.js, 10 API endpoints
+
 ## [v5.7.0] - 2026-04-03
 
 ### Planetary Industry — Grid View Upgrade

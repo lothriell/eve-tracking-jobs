@@ -145,6 +145,14 @@ function TradeFinder({ onError, refreshKey }) {
 
   const enabledHubs = hubs.filter(h => h.enabled);
 
+  // Data freshness check
+  const oldestRefresh = enabledHubs.reduce((oldest, h) => {
+    const t = h.refresh?.last_refresh_at ? new Date(h.refresh.last_refresh_at + 'Z').getTime() : 0;
+    return t > 0 && (oldest === 0 || t < oldest) ? t : oldest;
+  }, 0);
+  const dataAge = oldestRefresh > 0 ? Math.floor((Date.now() - oldestRefresh) / 60000) : null;
+  const isStale = dataAge !== null && dataAge > 60;
+
   if (loading) {
     return (
       <div className="trade-finder-container">
@@ -190,6 +198,14 @@ function TradeFinder({ onError, refreshKey }) {
           )}
         </div>
       </div>
+
+      {/* Data freshness */}
+      {dataAge !== null && (
+        <div className={`trade-freshness ${isStale ? 'stale' : 'fresh'}`}>
+          {isStale ? '⚠ ' : ''}Market data updated {dataAge < 1 ? 'just now' : dataAge < 60 ? `${dataAge}m ago` : `${Math.floor(dataAge / 60)}h ${dataAge % 60}m ago`}
+          {isStale && ' — prices may be outdated'}
+        </div>
+      )}
 
       {/* Controls */}
       <div className="trade-controls">

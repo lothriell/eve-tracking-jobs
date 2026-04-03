@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { getTradeHubs, getHubComparison, addTradeHub, removeTradeHub, toggleTradeHub, searchStations } from '../services/api';
+import { getTradeHubs, getHubComparison, addTradeHub, removeTradeHub, toggleTradeHub, searchStations, searchTypes } from '../services/api';
 import ExportButton from './ExportButton';
 import './HubComparison.css';
 
@@ -35,6 +35,9 @@ function HubComparison({ onError, refreshKey }) {
   const [searchTypeId, setSearchTypeId] = useState(null);
   const [comparison, setComparison] = useState(null);
   const [comparing, setComparing] = useState(false);
+  const [typeResults, setTypeResults] = useState([]);
+  const [typeSearchTimeout, setTypeSearchTimeout] = useState(null);
+  const [searchingTypes, setSearchingTypes] = useState(false);
   const [showManager, setShowManager] = useState(false);
   const [addingHub, setAddingHub] = useState(false);
   const [stationSearch, setStationSearch] = useState('');
@@ -58,20 +61,45 @@ function HubComparison({ onError, refreshKey }) {
 
   useEffect(() => { loadHubs(); }, [loadHubs, refreshKey]);
 
+  const handleSearchInput = (value) => {
+    setSearchText(value);
+    setTypeResults([]);
+    if (typeSearchTimeout) clearTimeout(typeSearchTimeout);
+
+    // If it's a number, don't autocomplete
+    if (/^\d+$/.test(value.trim())) return;
+
+    if (value.trim().length < 2) return;
+
+    const timeout = setTimeout(async () => {
+      try {
+        setSearchingTypes(true);
+        const resp = await searchTypes(value.trim());
+        setTypeResults(resp.data.results || []);
+      } catch {
+        setTypeResults([]);
+      } finally {
+        setSearchingTypes(false);
+      }
+    }, 300);
+    setTypeSearchTimeout(timeout);
+  };
+
   const handleSearch = async () => {
     const text = searchText.trim();
     if (!text) return;
+    setTypeResults([]);
 
-    // Try as type_id first (number)
     const typeId = parseInt(text);
     if (typeId && typeId > 0) {
       await fetchComparison(typeId);
-      return;
     }
+  };
 
-    // Search by name — use the backend compare endpoint with a name search
-    // For now, we'll need to search by type_id. Show a hint.
-    onError?.('Enter a type ID (e.g., 34 for Tritanium). Name search coming in a future update.');
+  const handleTypeSelect = (type) => {
+    setSearchText(type.name);
+    setTypeResults([]);
+    fetchComparison(type.type_id);
   };
 
   const fetchComparison = async (typeId) => {
@@ -260,17 +288,29 @@ function HubComparison({ onError, refreshKey }) {
       )}
 
       {/* Search */}
-      <div className="hub-search">
-        <input
-          type="text"
-          placeholder="Enter type ID (e.g., 34 for Tritanium)"
-          value={searchText}
-          onChange={e => setSearchText(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleSearch()}
-        />
-        <button onClick={handleSearch} disabled={comparing || !searchText.trim()}>
-          {comparing ? 'Searching...' : 'Compare'}
-        </button>
+      <div className="hub-search-container">
+        <div className="hub-search">
+          <input
+            type="text"
+            placeholder="Search item name or enter type ID..."
+            value={searchText}
+            onChange={e => handleSearchInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSearch()}
+          />
+          <button onClick={handleSearch} disabled={comparing || !searchText.trim()}>
+            {comparing ? 'Searching...' : 'Compare'}
+          </button>
+        </div>
+        {typeResults.length > 0 && (
+          <div className="type-search-results">
+            {typeResults.map(t => (
+              <div key={t.type_id} className="type-search-result" onClick={() => handleTypeSelect(t)}>
+                <span className="result-name">{t.name}</span>
+                <span className="result-type-id">ID: {t.type_id}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Quick search buttons */}
@@ -338,6 +378,22 @@ function HubComparison({ onError, refreshKey }) {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Freshness bar */}
+      {hubs.length > 0 && (
+        <div className="hub-freshness">
+          {hubs.filter(h => h.enabled).map(h => {
+            const refresh = h.refresh || {};
+            const isStale = refresh.last_refresh_at && (Date.now() - new Date(refresh.last_refresh_at + 'Z').getTime()) > 3600000;
+            return (
+              <span key={h.id} className={`freshness-chip ${refresh.status === 'error' ? 'error' : isStale ? 'stale' : refresh.status === 'ok' ? 'fresh' : 'pending'}`}>
+                {h.name}: {refresh.last_refresh_at ? timeAgo(refresh.last_refresh_at) : 'pending'}
+                {isStale && ' ⚠'}
+              </span>
+            );
+          })}
         </div>
       )}
 

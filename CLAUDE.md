@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Current version:** v5.7.0 (2026-04-03)
+**Current version:** v5.8.0 (2026-04-04)
 
 ## Build & Deploy
 
@@ -48,13 +48,17 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 - `esiClient.js`: All ESI HTTP calls with rate limiting (20 req/s), batch name resolution via `POST /universe/names/`
 - `tokenRefresh.js`: Transparent token refresh before ESI calls (5-min buffer)
 - `corporationService.js`: Corp-specific ESI (roles, jobs, customs offices)
-- `cacheRefresh.js`: Background scheduler — market prices, Jita prices, cost indices every 6 hours
+- `cacheRefresh.js`: Background scheduler — market prices, Jita prices, cost indices every 6 hours; hub prices every 30 minutes
+- `tradeCalculator.js`: Pure calculation module — broker fees, sales tax, trade opportunity finder
+- `tradingController.js`: Trading API endpoints (hub CRUD, price comparison, trade finder, settings) — locked to Lothriell
 - `sdeImport.js`: First-startup download of EVE SDE from Fuzzwork (~50K types with volumes, ~5K stations, ~8K systems)
 
 **Frontend**: React 18 + Vite 6 (migrated from CRA in v3.6.0)
 - `App.jsx`: Auth check on mount → renders `Login` or `Main` (no react-router)
 - `Main.jsx` renders views based on `currentView` state: dashboard, character, jobs, corp-jobs, assets, planets
 - `Main.jsx` owns global refresh (auto + manual) via `refreshKey` prop passed to all views
+- `HubComparison.jsx`: cross-hub price comparison with item name search + hub manager
+- `TradeFinder.jsx`: trade opportunity finder with ROI/margin calc, multi-buy export, fee settings
 - `Login.jsx`: Single "Login with EVE Online" button (no username/password)
 - `Sidebar.jsx`: clicking character → navigates to CharacterPage; nav items switch views
 - `CharacterPage.jsx`: per-character detail view (skill queue, jobs, planets, net worth)
@@ -131,6 +135,10 @@ esi-wallet.read_character_wallet.v1
 - `market_prices`: type_id PK, adjusted_price, average_price
 - `jita_prices`: type_id PK, sell_min, buy_max, sell_volume, buy_volume
 - `cost_indices`: (system_id, activity) PK, cost_index
+- `trade_hubs`: per-user configurable trade hubs (station_id, region_id, is_default, is_structure, enabled)
+- `hub_prices`: (type_id, station_id) PK — aggregated sell_min/buy_max/volumes per hub
+- `hub_refresh_status`: station_id PK — tracks last refresh time/status per hub
+- `trade_settings`: character_id PK — Accounting/Broker Relations skill levels + standings
 
 ## Environment
 

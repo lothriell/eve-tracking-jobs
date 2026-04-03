@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.7.0 | **Build Date:** 2026-04-03
+**Current Version:** v5.8.0 | **Build Date:** 2026-04-04
 
 A comprehensive web application for tracking EVE Online industry jobs, assets, planetary industry, and character management across multiple characters and corporations.
 
@@ -118,6 +118,13 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 ## Recent Updates
 
+### v5.8.0 (2026-04-04)
+- Trading Feature — multi-hub price comparison + trade finder (owner-locked)
+- Configurable hubs: 5 NPC defaults + custom player structures (nullsec)
+- Station search by name with auto-resolve region
+- Trade calculator with skill-based fee/tax, auto-detect from ESI
+- Multi-buy clipboard export, CSV/JSON export, sortable results
+
 ### v5.7.0 (2026-04-03)
 - Planetary Industry — product icons + P1–P4 tier badges on grid and list views
 - Enhanced 10-state colony status system with reason text (RIFT-inspired)
@@ -170,6 +177,7 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| v5.8.0 | 2026-04-04 | Trading: multi-hub comparison, trade finder, configurable hubs (incl. nullsec structures), skill-based fees |
 | v5.7.0 | 2026-04-03 | PI product icons + tier badges, enhanced colony statuses, storage tier colors, auto-refresh countdown |
 | v5.6.0 | 2026-04-02 | Unified wallet journal, wealth chart ranges, EVE skill boxes |
 | v5.5.0 | 2026-04-01 | Wallet journal items, wealth dedup, ISK colors |

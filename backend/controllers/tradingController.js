@@ -356,6 +356,18 @@ async function autoDetectSkills(req, res) {
   }
 }
 
+async function searchTypes(req, res) {
+  try {
+    const query = (req.query.q || '').trim();
+    if (query.length < 2) return res.json({ results: [] });
+    const rows = db.searchTypes(query, 20);
+    res.json({ results: rows.map(r => ({ type_id: r.id, name: r.name })) });
+  } catch (error) {
+    console.error('Type search error:', error.message);
+    res.status(500).json({ error: 'Failed to search types' });
+  }
+}
+
 async function searchStations(req, res) {
   try {
     const query = (req.query.q || '').trim();
@@ -386,6 +398,7 @@ async function searchStations(req, res) {
 module.exports = {
   requireTradeAccess,
   ensureHubsSeeded,
+  searchTypes,
   searchStations,
   getHubs,
   addHub,

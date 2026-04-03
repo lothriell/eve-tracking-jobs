@@ -422,6 +422,14 @@ class DB {
     ).all(characterId, ...dates);
   }
 
+  // ===== TYPE SEARCH =====
+
+  searchTypes(query, limit = 20) {
+    return this.db.prepare(
+      `SELECT id, name FROM name_cache WHERE category = 'type' AND name LIKE ? ORDER BY name ASC LIMIT ?`
+    ).all(`%${query}%`, limit);
+  }
+
   // ===== STATION/STRUCTURE SEARCH =====
 
   searchStations(query, limit = 20) {
