@@ -2,6 +2,47 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.7.0] - 2026-04-03
+
+### Planetary Industry — Grid View Upgrade
+- **Product icons** — EVE type icon overlaid on planet circle showing final product
+- **Tier badges** — P1/P2/P3/P4 color-coded labels (gray/blue/teal/gold/green) with product name
+- **PI schematics SDE import** — schematic_id → output type + cycle time from Fuzzwork planetSchematics
+- Smart tier detection: Basic→P1, Advanced→P2 (with Basic) or P3 (standalone), High-Tech→P4
+- Planet name and type on one line, full names without truncation
+
+### Planetary Industry — Enhanced Colony Statuses
+- **10-state pin status system** (RIFT-inspired): extracting, expired, inactive, producing, factory-idle, not-setup, input/output-not-routed, storage-full, static
+- **6 colony statuses**: Active, Extracting, Producing, Stopped, Attention, Setup, Idle
+- Status reason text (e.g. "2 expired, storage full", "3 factories idle")
+- Factory-only planets now show Producing/Stopped instead of misleading "STOPPED"
+- Uses ESI `last_cycle_start` + schematic `cycle_time` for factory activity detection
+- Routes analyzed for input/output routing validation
+
+### Planetary Industry — List View Enhancements
+- **Product column** with EVE type icon, tier badge, and full product name
+- **AlertBadges restored** alongside new status column
+- **Level (stars) moved** to ColonyDetail header
+- Pins column removed from table (kept in detail panel)
+- Planet and product icons increased 25%
+- Unified row height (48px)
+
+### Storage Tier Visualization
+- **Color-coded storage breakdown** by PI tier (P0–P4) in both grid gauge and list bar
+- P0 gray, P1 blue, P2 teal, P3 gold, P4 green
+- Tier classified by SDE packaged volume (0.005/0.19/0.75/3.0/50.0 m³)
+- Hover tooltip shows per-tier percentage breakdown
+- Grid card tooltip: alerts first, then storage utilization
+
+### Extraction Graphs
+- **HiDPI sharp rendering** — canvas uses devicePixelRatio for crisp bars and labels on retina
+- Single extractor graph capped at 50% width (matches 2-extractor layout)
+
+### Auto-Refresh Countdown
+- **Live countdown timer** on auto-refresh button (e.g. "⟳ 5m 3:42")
+- Resets on manual refresh and interval change
+- Wider button (min-width 105px) prevents layout shift
+
 ## [v5.6.0] - 2026-04-02
 
 ### Wallet Journal — Unified Table Views

@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.6.0 | **Build Date:** 2026-04-02
+**Current Version:** v5.7.0 | **Build Date:** 2026-04-03
 
 A comprehensive web application for tracking EVE Online industry jobs, assets, planetary industry, and character management across multiple characters and corporations.
 
@@ -58,12 +58,15 @@ A comprehensive web application for tracking EVE Online industry jobs, assets, p
 
 ### Planetary Industry
 - Colony overview with list and grid views
+- **Product icons + tier badges** (P1–P4) on grid cards and list table
+- **Enhanced colony statuses** — Active, Extracting, Producing, Stopped, Attention, Setup, Idle with reason text
+- **Color-coded storage breakdown** by PI tier (P0 gray, P1 blue, P2 teal, P3 gold, P4 green)
 - Live countdown timers with 8-level color urgency
 - Extraction rate calculation + balance detection
 - Storage fill tracking with visual bars and alerts
 - Alert mode filter (EXPIRED, OFF-BAL, LOW, STORAGE)
-- Extraction prediction bar graphs per extractor
-- Character filter, auto-refresh
+- Extraction prediction bar graphs per extractor (HiDPI sharp)
+- Character filter, auto-refresh with countdown
 - CSV/JSON export
 
 ### Cross-Cutting Features
@@ -115,6 +118,12 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 ## Recent Updates
 
+### v5.7.0 (2026-04-03)
+- Planetary Industry — product icons + P1–P4 tier badges on grid and list views
+- Enhanced 10-state colony status system with reason text (RIFT-inspired)
+- Color-coded storage breakdown by PI tier (P0–P4)
+- HiDPI extraction graphs, auto-refresh countdown timer
+
 ### v5.6.0 (2026-04-02)
 - Wallet Journal — unified 8-column layout, fixed-height tabs, dynamic overview donut
 - Wealth History — trading platform range selector (1D–MAX), unlimited history retention
@@ -161,6 +170,9 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| v5.7.0 | 2026-04-03 | PI product icons + tier badges, enhanced colony statuses, storage tier colors, auto-refresh countdown |
+| v5.6.0 | 2026-04-02 | Unified wallet journal, wealth chart ranges, EVE skill boxes |
+| v5.5.0 | 2026-04-01 | Wallet journal items, wealth dedup, ISK colors |
 | v5.4.0 | 2026-04-01 | Global refresh, sticky slot cards, zKillboard on characters, ISK color unify |
 | v5.3.0 | 2026-04-01 | Character Page, external lookups, CSV export, per-char net worth, perf |
 | v5.2.0 | 2026-03-30 | Skill training on Dashboard cards |

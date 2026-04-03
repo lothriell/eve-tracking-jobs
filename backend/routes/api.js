@@ -5,9 +5,9 @@ const characterController = require('../controllers/characterController');
 // Version endpoint (for deployment verification)
 router.get('/version', (req, res) => {
   res.json({ 
-    version: '5.6.0',
+    version: '5.7.0',
     name: 'EVE Industry Tracker',
-    buildDate: '2026-04-01'
+    buildDate: '2026-04-03'
   });
 });
 
