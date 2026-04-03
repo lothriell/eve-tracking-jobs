@@ -261,6 +261,32 @@ function TradeFinder({ onError, refreshKey }) {
           </div>
         </div>
         <div className="trade-control-row">
+          <div className="control-group">
+            <label>Buyer (source hub)</label>
+            <div className="char-detect-row">
+              <select value={buyerChar} onChange={e => handleBuyerChange(e.target.value)}>
+                <option value="">Default fees</option>
+                {characters.map(c => (
+                  <option key={c.character_id} value={c.character_id}>{c.name}</option>
+                ))}
+              </select>
+              {buyerChar && <button className="detect-btn" onClick={() => handleAutoDetect('buyer')} disabled={detectingBuyer}>{detectingBuyer ? '...' : 'Detect'}</button>}
+            </div>
+          </div>
+          <div className="control-group">
+            <label>Seller (dest hub)</label>
+            <div className="char-detect-row">
+              <select value={sellerChar} onChange={e => handleSellerChange(e.target.value)}>
+                <option value="">Default fees</option>
+                {characters.map(c => (
+                  <option key={c.character_id} value={c.character_id}>{c.name}</option>
+                ))}
+              </select>
+              {sellerChar && <button className="detect-btn" onClick={() => handleAutoDetect('seller')} disabled={detectingSeller}>{detectingSeller ? '...' : 'Detect'}</button>}
+            </div>
+          </div>
+        </div>
+        <div className="trade-control-row">
           <div className="control-group small">
             <label>Min ROI %</label>
             <input type="number" value={minROI} onChange={e => setMinROI(e.target.value)} placeholder="5" />
@@ -286,58 +312,15 @@ function TradeFinder({ onError, refreshKey }) {
         </div>
       </div>
 
-      {/* Settings Toggle */}
-      <div className="trade-settings-bar">
-        <button className={`settings-toggle ${showSettings ? 'active' : ''}`} onClick={() => setShowSettings(!showSettings)}>
-          ⚙ Fee Settings
-          {buyerSettings || sellerSettings ? ` (Buy: ${(buyerSettings?.effective_broker_fee ?? 3.0).toFixed(1)}% / Sell: ${(sellerSettings?.effective_broker_fee ?? 3.0).toFixed(1)}% + ${(sellerSettings?.effective_sales_tax ?? 3.6).toFixed(1)}% tax)` : ' (Default: 3.0% / 3.6%)'}
-        </button>
-      </div>
-
-      {showSettings && (
-        <div className="trade-settings-panel">
-          <div className="settings-row">
-            <div className="control-group">
-              <label>Buyer (at source hub)</label>
-              <select value={buyerChar} onChange={e => handleBuyerChange(e.target.value)}>
-                <option value="">Select character...</option>
-                {characters.map(c => (
-                  <option key={c.character_id} value={c.character_id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-            <button className="auto-detect-btn" onClick={() => handleAutoDetect('buyer')} disabled={!buyerChar || detectingBuyer}>
-              {detectingBuyer ? '...' : 'Detect'}
-            </button>
-            <div className="control-group">
-              <label>Seller (at dest hub)</label>
-              <select value={sellerChar} onChange={e => handleSellerChange(e.target.value)}>
-                <option value="">Select character...</option>
-                {characters.map(c => (
-                  <option key={c.character_id} value={c.character_id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-            <button className="auto-detect-btn" onClick={() => handleAutoDetect('seller')} disabled={!sellerChar || detectingSeller}>
-              {detectingSeller ? '...' : 'Detect'}
-            </button>
-          </div>
-          <div className="settings-display-dual">
-            {buyerSettings && (
-              <div className="settings-char-block">
-                <span className="settings-char-label">Buyer:</span>
-                <span>Acct L{buyerSettings.accounting_level} / Broker L{buyerSettings.broker_relations_level} / Adv L{buyerSettings.advanced_broker_level}</span>
-                <span className="settings-result">Broker: {buyerSettings.effective_broker_fee?.toFixed(2)}%</span>
-              </div>
-            )}
-            {sellerSettings && (
-              <div className="settings-char-block">
-                <span className="settings-char-label">Seller:</span>
-                <span>Acct L{sellerSettings.accounting_level} / Broker L{sellerSettings.broker_relations_level} / Adv L{sellerSettings.advanced_broker_level}</span>
-                <span className="settings-result">Broker: {sellerSettings.effective_broker_fee?.toFixed(2)}% | Tax: {sellerSettings.effective_sales_tax?.toFixed(2)}%</span>
-              </div>
-            )}
-          </div>
+      {/* Detected skills summary */}
+      {(buyerSettings || sellerSettings) && (
+        <div className="trade-skills-summary">
+          {buyerSettings && (
+            <span className="skill-chip buyer">Buyer: Broker {buyerSettings.effective_broker_fee?.toFixed(1)}% (Acct L{buyerSettings.accounting_level} / Broker L{buyerSettings.broker_relations_level} / Adv L{buyerSettings.advanced_broker_level})</span>
+          )}
+          {sellerSettings && (
+            <span className="skill-chip seller">Seller: Broker {sellerSettings.effective_broker_fee?.toFixed(1)}% + Tax {sellerSettings.effective_sales_tax?.toFixed(1)}% (Acct L{sellerSettings.accounting_level} / Broker L{sellerSettings.broker_relations_level} / Adv L{sellerSettings.advanced_broker_level})</span>
+          )}
         </div>
       )}
 
