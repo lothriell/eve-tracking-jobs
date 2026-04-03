@@ -1296,9 +1296,19 @@ exports.getColonyLayout = async (req, res) => {
       if (pin.extractor_details?.product_type_id) {
         typeIds.add(pin.extractor_details.product_type_id);
       }
-      // Also resolve factory schematic output
+      // Resolve factory schematic output type + cycle time
       if (pin.factory_details?.schematic_id) {
-        // schematic_id is not a type_id, skip
+        const output = db.getSchematicOutput(pin.factory_details.schematic_id);
+        if (output) {
+          pin.factory_details.output_type_id = output.type_id;
+          pin.factory_details.output_quantity = output.quantity;
+          typeIds.add(output.type_id);
+        }
+        const info = db.getSchematicInfo(pin.factory_details.schematic_id);
+        if (info) {
+          pin.factory_details.cycle_time = info.cycle_time;
+          pin.factory_details.schematic_name = info.schematic_name;
+        }
       }
     });
 
@@ -1327,6 +1337,9 @@ exports.getColonyLayout = async (req, res) => {
       }
       if (pin.extractor_details?.product_type_id) {
         pin.extractor_details.product_name = typeNames[pin.extractor_details.product_type_id] || null;
+      }
+      if (pin.factory_details?.output_type_id) {
+        pin.factory_details.output_name = typeNames[pin.factory_details.output_type_id] || null;
       }
     });
 

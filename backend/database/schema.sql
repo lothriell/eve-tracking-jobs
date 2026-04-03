@@ -115,3 +115,21 @@ CREATE TABLE IF NOT EXISTS wallet_transactions (
 
 CREATE INDEX IF NOT EXISTS idx_wallet_trans_char_date ON wallet_transactions(character_id, date);
 CREATE INDEX IF NOT EXISTS idx_wallet_trans_journal ON wallet_transactions(character_id, journal_ref_id);
+
+-- Planet schematics (PI factory recipes from SDE)
+CREATE TABLE IF NOT EXISTS planet_schematics (
+    schematic_id INTEGER NOT NULL,
+    type_id INTEGER NOT NULL,
+    quantity INTEGER DEFAULT 0,
+    is_input INTEGER DEFAULT 0,
+    PRIMARY KEY (schematic_id, type_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_planet_schematics_output ON planet_schematics(schematic_id, is_input);
+
+-- Planet schematic info (cycle times + names from SDE)
+CREATE TABLE IF NOT EXISTS planet_schematic_info (
+    schematic_id INTEGER PRIMARY KEY,
+    schematic_name TEXT,
+    cycle_time INTEGER DEFAULT 0
+);

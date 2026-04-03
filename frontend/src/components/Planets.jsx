@@ -768,6 +768,150 @@ function CharacterColonies({ characterData, alertMode }) {
 
 // ============== COLONY CARD (Grid View) ==============
 
+// Determine PI tier from factory pin type name + colony context
+function getFactoryTier(pinTypeName, hasBasicFactories) {
+  const name = (pinTypeName || '').toLowerCase();
+  if (name.includes('high-tech') || name.includes('high tech')) return 'P4';
+  if (name.includes('advanced')) return hasBasicFactories ? 'P2' : 'P3';
+  if (name.includes('basic')) return 'P1';
+  return null;
+}
+
+// Get final products from colony layout (highest-tier factory outputs)
+function getFinalProducts(pins) {
+  if (!pins || pins.length === 0) return [];
+
+  const factoryPins = pins.filter(p => p.factory_details?.output_type_id);
+  if (factoryPins.length === 0) return [];
+
+  // Check if colony has Basic factories (P0→P1 chain, meaning Advanced = P2)
+  const hasBasicFactories = factoryPins.some(p => (p.type_name || '').toLowerCase().includes('basic'));
+
+  // Collect unique outputs with tier info
+  const outputs = {};
+  for (const pin of factoryPins) {
+    const fd = pin.factory_details;
+    const typeId = fd.output_type_id;
+    const tier = getFactoryTier(pin.type_name, hasBasicFactories);
+    if (!outputs[typeId] || tierRank(tier) > tierRank(outputs[typeId].tier)) {
+      outputs[typeId] = {
+        type_id: typeId,
+        name: fd.output_name || `Type ${typeId}`,
+        tier: tier,
+        quantity: fd.output_quantity || 0,
+      };
+    }
+  }
+
+  // Return the highest-tier product(s)
+  const products = Object.values(outputs);
+  if (products.length === 0) return [];
+  const maxRank = Math.max(...products.map(p => tierRank(p.tier)));
+  return products.filter(p => tierRank(p.tier) === maxRank);
+}
+
+function tierRank(tier) {
+  if (tier === 'P4') return 4;
+  if (tier === 'P3') return 3;
+  if (tier === 'P2') return 2;
+  if (tier === 'P1') return 1;
+  return 0;
+}
+
+// Determine individual pin status (RIFT-inspired)
+function getPinStatus(pin, routes, now) {
+  const pinId = pin.pin_id;
+
+  if (pin.extractor_details) {
+    // Extractor pin
+    const hasSetup = pin.install_time && pin.expiry_time && pin.extractor_details.cycle_time && pin.extractor_details.product_type_id;
+    if (!hasSetup) return 'not-setup';
+    if (pin.expiry_time && new Date(pin.expiry_time).getTime() <= now) return 'expired';
+    // Check output routing
+    const hasOutput = routes.some(r => r.source_pin_id === pinId);
+    if (!hasOutput) return 'output-not-routed';
+    if (pin.expiry_time && new Date(pin.expiry_time).getTime() > now) return 'extracting';
+    return 'inactive';
+  }
+
+  if (pin.factory_details) {
+    // Factory pin
+    if (!pin.factory_details.schematic_id) return 'not-setup';
+    // Check input routing — factory needs at least one incoming route
+    const hasInput = routes.some(r => r.destination_pin_id === pinId);
+    if (!hasInput) return 'input-not-routed';
+    // Check output routing
+    const hasOutput = routes.some(r => r.source_pin_id === pinId);
+    if (!hasOutput) return 'output-not-routed';
+    // Check if actively producing using last_cycle_start + cycle_time
+    if (pin.last_cycle_start && pin.factory_details.cycle_time) {
+      const lastCycle = new Date(pin.last_cycle_start).getTime();
+      const cycleMs = pin.factory_details.cycle_time * 1000;
+      if (now - lastCycle < cycleMs) return 'producing';
+    }
+    return 'factory-idle';
+  }
+
+  // Storage/launchpad/command center
+  const cap = getStorageCapacity(pin);
+  if (cap > 0) {
+    const used = (pin.contents || []).reduce((s, item) => {
+      const vol = item.volume || DEFAULT_VOLUME;
+      return s + vol * (item.amount || 0);
+    }, 0);
+    if (used / cap > 0.9) return 'storage-full';
+  }
+  return 'static';
+}
+
+// Aggregate pin statuses into colony status
+function getColonyStatus(pins, routes, now) {
+  if (!pins || pins.length === 0) return { label: 'Idle', class: 'status-idle', reason: null };
+
+  const statuses = pins.map(p => getPinStatus(p, routes || [], now));
+
+  // Priority 1: Setup/routing issues
+  const notSetup = statuses.filter(s => s === 'not-setup').length;
+  const inputNotRouted = statuses.filter(s => s === 'input-not-routed').length;
+  const outputNotRouted = statuses.filter(s => s === 'output-not-routed').length;
+  if (notSetup > 0 || inputNotRouted > 0 || outputNotRouted > 0) {
+    const reasons = [];
+    if (notSetup > 0) reasons.push(`${notSetup} not setup`);
+    if (inputNotRouted > 0) reasons.push(`${inputNotRouted} no input`);
+    if (outputNotRouted > 0) reasons.push(`${outputNotRouted} no output`);
+    return { label: 'Setup', class: 'status-setup', reason: reasons.join(', ') };
+  }
+
+  // Priority 2: Attention — expired, storage full, factory idle with no feed
+  const expired = statuses.filter(s => s === 'expired').length;
+  const storageFull = statuses.filter(s => s === 'storage-full').length;
+  const factoryIdle = statuses.filter(s => s === 'factory-idle').length;
+  const inactive = statuses.filter(s => s === 'inactive').length;
+
+  if (expired > 0 || storageFull > 0) {
+    const reasons = [];
+    if (expired > 0) reasons.push(`${expired} expired`);
+    if (storageFull > 0) reasons.push('storage full');
+    if (factoryIdle > 0) reasons.push(`${factoryIdle} idle`);
+    return { label: 'Attention', class: 'status-attention', reason: reasons.join(', ') };
+  }
+
+  // Priority 3: Active states
+  const extracting = statuses.includes('extracting');
+  const producing = statuses.includes('producing');
+
+  if (extracting && producing) return { label: 'Active', class: 'status-active', reason: null };
+  if (extracting) return { label: 'Extracting', class: 'status-extracting', reason: null };
+  if (producing) return { label: 'Producing', class: 'status-producing', reason: null };
+
+  // Priority 4: Factories exist but idle (no extractors feeding them, or stopped)
+  if (factoryIdle > 0) {
+    return { label: 'Stopped', class: 'status-stopped', reason: `${factoryIdle} factories idle` };
+  }
+
+  return { label: 'Idle', class: 'status-idle', reason: null };
+}
+
 function ColonyCard({ colony, characterName, characterId }) {
   const [layout, setLayout] = useState(null);
   const [now, setNow] = useState(Date.now());
@@ -788,10 +932,12 @@ function ColonyCard({ colony, characterName, characterId }) {
 
   const style = getPlanetStyle(colony.planet_type);
   const pins = layout?.pins || [];
+  const routes = layout?.routes || [];
   const extractorPins = pins.filter(p => p.extractor_details);
   const factoryPins = pins.filter(p => p.factory_details);
   const storage = pins.length > 0 ? calcStorageFill(pins) : null;
   const totalUPH = extractorPins.reduce((s, p) => s + calcExtractorUPH(p), 0);
+  const finalProducts = getFinalProducts(pins);
 
   // Find earliest extractor expiry
   const extractorExpiries = extractorPins.map(p => p.expiry_time).filter(Boolean);
@@ -799,17 +945,10 @@ function ColonyCard({ colony, characterName, characterId }) {
   const expiryDiff = earliestExpiry ? new Date(earliestExpiry).getTime() - now : null;
   const expiryColor = expiryDiff !== null ? getExpiryColor(expiryDiff) : '#4a5568';
 
-  // Determine colony status
-  const hasExpired = extractorPins.some(p => !p.expiry_time || new Date(p.expiry_time).getTime() - now <= 0);
-  const isExtracting = extractorPins.some(p => p.expiry_time && new Date(p.expiry_time).getTime() - now > 0);
-  const isProducing = factoryPins.length > 0;
-  const needsAttention = hasExpired || (storage && storage.pct > 80);
-
-  let statusLabel = 'Idle';
-  let statusClass = 'status-idle';
-  if (needsAttention) { statusLabel = 'Attention'; statusClass = 'status-attention'; }
-  else if (isExtracting) { statusLabel = 'Extracting'; statusClass = 'status-extracting'; }
-  else if (isProducing) { statusLabel = 'Producing'; statusClass = 'status-producing'; }
+  // Enhanced colony status
+  const colonyStatus = getColonyStatus(pins, routes, now);
+  const statusClass = colonyStatus.class;
+  const needsAttention = statusClass === 'status-attention' || statusClass === 'status-setup';
 
   // Fill gauge SVG
   const fillPct = storage ? storage.pct : 0;
@@ -847,7 +986,29 @@ function ColonyCard({ colony, characterName, characterId }) {
           </div>
         )}
         {needsAttention && <div className="colony-card-attention-pulse" />}
+        {/* Product icon overlay */}
+        {finalProducts.length > 0 && (
+          <div className="colony-card-product-icon" title={finalProducts.map(p => p.name).join(', ')}>
+            <img
+              src={`https://images.evetech.net/types/${finalProducts[0].type_id}/icon?size=32`}
+              alt={finalProducts[0].name}
+              className="colony-card-product-img"
+            />
+          </div>
+        )}
       </div>
+
+      {/* Product info */}
+      {finalProducts.length > 0 && (
+        <div className="colony-card-product">
+          <span className={`colony-card-tier-badge tier-${(finalProducts[0].tier || '').toLowerCase()}`}>
+            {finalProducts[0].tier || '?'}
+          </span>
+          <span className="colony-card-product-name" title={finalProducts[0].name}>
+            {finalProducts[0].name}
+          </span>
+        </div>
+      )}
 
       {/* Info */}
       <div className="colony-card-info">
@@ -861,13 +1022,24 @@ function ColonyCard({ colony, characterName, characterId }) {
 
       {/* Status bar */}
       <div className="colony-card-status">
-        <div className="colony-card-expiry" style={{ color: expiryColor }}>
-          {expiryDiff !== null ? formatCountdown(expiryDiff) : 'STOPPED'}
-        </div>
+        {extractorPins.length > 0 ? (
+          <div className="colony-card-expiry" style={{ color: expiryColor }}>
+            {expiryDiff !== null ? formatCountdown(expiryDiff) : 'STOPPED'}
+          </div>
+        ) : (
+          <div className={`colony-card-status-label ${statusClass}`}>
+            {colonyStatus.label}
+          </div>
+        )}
         {totalUPH > 0 && (
           <div className="colony-card-rate">{totalUPH.toLocaleString()} u/h</div>
         )}
       </div>
+
+      {/* Status reason */}
+      {colonyStatus.reason && (
+        <div className="colony-card-reason">{colonyStatus.reason}</div>
+      )}
 
       {/* Character */}
       <div className="colony-card-character">{characterName}</div>

@@ -823,6 +823,18 @@
   border-color: rgba(74, 158, 255, 0.3);
 }
 
+.colony-card.status-active {
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.colony-card.status-setup {
+  border-color: rgba(236, 201, 75, 0.4);
+}
+
+.colony-card.status-stopped {
+  border-color: rgba(160, 120, 60, 0.4);
+}
+
 /* Planet icon with SVG gauge */
 .colony-card-planet {
   position: relative;
@@ -878,6 +890,76 @@
   50% { opacity: 0.8; transform: scale(1.05); }
 }
 
+/* Product icon overlay on planet circle */
+.colony-card-product-icon {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.colony-card-product-img {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+}
+
+/* Product info row */
+.colony-card-product {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  justify-content: center;
+  min-height: 18px;
+}
+
+.colony-card-tier-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+
+.colony-card-tier-badge.tier-p1 {
+  background: rgba(113, 128, 150, 0.3);
+  color: #a0aec0;
+}
+
+.colony-card-tier-badge.tier-p2 {
+  background: rgba(74, 158, 255, 0.2);
+  color: #63b3ed;
+}
+
+.colony-card-tier-badge.tier-p3 {
+  background: rgba(236, 201, 75, 0.2);
+  color: #ecc94b;
+}
+
+.colony-card-tier-badge.tier-p4 {
+  background: rgba(72, 187, 120, 0.2);
+  color: #68d391;
+}
+
+.colony-card-product-name {
+  font-size: 10px;
+  color: #cbd5e0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
 /* Card info */
 .colony-card-info {
   text-align: center;
@@ -923,6 +1005,50 @@
   font-size: 10px;
   color: #68d391;
   font-family: 'Consolas', 'Monaco', monospace;
+}
+
+/* Status label for factory-only colonies */
+.colony-card-status-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.colony-card-status-label.status-active,
+.colony-card-status-label.status-extracting {
+  color: #68d391;
+}
+
+.colony-card-status-label.status-producing {
+  color: #63b3ed;
+}
+
+.colony-card-status-label.status-stopped {
+  color: #a0784c;
+}
+
+.colony-card-status-label.status-attention {
+  color: #AB324A;
+}
+
+.colony-card-status-label.status-setup {
+  color: #ecc94b;
+}
+
+.colony-card-status-label.status-idle {
+  color: #4a5568;
+}
+
+/* Status reason */
+.colony-card-reason {
+  font-size: 9px;
+  color: #718096;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
 /* Character name */

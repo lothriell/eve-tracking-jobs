@@ -215,6 +215,54 @@ async function importConstellations() {
   }
 }
 
+async function importPlanetSchematics() {
+  try {
+    // Import schematic type map (inputs/outputs)
+    const csv = await downloadCSV('planetSchematicsTypeMap.csv');
+    const rows = parseCSV(csv);
+
+    const entries = [];
+    for (const row of rows) {
+      const schematicId = parseInt(row.schematicID);
+      const typeId = parseInt(row.typeID);
+      const quantity = parseInt(row.quantity) || 0;
+      const isInput = parseInt(row.isInput) || 0;
+      if (schematicId && typeId) {
+        entries.push({ schematic_id: schematicId, type_id: typeId, quantity, is_input: isInput });
+      }
+    }
+
+    if (entries.length > 0) {
+      db.savePlanetSchematics(entries);
+      console.log(`[SDE] Planet schematic type map: ${entries.length} entries imported`);
+    }
+
+    // Import schematic info (names + cycle times)
+    const infoCsv = await downloadCSV('planetSchematics.csv');
+    const infoRows = parseCSV(infoCsv);
+
+    const infoEntries = [];
+    for (const row of infoRows) {
+      const schematicId = parseInt(row.schematicID);
+      const schematicName = row.schematicName;
+      const cycleTime = parseInt(row.cycleTime) || 0;
+      if (schematicId && schematicName) {
+        infoEntries.push({ schematic_id: schematicId, schematic_name: schematicName, cycle_time: cycleTime });
+      }
+    }
+
+    if (infoEntries.length > 0) {
+      db.savePlanetSchematicInfo(infoEntries);
+      console.log(`[SDE] Planet schematic info: ${infoEntries.length} entries imported`);
+    }
+
+    return entries.length + infoEntries.length;
+  } catch (error) {
+    console.error('[SDE] Failed to import planet schematics:', error.message);
+    return 0;
+  }
+}
+
 // ===== MAIN IMPORT FUNCTION =====
 
 async function importSDE() {
@@ -226,8 +274,18 @@ async function importSDE() {
   const sampleType = db.getCachedName(11, 'type'); // Planet (Temperate)
   const hasVolumes = sampleType && sampleType.extra_data;
 
-  if (typeCount > 50000 && hasVolumes) {
-    console.log(`[SDE] Already have ${typeCount} types cached with volumes, skipping SDE import`);
+  // Check if planet schematics need importing
+  const schematicsCount = db.getPlanetSchematicsCount();
+
+  if (typeCount > 50000 && hasVolumes && schematicsCount > 0) {
+    console.log(`[SDE] Already have ${typeCount} types cached with volumes + ${schematicsCount} schematic entries, skipping SDE import`);
+    return;
+  }
+
+  if (typeCount > 50000 && hasVolumes && schematicsCount === 0) {
+    console.log(`[SDE] Types exist but planet schematics missing — importing schematics only`);
+    const count = await importPlanetSchematics();
+    console.log(`[SDE] Planet schematics: ${count} entries imported`);
     return;
   }
 
@@ -243,7 +301,8 @@ async function importSDE() {
     stations: await importStations(),
     systems: await importSystems(),
     regions: await importRegions(),
-    constellations: await importConstellations()
+    constellations: await importConstellations(),
+    schematics: await importPlanetSchematics()
   };
 
   const elapsed = ((Date.now() - start) / 1000).toFixed(1);
@@ -253,6 +312,7 @@ async function importSDE() {
   console.log(`[SDE]   Systems: ${results.systems}`);
   console.log(`[SDE]   Regions: ${results.regions}`);
   console.log(`[SDE]   Constellations: ${results.constellations}`);
+  console.log(`[SDE]   Planet schematics: ${results.schematics}`);
 
   return results;
 }
@@ -263,5 +323,6 @@ module.exports = {
   importStations,
   importSystems,
   importRegions,
-  importConstellations
+  importConstellations,
+  importPlanetSchematics
 };

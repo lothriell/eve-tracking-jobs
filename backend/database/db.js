@@ -248,6 +248,77 @@ class DB {
     return this.db.prepare('SELECT MIN(updated_at) as oldest, MAX(updated_at) as newest, COUNT(*) as count FROM cost_indices').get();
   }
 
+  // ===== PLANET SCHEMATICS =====
+
+  savePlanetSchematics(entries) {
+    const stmt = this.db.prepare(
+      `INSERT OR REPLACE INTO planet_schematics (schematic_id, type_id, quantity, is_input) VALUES (?, ?, ?, ?)`
+    );
+    const batch = this.db.transaction((items) => {
+      for (const item of items) {
+        stmt.run(item.schematic_id, item.type_id, item.quantity, item.is_input);
+      }
+    });
+    batch(entries);
+    return entries.length;
+  }
+
+  getSchematicOutput(schematicId) {
+    return this.db.prepare(
+      'SELECT type_id, quantity FROM planet_schematics WHERE schematic_id = ? AND is_input = 0'
+    ).get(schematicId);
+  }
+
+  getSchematicOutputs(schematicIds) {
+    if (!schematicIds || schematicIds.length === 0) return {};
+    const placeholders = schematicIds.map(() => '?').join(',');
+    const rows = this.db.prepare(
+      `SELECT schematic_id, type_id, quantity FROM planet_schematics WHERE is_input = 0 AND schematic_id IN (${placeholders})`
+    ).all(...schematicIds);
+    const result = {};
+    for (const row of rows) {
+      result[row.schematic_id] = { type_id: row.type_id, quantity: row.quantity };
+    }
+    return result;
+  }
+
+  getPlanetSchematicsCount() {
+    const row = this.db.prepare('SELECT COUNT(*) as count FROM planet_schematics').get();
+    return row?.count || 0;
+  }
+
+  savePlanetSchematicInfo(entries) {
+    const stmt = this.db.prepare(
+      `INSERT OR REPLACE INTO planet_schematic_info (schematic_id, schematic_name, cycle_time) VALUES (?, ?, ?)`
+    );
+    const batch = this.db.transaction((items) => {
+      for (const item of items) {
+        stmt.run(item.schematic_id, item.schematic_name, item.cycle_time);
+      }
+    });
+    batch(entries);
+    return entries.length;
+  }
+
+  getSchematicInfo(schematicId) {
+    return this.db.prepare(
+      'SELECT schematic_name, cycle_time FROM planet_schematic_info WHERE schematic_id = ?'
+    ).get(schematicId);
+  }
+
+  getSchematicInfoBatch(schematicIds) {
+    if (!schematicIds || schematicIds.length === 0) return {};
+    const placeholders = schematicIds.map(() => '?').join(',');
+    const rows = this.db.prepare(
+      `SELECT schematic_id, schematic_name, cycle_time FROM planet_schematic_info WHERE schematic_id IN (${placeholders})`
+    ).all(...schematicIds);
+    const result = {};
+    for (const row of rows) {
+      result[row.schematic_id] = { schematic_name: row.schematic_name, cycle_time: row.cycle_time };
+    }
+    return result;
+  }
+
   // Wealth snapshots
   saveWealthSnapshot(characterId, userId, walletBalance, assetValue) {
     // Only save one snapshot per character per hour
