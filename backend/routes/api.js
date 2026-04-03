@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const characterController = require('../controllers/characterController');
+const tradingController = require('../controllers/tradingController');
 
 // Version endpoint (for deployment verification)
 router.get('/version', (req, res) => {
@@ -384,5 +385,18 @@ router.get('/assets/corp', requireAuth, characterController.getCorporationAssets
 router.get('/planets', requireAuth, characterController.getCharacterPlanets);
 router.get('/planets/customs', requireAuth, characterController.getCustomsOffices);
 router.get('/planets/layout', requireAuth, characterController.getColonyLayout);
+
+// ===== TRADING ENDPOINTS (locked to Lothriell) =====
+const tradeAuth = [requireAuth, tradingController.requireTradeAccess, tradingController.ensureHubsSeeded];
+
+router.get('/trading/hubs', ...tradeAuth, tradingController.getHubs);
+router.post('/trading/hubs', ...tradeAuth, tradingController.addHub);
+router.delete('/trading/hubs/:hubId', ...tradeAuth, tradingController.removeHub);
+router.put('/trading/hubs/:hubId', ...tradeAuth, tradingController.toggleHub);
+router.get('/trading/compare/:typeId', ...tradeAuth, tradingController.compareItem);
+router.get('/trading/find', ...tradeAuth, tradingController.findTrades);
+router.get('/trading/settings', ...tradeAuth, tradingController.getSettings);
+router.put('/trading/settings', ...tradeAuth, tradingController.updateSettings);
+router.get('/trading/settings/auto', ...tradeAuth, tradingController.autoDetectSkills);
 
 module.exports = router;
