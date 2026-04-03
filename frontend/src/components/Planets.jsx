@@ -90,13 +90,13 @@ function calcExtractorUPH(extractor) {
   return Math.round((qty_per_cycle / cycle_time) * 3600);
 }
 
-// Classify PI tier by item volume (reliable SDE values)
+// Classify PI tier by item volume (SDE packaged volumes)
 function getItemTier(volume) {
-  if (!volume || volume <= 0.05) return 'P0';   // 0.01 m³
-  if (volume <= 0.5)  return 'P1';               // 0.38 m³
-  if (volume <= 3.0)  return 'P2';               // 1.50 m³
-  if (volume <= 20.0) return 'P3';               // 6.00 m³
-  return 'P4';                                    // 100.00 m³
+  if (!volume || volume <= 0.01) return 'P0';    // 0.005 m³
+  if (volume <= 0.3)  return 'P1';                // 0.19 m³
+  if (volume <= 1.0)  return 'P2';                // 0.75 m³
+  if (volume <= 10.0) return 'P3';                // 3.00 m³
+  return 'P4';                                    // 50.00 m³
 }
 
 const TIER_COLORS = {
