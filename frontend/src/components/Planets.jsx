@@ -1011,10 +1011,11 @@ function ColonyCard({ colony, characterName, characterId }) {
         </div>
       )}
 
-      {/* Info */}
+      {/* Info — planet name + type on one line */}
       <div className="colony-card-info">
-        <div className="colony-card-system">{colony.planet_name || colony.system_name || `Planet ${colony.planet_id}`}</div>
-        <div className="colony-card-type">
+        <div className="colony-card-system">
+          {colony.planet_name || colony.system_name || `Planet ${colony.planet_id}`}
+          {' '}
           <span className="colony-card-type-badge" style={{ color: style.dot }}>
             {(colony.planet_type || 'unknown').charAt(0).toUpperCase() + (colony.planet_type || '').slice(1)}
           </span>

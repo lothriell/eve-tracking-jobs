@@ -975,15 +975,11 @@
   text-overflow: ellipsis;
 }
 
-.colony-card-type {
-  margin-top: 2px;
-}
-
 .colony-card-type-badge {
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 /* Status bar */
