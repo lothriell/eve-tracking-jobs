@@ -125,6 +125,9 @@ function TradeFinder({ onError, refreshKey }) {
     if (charId) loadSettings(charId);
   };
 
+  // Recap top N
+  const [recapTopN, setRecapTopN] = useState(5);
+
   // Sort state
   const [sortCol, setSortCol] = useState('roi');
   const [sortDir, setSortDir] = useState('desc');
@@ -302,6 +305,67 @@ function TradeFinder({ onError, refreshKey }) {
       )}
 
       {/* Results */}
+      {results && results.opportunities?.length > 0 && (() => {
+        // Build route summaries
+        const routes = {};
+        for (const opp of results.opportunities) {
+          const key = opp.dest_hub_name || 'Destination';
+          if (!routes[key]) routes[key] = { items: 0, totalProfit: 0, bestItem: null, bestROI: 0, topItems: [] };
+          const r = routes[key];
+          r.items++;
+          r.totalProfit += opp.net_profit;
+          if (opp.roi > r.bestROI) {
+            r.bestROI = opp.roi;
+            r.bestItem = opp.type_name;
+          }
+          if (r.topItems.length < recapTopN) {
+            r.topItems.push(opp);
+          }
+        }
+        const routeEntries = Object.entries(routes).sort((a, b) => b[1].totalProfit - a[1].totalProfit);
+        const grandProfit = routeEntries.reduce((s, [, r]) => s + r.totalProfit, 0);
+
+        return (
+          <div className="trade-recap">
+            <div className="recap-header">
+              <h3>Trade Summary</h3>
+              <div className="recap-header-right">
+                <span className="recap-total">{results.total} opportunities | Est. profit/unit: {formatISK(grandProfit)}</span>
+                <div className="recap-topn">
+                  Top
+                  {[3, 5, 10, 20].map(n => (
+                    <button key={n} className={recapTopN === n ? 'active' : ''} onClick={() => setRecapTopN(n)}>{n}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="recap-routes">
+              {routeEntries.map(([dest, r]) => (
+                <div key={dest} className="recap-route-card">
+                  <div className="recap-route-header">
+                    <span className="recap-route-name">{results.source_hub?.name} → {dest}</span>
+                    <span className="recap-route-profit">{formatISK(r.totalProfit)} profit</span>
+                  </div>
+                  <div className="recap-route-stats">
+                    <span>{r.items} items</span>
+                    <span>Best ROI: {r.bestROI.toFixed(1)}%</span>
+                  </div>
+                  <div className="recap-top-items">
+                    {r.topItems.map((item, i) => (
+                      <div key={i} className="recap-item">
+                        <span className="recap-item-name">{item.type_name}</span>
+                        <span className="recap-item-detail">
+                          Buy {formatISK(item.buy_price)} → Sell {formatISK(item.sell_price)} = <strong>{formatISK(item.net_profit)}</strong> ({item.roi.toFixed(1)}%)
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
       {results && (
         <div className="trade-results">
           <div className="trade-results-header">
