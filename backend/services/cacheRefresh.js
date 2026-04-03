@@ -17,7 +17,9 @@ const ESI_BASE = 'https://esi.evetech.net/latest';
 const DS = 'tranquility';
 
 let refreshTimer = null;
+let hubRefreshTimer = null;
 let isRefreshing = false;
+let isHubRefreshing = false;
 
 // ===== MARKET PRICES =====
 async function refreshMarketPrices() {
@@ -135,6 +137,134 @@ async function refreshJitaPrices() {
   }
 }
 
+// ===== HUB PRICES (multi-hub, configurable) =====
+
+async function refreshHubPrices() {
+  try {
+    const hubs = db.getAllEnabledHubs();
+    if (hubs.length === 0) {
+      console.log('[CACHE] No trade hubs configured, skipping hub price refresh');
+      return 0;
+    }
+
+    console.log(`[CACHE] Refreshing hub prices for ${hubs.length} stations...`);
+
+    // Group hubs by region to avoid fetching the same region twice
+    const regionMap = {};
+    for (const hub of hubs) {
+      if (!regionMap[hub.region_id]) regionMap[hub.region_id] = [];
+      regionMap[hub.region_id].push(hub);
+    }
+
+    let totalTypes = 0;
+    const regionIds = Object.keys(regionMap);
+
+    for (let r = 0; r < regionIds.length; r++) {
+      const regionId = regionIds[r];
+      const hubsInRegion = regionMap[regionId];
+      const stationIds = new Set(hubsInRegion.map(h => h.station_id));
+      const hubNames = hubsInRegion.map(h => h.name).join(', ');
+
+      try {
+        console.log(`[CACHE]   Region ${regionId} (${hubNames}): fetching orders...`);
+
+        // Fetch all orders in region (paginated)
+        const allOrders = [];
+        let page = 1;
+        while (true) {
+          const response = await axios.get(`${ESI_BASE}/markets/${regionId}/orders/`, {
+            params: { datasource: DS, order_type: 'all', page },
+            timeout: 30000
+          });
+          const orders = response.data || [];
+          if (orders.length === 0) break;
+
+          // Filter to only our hub stations
+          const hubOrders = orders.filter(o => stationIds.has(o.location_id));
+          allOrders.push(...hubOrders);
+
+          if (orders.length < 1000) break;
+          page++;
+        }
+
+        console.log(`[CACHE]   Region ${regionId}: ${page} pages, ${allOrders.length} hub orders`);
+
+        // Aggregate per station per type
+        const stationPrices = {}; // station_id -> type_id -> { sell_min, buy_max, ... }
+        for (const sid of stationIds) {
+          stationPrices[sid] = {};
+        }
+
+        for (const order of allOrders) {
+          const sid = order.location_id;
+          if (!stationPrices[sid]) continue;
+
+          if (!stationPrices[sid][order.type_id]) {
+            stationPrices[sid][order.type_id] = {
+              sell_min: Infinity, buy_max: 0,
+              sell_volume: 0, buy_volume: 0,
+              sell_order_count: 0, buy_order_count: 0
+            };
+          }
+
+          const entry = stationPrices[sid][order.type_id];
+          if (order.is_buy_order) {
+            if (order.price > entry.buy_max) entry.buy_max = order.price;
+            entry.buy_volume += order.volume_remain;
+            entry.buy_order_count++;
+          } else {
+            if (order.price < entry.sell_min) entry.sell_min = order.price;
+            entry.sell_volume += order.volume_remain;
+            entry.sell_order_count++;
+          }
+        }
+
+        // Store per station
+        for (const hub of hubsInRegion) {
+          const priceMap = stationPrices[hub.station_id] || {};
+          const prices = Object.entries(priceMap).map(([typeId, p]) => ({
+            type_id: parseInt(typeId),
+            sell_min: p.sell_min === Infinity ? 0 : p.sell_min,
+            buy_max: p.buy_max,
+            sell_volume: p.sell_volume,
+            buy_volume: p.buy_volume,
+            sell_order_count: p.sell_order_count,
+            buy_order_count: p.buy_order_count,
+          }));
+
+          if (prices.length > 0) {
+            const count = db.setHubPrices(hub.station_id, prices);
+            console.log(`[CACHE]   ${hub.name}: ${count} types cached`);
+            totalTypes += count;
+          }
+
+          db.setHubRefreshStatus(hub.station_id, hub.region_id, {
+            pageCount: page, orderCount: allOrders.length, status: 'ok'
+          });
+        }
+      } catch (error) {
+        console.error(`[CACHE]   Region ${regionId} failed: ${error.message}`);
+        for (const hub of hubsInRegion) {
+          db.setHubRefreshStatus(hub.station_id, hub.region_id, {
+            status: 'error', error: error.message
+          });
+        }
+      }
+
+      // Stagger 2s between regions to be kind to ESI
+      if (r < regionIds.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+
+    console.log(`[CACHE] Hub prices complete: ${totalTypes} total types across ${hubs.length} stations`);
+    return totalTypes;
+  } catch (error) {
+    console.error('[CACHE] Failed to refresh hub prices:', error.message);
+    return 0;
+  }
+}
+
 // ===== FULL REFRESH =====
 async function runFullRefresh() {
   if (isRefreshing) {
@@ -155,6 +285,9 @@ async function runFullRefresh() {
     await refreshJitaPrices();
     await refreshCostIndices();
 
+    // Multi-hub prices (also refreshed on separate 30-min timer)
+    await refreshHubPrices();
+
     const stats = db.getCacheStats();
     const elapsed = ((Date.now() - start) / 1000).toFixed(1);
     console.log(`[CACHE] === Refresh complete in ${elapsed}s ===`);
@@ -166,22 +299,49 @@ async function runFullRefresh() {
   }
 }
 
+// ===== HUB PRICE REFRESH (30-min cycle) =====
+async function runHubRefresh() {
+  if (isHubRefreshing || isRefreshing) {
+    console.log('[CACHE] Hub refresh skipped (another refresh in progress)');
+    return;
+  }
+  isHubRefreshing = true;
+  try {
+    const start = Date.now();
+    await refreshHubPrices();
+    const elapsed = ((Date.now() - start) / 1000).toFixed(1);
+    console.log(`[CACHE] Hub price refresh complete in ${elapsed}s`);
+  } catch (error) {
+    console.error('[CACHE] Hub refresh error:', error.message);
+  } finally {
+    isHubRefreshing = false;
+  }
+}
+
 // ===== SCHEDULER =====
 function startCacheRefresh() {
   // Run immediately on startup
   setTimeout(() => runFullRefresh(), 5000); // 5s delay to let DB initialize
 
-  // Then every 6 hours
+  // Full refresh every 6 hours
   const SIX_HOURS = 6 * 60 * 60 * 1000;
   refreshTimer = setInterval(() => runFullRefresh(), SIX_HOURS);
 
-  console.log('[CACHE] Background refresh scheduled (every 6 hours)');
+  // Hub prices refresh every 30 minutes (market data is time-sensitive for trading)
+  const THIRTY_MIN = 30 * 60 * 1000;
+  hubRefreshTimer = setInterval(() => runHubRefresh(), THIRTY_MIN);
+
+  console.log('[CACHE] Background refresh scheduled (full: 6h, hub prices: 30m)');
 }
 
 function stopCacheRefresh() {
   if (refreshTimer) {
     clearInterval(refreshTimer);
     refreshTimer = null;
+  }
+  if (hubRefreshTimer) {
+    clearInterval(hubRefreshTimer);
+    hubRefreshTimer = null;
   }
 }
 
@@ -190,5 +350,7 @@ module.exports = {
   stopCacheRefresh,
   runFullRefresh,
   refreshMarketPrices,
-  refreshCostIndices
+  refreshCostIndices,
+  refreshHubPrices,
+  runHubRefresh
 };

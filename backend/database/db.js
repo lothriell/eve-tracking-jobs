@@ -422,6 +422,173 @@ class DB {
     ).all(characterId, ...dates);
   }
 
+  // ===== TRADE HUBS =====
+
+  // Default hubs seeded per-user on first trading access
+  static DEFAULT_HUBS = [
+    { name: 'Jita 4-4', station_id: 60003760, region_id: 10000002 },
+    { name: 'Dodixie', station_id: 60011866, region_id: 10000032 },
+    { name: 'Amarr', station_id: 60008494, region_id: 10000043 },
+    { name: 'Rens', station_id: 60004588, region_id: 10000030 },
+    { name: 'Hek', station_id: 60005686, region_id: 10000042 },
+  ];
+
+  seedDefaultHubsForUser(userId) {
+    const stmt = this.db.prepare(
+      `INSERT OR IGNORE INTO trade_hubs (user_id, name, station_id, region_id, is_default, is_structure)
+       VALUES (?, ?, ?, ?, 1, 0)`
+    );
+    const batch = this.db.transaction((hubs) => {
+      for (const hub of hubs) {
+        stmt.run(userId, hub.name, hub.station_id, hub.region_id);
+      }
+    });
+    batch(DB.DEFAULT_HUBS);
+  }
+
+  getTradeHubs(userId) {
+    return this.db.prepare(
+      'SELECT * FROM trade_hubs WHERE user_id = ? ORDER BY is_default DESC, name ASC'
+    ).all(userId);
+  }
+
+  getEnabledTradeHubs(userId) {
+    return this.db.prepare(
+      'SELECT * FROM trade_hubs WHERE user_id = ? AND enabled = 1 ORDER BY is_default DESC, name ASC'
+    ).all(userId);
+  }
+
+  getAllEnabledHubs() {
+    // Deduped by station_id across all users (for the fetcher)
+    return this.db.prepare(
+      `SELECT DISTINCT station_id, region_id, name
+       FROM trade_hubs WHERE enabled = 1
+       ORDER BY station_id`
+    ).all();
+  }
+
+  getTradeHub(hubId, userId) {
+    return this.db.prepare(
+      'SELECT * FROM trade_hubs WHERE id = ? AND user_id = ?'
+    ).get(hubId, userId);
+  }
+
+  addTradeHub(userId, name, stationId, regionId, isStructure = 0) {
+    const result = this.db.prepare(
+      `INSERT INTO trade_hubs (user_id, name, station_id, region_id, is_default, is_structure)
+       VALUES (?, ?, ?, ?, 0, ?)`
+    ).run(userId, name, stationId, regionId, isStructure ? 1 : 0);
+    return result.lastInsertRowid;
+  }
+
+  removeTradeHub(hubId, userId) {
+    const result = this.db.prepare(
+      'DELETE FROM trade_hubs WHERE id = ? AND user_id = ?'
+    ).run(hubId, userId);
+    return result.changes;
+  }
+
+  setHubEnabled(hubId, userId, enabled) {
+    const result = this.db.prepare(
+      'UPDATE trade_hubs SET enabled = ? WHERE id = ? AND user_id = ?'
+    ).run(enabled ? 1 : 0, hubId, userId);
+    return result.changes;
+  }
+
+  // ===== HUB PRICES =====
+
+  setHubPrices(stationId, prices) {
+    const stmt = this.db.prepare(
+      `INSERT OR REPLACE INTO hub_prices (type_id, station_id, sell_min, buy_max, sell_volume, buy_volume, sell_order_count, buy_order_count, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+    );
+    const batch = this.db.transaction((items) => {
+      for (const item of items) {
+        stmt.run(item.type_id, stationId, item.sell_min || 0, item.buy_max || 0,
+                 item.sell_volume || 0, item.buy_volume || 0,
+                 item.sell_order_count || 0, item.buy_order_count || 0);
+      }
+    });
+    batch(prices);
+    return prices.length;
+  }
+
+  getHubPrices(stationId, typeIds) {
+    if (!typeIds || typeIds.length === 0) return {};
+    const placeholders = typeIds.map(() => '?').join(',');
+    const rows = this.db.prepare(
+      `SELECT type_id, sell_min, buy_max, sell_volume, buy_volume, sell_order_count, buy_order_count
+       FROM hub_prices WHERE station_id = ? AND type_id IN (${placeholders})`
+    ).all(stationId, ...typeIds);
+    const result = {};
+    for (const row of rows) {
+      result[row.type_id] = row;
+    }
+    return result;
+  }
+
+  getHubPricesForType(typeId, stationIds) {
+    if (!stationIds || stationIds.length === 0) return {};
+    const placeholders = stationIds.map(() => '?').join(',');
+    const rows = this.db.prepare(
+      `SELECT station_id, sell_min, buy_max, sell_volume, buy_volume, sell_order_count, buy_order_count
+       FROM hub_prices WHERE type_id = ? AND station_id IN (${placeholders})`
+    ).all(typeId, ...stationIds);
+    const result = {};
+    for (const row of rows) {
+      result[row.station_id] = row;
+    }
+    return result;
+  }
+
+  getHubPriceAge(stationId) {
+    return this.db.prepare(
+      'SELECT MIN(updated_at) as oldest, MAX(updated_at) as newest, COUNT(*) as count FROM hub_prices WHERE station_id = ?'
+    ).get(stationId);
+  }
+
+  // ===== HUB REFRESH STATUS =====
+
+  setHubRefreshStatus(stationId, regionId, data) {
+    this.db.prepare(
+      `INSERT OR REPLACE INTO hub_refresh_status (station_id, region_id, last_refresh_at, last_page_count, last_order_count, status, error_message)
+       VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?)`
+    ).run(stationId, regionId, data.pageCount || 0, data.orderCount || 0, data.status || 'ok', data.error || null);
+  }
+
+  getHubRefreshStatuses(stationIds) {
+    if (!stationIds || stationIds.length === 0) return {};
+    const placeholders = stationIds.map(() => '?').join(',');
+    const rows = this.db.prepare(
+      `SELECT station_id, last_refresh_at, last_page_count, last_order_count, status, error_message
+       FROM hub_refresh_status WHERE station_id IN (${placeholders})`
+    ).all(...stationIds);
+    const result = {};
+    for (const row of rows) {
+      result[row.station_id] = row;
+    }
+    return result;
+  }
+
+  getAllHubRefreshStatuses() {
+    return this.db.prepare('SELECT * FROM hub_refresh_status').all();
+  }
+
+  // ===== TRADE SETTINGS =====
+
+  getTradeSettings(characterId) {
+    return this.db.prepare('SELECT * FROM trade_settings WHERE character_id = ?').get(characterId);
+  }
+
+  setTradeSettings(characterId, settings) {
+    this.db.prepare(
+      `INSERT OR REPLACE INTO trade_settings (character_id, accounting_level, broker_relations_level, advanced_broker_level, faction_standing, corp_standing, preferred_source_hub, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+    ).run(characterId, settings.accounting_level || 0, settings.broker_relations_level || 0,
+          settings.advanced_broker_level || 0, settings.faction_standing || 0,
+          settings.corp_standing || 0, settings.preferred_source_hub || null);
+  }
+
   close() {
     if (this.db) {
       this.db.close();

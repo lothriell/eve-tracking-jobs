@@ -133,3 +133,59 @@ CREATE TABLE IF NOT EXISTS planet_schematic_info (
     schematic_name TEXT,
     cycle_time INTEGER DEFAULT 0
 );
+
+-- ===== TRADING FEATURE =====
+
+-- Configurable trade hubs (per-user)
+CREATE TABLE IF NOT EXISTS trade_hubs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    station_id INTEGER NOT NULL,
+    region_id INTEGER NOT NULL,
+    is_default INTEGER DEFAULT 0,
+    is_structure INTEGER DEFAULT 0,
+    enabled INTEGER DEFAULT 1,
+    added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, station_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_trade_hubs_user ON trade_hubs(user_id);
+
+-- Aggregated hub prices (min sell / max buy per type per station, shared globally)
+CREATE TABLE IF NOT EXISTS hub_prices (
+    type_id INTEGER NOT NULL,
+    station_id INTEGER NOT NULL,
+    sell_min REAL DEFAULT 0,
+    buy_max REAL DEFAULT 0,
+    sell_volume INTEGER DEFAULT 0,
+    buy_volume INTEGER DEFAULT 0,
+    sell_order_count INTEGER DEFAULT 0,
+    buy_order_count INTEGER DEFAULT 0,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (type_id, station_id)
+);
+CREATE INDEX IF NOT EXISTS idx_hub_prices_station ON hub_prices(station_id);
+
+-- Per-character trade skill settings (for fee calculation)
+CREATE TABLE IF NOT EXISTS trade_settings (
+    character_id INTEGER PRIMARY KEY,
+    accounting_level INTEGER DEFAULT 0,
+    broker_relations_level INTEGER DEFAULT 0,
+    advanced_broker_level INTEGER DEFAULT 0,
+    faction_standing REAL DEFAULT 0,
+    corp_standing REAL DEFAULT 0,
+    preferred_source_hub INTEGER,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Hub refresh tracking (keyed by station_id, shared globally)
+CREATE TABLE IF NOT EXISTS hub_refresh_status (
+    station_id INTEGER PRIMARY KEY,
+    region_id INTEGER NOT NULL,
+    last_refresh_at DATETIME,
+    last_page_count INTEGER DEFAULT 0,
+    last_order_count INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'pending',
+    error_message TEXT
+);
