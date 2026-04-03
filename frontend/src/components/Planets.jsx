@@ -417,7 +417,7 @@ function StorageBar({ storage }) {
 
 // ============== COLONY DETAIL ==============
 
-function ColonyDetail({ characterId, planetId, planetType, onClose }) {
+function ColonyDetail({ characterId, planetId, planetType, upgradeLevel, onClose }) {
   const [layout, setLayout] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -463,6 +463,7 @@ function ColonyDetail({ characterId, planetId, planetType, onClose }) {
       <div className="colony-detail-header">
         <span className="planet-dot" style={{ backgroundColor: style.dot, width: 10, height: 10, borderRadius: '50%', display: 'inline-block' }} />
         <span className="colony-detail-title">Planet {planetId} — Colony Layout</span>
+        <UpgradeStars level={upgradeLevel || 0} />
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           {!loading && (
             <>
@@ -681,11 +682,11 @@ function CharacterColonies({ characterData, alertMode }) {
               <th className="col-planet">Planet</th>
               <th className="col-type">Type</th>
               <th className="col-product">Product</th>
-              <th className="col-level text-right">Level</th>
               <th className="col-pins text-right">Pins</th>
               <th className="col-rate text-right">Rate</th>
               <th className="col-storage">Storage</th>
               <th className="col-expiry">Expiry</th>
+              <th className="col-alerts">Alerts</th>
               <th className="col-status">Status</th>
               <th className="col-action"></th>
             </tr>
@@ -745,9 +746,6 @@ function CharacterColonies({ characterData, alertMode }) {
                         </div>
                       ) : <span className="date-muted">—</span>}
                     </td>
-                    <td className="text-right">
-                      <UpgradeStars level={colony.upgrade_level || 0} />
-                    </td>
                     <td className="text-right" style={{ color: '#a0aec0' }}>{colony.num_pins || '—'}</td>
                     <td className="text-right">
                       {loadingLayouts[colony.planet_id] ? (
@@ -765,6 +763,9 @@ function CharacterColonies({ characterData, alertMode }) {
                     </td>
                     <td>
                       <LiveCountdown expiryTime={earliestExpiry} />
+                    </td>
+                    <td>
+                      <AlertBadges alerts={alerts} />
                     </td>
                     <td>
                       <div className="colony-status-cell">
@@ -785,6 +786,7 @@ function CharacterColonies({ characterData, alertMode }) {
                           characterId={character_id}
                           planetId={colony.planet_id}
                           planetType={colony.planet_type}
+                          upgradeLevel={colony.upgrade_level}
                           onClose={() => setOpenColony(null)}
                         />
                       </td>
