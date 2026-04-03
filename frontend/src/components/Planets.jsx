@@ -1027,8 +1027,18 @@ function ColonyCard({ colony, characterName, characterId }) {
   const circumference = 2 * Math.PI * radius;
   const tierSegments = storage?.tiers || [];
 
+  // Build tooltip: alerts first, then storage
+  const tooltipParts = [];
+  if (colonyStatus.reason) tooltipParts.push(`⚠ ${colonyStatus.reason}`);
+  if (storage) {
+    const storageLine = `Storage: ${Math.round(storage.pct)}% (${storage.used.toFixed(0)} / ${storage.capacity.toFixed(0)} m³)`;
+    const tierBreakdown = (storage.tiers || []).map(t => `${t.tier}: ${t.pct.toFixed(1)}%`).join(', ');
+    tooltipParts.push(tierBreakdown ? `${storageLine}\n${tierBreakdown}` : storageLine);
+  }
+  const cardTooltip = tooltipParts.join('\n') || `${colony.system_name || ''} — ${colonyStatus.label}`;
+
   return (
-    <div className={`colony-card ${statusClass}`} title={`${characterName} — ${colony.system_name || ''} — ${(colony.planet_type || '').charAt(0).toUpperCase() + (colony.planet_type || '').slice(1)}`}>
+    <div className={`colony-card ${statusClass}`} title={cardTooltip}>
       {/* Planet icon with fill gauge */}
       <div className="colony-card-planet">
         <svg className="colony-card-gauge" viewBox="0 0 80 80">
