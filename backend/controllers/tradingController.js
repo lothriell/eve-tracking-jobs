@@ -407,11 +407,13 @@ async function stockAnalysis(req, res) {
   try {
     const sourceHubId = parseInt(req.query.source);
     const destHubId = parseInt(req.query.dest);
-    const markup = parseFloat(req.query.markup) || 20; // default 20% markup
+    const markup = parseFloat(req.query.markup) || 20;
     const limit = Math.min(parseInt(req.query.limit) || 100, 500);
     const minJitaVolume = parseInt(req.query.minVolume) || 10;
     const maxPrice = parseFloat(req.query.maxPrice) || 0;
     const nameFilter = (req.query.name || '').trim().toLowerCase();
+    const iskPerM3 = parseFloat(req.query.iskPerM3) || 0;
+    const collateralPct = parseFloat(req.query.collateralPct) || 0;
 
     if (!sourceHubId || !destHubId) return res.status(400).json({ error: 'source and dest required' });
 
@@ -433,6 +435,22 @@ async function stockAnalysis(req, res) {
       destPriceMap[row.type_id] = row;
     }
 
+    // Get item volumes from SDE (extra_data on type entries in name_cache)
+    const volumeMap = {};
+    if (iskPerM3 > 0) {
+      const typeIds = allSourcePrices.map(p => p.type_id);
+      for (let i = 0; i < typeIds.length; i += 999) {
+        const batch = typeIds.slice(i, i + 999);
+        const placeholders = batch.map(() => '?').join(',');
+        const rows = db.db.prepare(
+          `SELECT id, extra_data FROM name_cache WHERE category = 'type' AND id IN (${placeholders})`
+        ).all(...batch);
+        for (const row of rows) {
+          if (row.extra_data) volumeMap[row.id] = parseFloat(row.extra_data) || 0;
+        }
+      }
+    }
+
     // Find items to stock: high volume at source, missing or overpriced at dest
     const opportunities = [];
     for (const src of allSourcePrices) {
@@ -441,21 +459,26 @@ async function stockAnalysis(req, res) {
 
       const dst = destPriceMap[src.type_id];
       const suggestedSell = src.sell_min * (1 + markup / 100);
-      let status, currentDestPrice, profitPerUnit;
+      let status, currentDestPrice, grossProfit;
 
       if (!dst || (dst.sell_min === 0 && dst.buy_max === 0)) {
-        // Not available at dest — prime opportunity
         status = 'missing';
         currentDestPrice = 0;
-        profitPerUnit = suggestedSell - src.sell_min;
+        grossProfit = suggestedSell - src.sell_min;
       } else if (dst.sell_min > suggestedSell) {
-        // Overpriced at dest — can undercut
         status = 'overpriced';
         currentDestPrice = dst.sell_min;
-        profitPerUnit = dst.sell_min * 0.95 - src.sell_min; // undercut by 5%
+        grossProfit = dst.sell_min * 0.95 - src.sell_min;
       } else {
-        continue; // already well-stocked, skip
+        continue;
       }
+
+      // Calculate shipping cost per unit
+      const itemVolume = volumeMap[src.type_id] || 0;
+      const shippingPerUnit = (itemVolume * iskPerM3) + (src.sell_min * collateralPct / 100);
+      const profitPerUnit = grossProfit - shippingPerUnit;
+
+      if (profitPerUnit <= 0 && (iskPerM3 > 0 || collateralPct > 0)) continue; // skip unprofitable after shipping
 
       opportunities.push({
         type_id: src.type_id,
@@ -463,8 +486,10 @@ async function stockAnalysis(req, res) {
         jita_volume: src.sell_volume,
         dest_sell: currentDestPrice,
         suggested_sell: Math.round(suggestedSell * 100) / 100,
+        volume_m3: itemVolume,
+        shipping_cost: Math.round(shippingPerUnit * 100) / 100,
         profit_per_unit: Math.round(profitPerUnit * 100) / 100,
-        roi: Math.round((profitPerUnit / src.sell_min) * 10000) / 100,
+        roi: Math.round((profitPerUnit / (src.sell_min + shippingPerUnit)) * 10000) / 100,
         status,
       });
     }
@@ -491,6 +516,8 @@ async function stockAnalysis(req, res) {
       source_hub: { id: sourceHub.id, name: sourceHub.name },
       dest_hub: { id: destHub.id, name: destHub.name },
       markup_pct: markup,
+      isk_per_m3: iskPerM3,
+      collateral_pct: collateralPct,
       total: result.length,
       opportunities: result,
     });

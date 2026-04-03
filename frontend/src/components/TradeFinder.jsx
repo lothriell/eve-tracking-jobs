@@ -24,6 +24,8 @@ function TradeFinder({ onError, refreshKey }) {
   const [stockResults, setStockResults] = useState(null);
   const [stockMarkup, setStockMarkup] = useState('20');
   const [stockNameFilter, setStockNameFilter] = useState('');
+  const [iskPerM3, setIskPerM3] = useState('');
+  const [collateralPct, setCollateralPct] = useState('');
 
   // Controls
   const [sourceHub, setSourceHub] = useState('');
@@ -111,6 +113,8 @@ function TradeFinder({ onError, refreshKey }) {
       };
       if (maxPrice) params.maxPrice = parseFloat(maxPrice);
       if (stockNameFilter) params.name = stockNameFilter;
+      if (iskPerM3) params.iskPerM3 = parseFloat(iskPerM3);
+      if (collateralPct) params.collateralPct = parseFloat(collateralPct);
 
       const resp = await getStockAnalysis(params);
       setStockResults(resp.data);
@@ -304,10 +308,20 @@ function TradeFinder({ onError, refreshKey }) {
             </div>
           )}
           {mode === 'stock' && (
-            <div className="control-group small">
-              <label>Markup %</label>
-              <input type="number" value={stockMarkup} onChange={e => setStockMarkup(e.target.value)} placeholder="20" />
-            </div>
+            <>
+              <div className="control-group small">
+                <label>Markup %</label>
+                <input type="number" value={stockMarkup} onChange={e => setStockMarkup(e.target.value)} placeholder="20" />
+              </div>
+              <div className="control-group small">
+                <label>ISK/m³</label>
+                <input type="number" value={iskPerM3} onChange={e => setIskPerM3(e.target.value)} placeholder="Halo rate" title="Hauling cost per m³ from your freight service" />
+              </div>
+              <div className="control-group small">
+                <label>Collateral %</label>
+                <input type="number" value={collateralPct} onChange={e => setCollateralPct(e.target.value)} placeholder="e.g. 1.5" title="Collateral fee % charged by freight service" />
+              </div>
+            </>
           )}
         </div>
         {mode === 'arbitrage' && (
@@ -507,6 +521,8 @@ function TradeFinder({ onError, refreshKey }) {
             <span>{stockResults.total} items to stock ({stockResults.markup_pct}% markup)</span>
             <span className="trade-meta">
               {stockResults.source_hub?.name} → {stockResults.dest_hub?.name}
+              {stockResults.isk_per_m3 > 0 && ` | Shipping: ${stockResults.isk_per_m3.toLocaleString()} ISK/m³`}
+              {stockResults.collateral_pct > 0 && ` + ${stockResults.collateral_pct}% collateral`}
             </span>
           </div>
           <table className="trade-table">
@@ -517,9 +533,11 @@ function TradeFinder({ onError, refreshKey }) {
                 <th className="num">Jita Sell</th>
                 <th className="num">Dest Sell</th>
                 <th className="num">Suggested</th>
+                {(stockResults.isk_per_m3 > 0 || stockResults.collateral_pct > 0) && <th className="num">Shipping</th>}
+                {stockResults.isk_per_m3 > 0 && <th className="num">m³</th>}
                 <th className="num">Profit/unit</th>
                 <th className="num">ROI %</th>
-                <th className="num">Jita Volume</th>
+                <th className="num">Jita Vol</th>
               </tr>
             </thead>
             <tbody>
@@ -537,6 +555,8 @@ function TradeFinder({ onError, refreshKey }) {
                   <td className="num">{formatISK(opp.jita_sell)}</td>
                   <td className="num">{opp.dest_sell > 0 ? formatISK(opp.dest_sell) : '—'}</td>
                   <td className="num">{formatISK(opp.suggested_sell)}</td>
+                  {(stockResults.isk_per_m3 > 0 || stockResults.collateral_pct > 0) && <td className="num shipping-cost">{formatISK(opp.shipping_cost)}</td>}
+                  {stockResults.isk_per_m3 > 0 && <td className="num">{opp.volume_m3 > 0 ? opp.volume_m3.toLocaleString() : '—'}</td>}
                   <td className="num profit">{formatISK(opp.profit_per_unit)}</td>
                   <td className={`num ${opp.roi >= 20 ? 'roi-high' : 'roi-med'}`}>{opp.roi.toFixed(1)}%</td>
                   <td className="num">{opp.jita_volume?.toLocaleString()}</td>

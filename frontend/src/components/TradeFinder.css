@@ -476,6 +476,10 @@
   color: #fc8181;
 }
 
+.shipping-cost {
+  color: #fc8181 !important;
+}
+
 .stock-status.overpriced {
   background: rgba(237, 137, 54, 0.15);
   color: #fbd38d;
