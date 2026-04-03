@@ -1077,8 +1077,6 @@ function ColonyCard({ colony, characterName, characterId }) {
         <div className="colony-card-reason">{colonyStatus.reason}</div>
       )}
 
-      {/* Character */}
-      <div className="colony-card-character">{characterName}</div>
     </div>
   );
 }
