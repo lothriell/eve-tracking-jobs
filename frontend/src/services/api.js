@@ -207,6 +207,10 @@ export const autoDetectTradeSkills = (characterId) => {
   return api.get(`/api/trading/settings/auto?characterId=${characterId}`);
 };
 
+export const getStockAnalysis = (params) => {
+  return api.get('/api/trading/stock-analysis', { params });
+};
+
 export const searchTypes = (query) => {
   return api.get(`/api/trading/types/search?q=${encodeURIComponent(query)}`);
 };

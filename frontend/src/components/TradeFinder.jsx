@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { getTradeHubs, findTrades, getAllCharacters, autoDetectTradeSkills, getTradeSettings, updateTradeSettings } from '../services/api';
+import { getTradeHubs, findTrades, getStockAnalysis, getAllCharacters, autoDetectTradeSkills, getTradeSettings, updateTradeSettings } from '../services/api';
 import ExportButton from './ExportButton';
 import ExternalLinks from './ExternalLinks';
 import './TradeFinder.css';
@@ -18,6 +18,12 @@ function TradeFinder({ onError, refreshKey }) {
   const [characters, setCharacters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
+  const [mode, setMode] = useState('arbitrage'); // 'arbitrage' or 'stock'
+
+  // Stock analysis
+  const [stockResults, setStockResults] = useState(null);
+  const [stockMarkup, setStockMarkup] = useState('20');
+  const [stockNameFilter, setStockNameFilter] = useState('');
 
   // Controls
   const [sourceHub, setSourceHub] = useState('');
@@ -92,6 +98,29 @@ function TradeFinder({ onError, refreshKey }) {
     }
   };
 
+  const handleStockSearch = async () => {
+    if (!sourceHub || !destHub || destHub === 'all') return;
+    try {
+      setSearching(true);
+      const params = {
+        source: sourceHub,
+        dest: destHub,
+        markup: parseFloat(stockMarkup) || 20,
+        limit: 100,
+        minVolume: parseInt(minVolume) || 10,
+      };
+      if (maxPrice) params.maxPrice = parseFloat(maxPrice);
+      if (stockNameFilter) params.name = stockNameFilter;
+
+      const resp = await getStockAnalysis(params);
+      setStockResults(resp.data);
+    } catch (err) {
+      onError?.('Failed to analyze stocking opportunities');
+    } finally {
+      setSearching(false);
+    }
+  };
+
   const handleCopyMultiBuy = () => {
     if (!results?.opportunities?.length) return;
     const lines = results.opportunities.map(o => `${o.type_name} 1`).join('\n');
@@ -141,6 +170,9 @@ function TradeFinder({ onError, refreshKey }) {
     setSellerChar(charId);
     if (charId) loadSettings(charId, setSellerSettings);
   };
+
+  // Item name filter on results
+  const [itemFilter, setItemFilter] = useState('');
 
   // Recap top N
   const [recapTopN, setRecapTopN] = useState(5);
@@ -220,6 +252,16 @@ function TradeFinder({ onError, refreshKey }) {
         </div>
       </div>
 
+      {/* Mode toggle */}
+      <div className="trade-mode-toggle">
+        <button className={mode === 'arbitrage' ? 'active' : ''} onClick={() => setMode('arbitrage')}>
+          Hub Arbitrage
+        </button>
+        <button className={mode === 'stock' ? 'active' : ''} onClick={() => setMode('stock')}>
+          Stock Nullsec
+        </button>
+      </div>
+
       {/* Data freshness */}
       {dataAge !== null && (
         <div className={`trade-freshness ${isStale ? 'stale' : 'fresh'}`}>
@@ -242,59 +284,79 @@ function TradeFinder({ onError, refreshKey }) {
           <div className="control-group">
             <label>Destination</label>
             <select value={destHub} onChange={e => setDestHub(e.target.value)}>
-              <option value="all">All Other Hubs</option>
+              {mode === 'arbitrage' && <option value="all">All Other Hubs</option>}
               {enabledHubs.filter(h => String(h.id) !== sourceHub).map(h => (
                 <option key={h.id} value={h.id}>{h.name}</option>
               ))}
             </select>
           </div>
-          <div className="control-group">
-            <label>Trade Type</label>
-            <div className="trade-type-toggle">
-              <button className={tradeType === 'B' ? 'active' : ''} onClick={() => setTradeType('B')}>
-                Type B (Instant)
-              </button>
-              <button className={tradeType === 'A' ? 'active' : ''} onClick={() => setTradeType('A')}>
-                Type A (Buy Order)
-              </button>
+          {mode === 'arbitrage' && (
+            <div className="control-group">
+              <label>Trade Type</label>
+              <div className="trade-type-toggle">
+                <button className={tradeType === 'B' ? 'active' : ''} onClick={() => setTradeType('B')}>
+                  Type B (Instant)
+                </button>
+                <button className={tradeType === 'A' ? 'active' : ''} onClick={() => setTradeType('A')}>
+                  Type A (Buy Order)
+                </button>
+              </div>
             </div>
-          </div>
+          )}
+          {mode === 'stock' && (
+            <div className="control-group small">
+              <label>Markup %</label>
+              <input type="number" value={stockMarkup} onChange={e => setStockMarkup(e.target.value)} placeholder="20" />
+            </div>
+          )}
         </div>
-        <div className="trade-control-row">
-          <div className="control-group">
-            <label>Buyer (source hub)</label>
-            <div className="char-detect-row">
-              <select value={buyerChar} onChange={e => handleBuyerChange(e.target.value)}>
-                <option value="">Default fees</option>
-                {characters.map(c => (
-                  <option key={c.character_id} value={c.character_id}>{c.name}</option>
-                ))}
-              </select>
-              {buyerChar && <button className="detect-btn" onClick={() => handleAutoDetect('buyer')} disabled={detectingBuyer}>{detectingBuyer ? '...' : 'Detect'}</button>}
+        {mode === 'arbitrage' && (
+          <div className="trade-control-row">
+            <div className="control-group">
+              <label>Buyer (source hub)</label>
+              <div className="char-detect-row">
+                <select value={buyerChar} onChange={e => handleBuyerChange(e.target.value)}>
+                  <option value="">Default fees</option>
+                  {characters.map(c => (
+                    <option key={c.character_id} value={c.character_id}>{c.name}</option>
+                  ))}
+                </select>
+                {buyerChar && <button className="detect-btn" onClick={() => handleAutoDetect('buyer')} disabled={detectingBuyer}>{detectingBuyer ? '...' : 'Detect'}</button>}
+              </div>
+            </div>
+            <div className="control-group">
+              <label>Seller (dest hub)</label>
+              <div className="char-detect-row">
+                <select value={sellerChar} onChange={e => handleSellerChange(e.target.value)}>
+                  <option value="">Default fees</option>
+                  {characters.map(c => (
+                    <option key={c.character_id} value={c.character_id}>{c.name}</option>
+                  ))}
+                </select>
+                {sellerChar && <button className="detect-btn" onClick={() => handleAutoDetect('seller')} disabled={detectingSeller}>{detectingSeller ? '...' : 'Detect'}</button>}
+              </div>
             </div>
           </div>
-          <div className="control-group">
-            <label>Seller (dest hub)</label>
-            <div className="char-detect-row">
-              <select value={sellerChar} onChange={e => handleSellerChange(e.target.value)}>
-                <option value="">Default fees</option>
-                {characters.map(c => (
-                  <option key={c.character_id} value={c.character_id}>{c.name}</option>
-                ))}
-              </select>
-              {sellerChar && <button className="detect-btn" onClick={() => handleAutoDetect('seller')} disabled={detectingSeller}>{detectingSeller ? '...' : 'Detect'}</button>}
-            </div>
-          </div>
-        </div>
+        )}
         <div className="trade-control-row">
-          <div className="control-group small">
-            <label>Min ROI %</label>
-            <input type="number" value={minROI} onChange={e => setMinROI(e.target.value)} placeholder="5" />
-          </div>
-          <div className="control-group small">
-            <label>Min Profit</label>
-            <input type="number" value={minProfit} onChange={e => setMinProfit(e.target.value)} placeholder="ISK" />
-          </div>
+          {mode === 'stock' && (
+            <div className="control-group">
+              <label>Filter by name</label>
+              <input type="text" value={stockNameFilter} onChange={e => setStockNameFilter(e.target.value)} placeholder="e.g. Shuttle, Ammo..." />
+            </div>
+          )}
+          {mode === 'arbitrage' && (
+            <>
+              <div className="control-group small">
+                <label>Min ROI %</label>
+                <input type="number" value={minROI} onChange={e => setMinROI(e.target.value)} placeholder="5" />
+              </div>
+              <div className="control-group small">
+                <label>Min Profit</label>
+                <input type="number" value={minProfit} onChange={e => setMinProfit(e.target.value)} placeholder="ISK" />
+              </div>
+            </>
+          )}
           <div className="control-group small">
             <label>Max Buy Price</label>
             <input type="number" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} placeholder="ISK" />
@@ -305,8 +367,8 @@ function TradeFinder({ onError, refreshKey }) {
           </div>
           <div className="control-group">
             <label>&nbsp;</label>
-            <button className="find-btn" onClick={handleSearch} disabled={searching || !sourceHub}>
-              {searching ? 'Searching...' : 'Find Trades'}
+            <button className="find-btn" onClick={mode === 'stock' ? handleStockSearch : handleSearch} disabled={searching || !sourceHub || (mode === 'stock' && (!destHub || destHub === 'all'))}>
+              {searching ? 'Searching...' : mode === 'stock' ? 'Analyze' : 'Find Trades'}
             </button>
           </div>
         </div>
@@ -432,9 +494,66 @@ function TradeFinder({ onError, refreshKey }) {
         </div>
       )}
 
-      {!results && !searching && (
+      {mode === 'arbitrage' && !results && !searching && (
         <div className="trade-empty-initial">
           <p>Select source and destination hubs, set your filters, and click <strong>Find Trades</strong></p>
+        </div>
+      )}
+
+      {/* Stock Analysis Results */}
+      {mode === 'stock' && stockResults && (
+        <div className="trade-results">
+          <div className="trade-results-header">
+            <span>{stockResults.total} items to stock ({stockResults.markup_pct}% markup)</span>
+            <span className="trade-meta">
+              {stockResults.source_hub?.name} → {stockResults.dest_hub?.name}
+            </span>
+          </div>
+          <table className="trade-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Status</th>
+                <th className="num">Jita Sell</th>
+                <th className="num">Dest Sell</th>
+                <th className="num">Suggested</th>
+                <th className="num">Profit/unit</th>
+                <th className="num">ROI %</th>
+                <th className="num">Jita Volume</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stockResults.opportunities.map((opp, i) => (
+                <tr key={opp.type_id}>
+                  <td className="item-name">
+                    <span>{opp.type_name}</span>
+                    <ExternalLinks type="item" typeId={opp.type_id} />
+                  </td>
+                  <td>
+                    <span className={`stock-status ${opp.status}`}>
+                      {opp.status === 'missing' ? 'MISSING' : 'OVERPRICED'}
+                    </span>
+                  </td>
+                  <td className="num">{formatISK(opp.jita_sell)}</td>
+                  <td className="num">{opp.dest_sell > 0 ? formatISK(opp.dest_sell) : '—'}</td>
+                  <td className="num">{formatISK(opp.suggested_sell)}</td>
+                  <td className="num profit">{formatISK(opp.profit_per_unit)}</td>
+                  <td className={`num ${opp.roi >= 20 ? 'roi-high' : 'roi-med'}`}>{opp.roi.toFixed(1)}%</td>
+                  <td className="num">{opp.jita_volume?.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {stockResults.opportunities.length === 0 && (
+            <div className="trade-empty">No stocking opportunities found. Try adjusting filters.</div>
+          )}
+        </div>
+      )}
+
+      {mode === 'stock' && !stockResults && !searching && (
+        <div className="trade-empty-initial">
+          <p>Select source (Jita) and your nullsec hub, set markup %, and click <strong>Analyze</strong></p>
+          <p className="stock-hint">Shows items available at source but missing or overpriced at your hub, sorted by demand</p>
         </div>
       )}
     </div>

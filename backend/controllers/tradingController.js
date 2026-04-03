@@ -403,11 +403,109 @@ async function searchStations(req, res) {
   }
 }
 
+async function stockAnalysis(req, res) {
+  try {
+    const sourceHubId = parseInt(req.query.source);
+    const destHubId = parseInt(req.query.dest);
+    const markup = parseFloat(req.query.markup) || 20; // default 20% markup
+    const limit = Math.min(parseInt(req.query.limit) || 100, 500);
+    const minJitaVolume = parseInt(req.query.minVolume) || 10;
+    const maxPrice = parseFloat(req.query.maxPrice) || 0;
+    const nameFilter = (req.query.name || '').trim().toLowerCase();
+
+    if (!sourceHubId || !destHubId) return res.status(400).json({ error: 'source and dest required' });
+
+    const sourceHub = db.getTradeHub(sourceHubId, req.session.userId);
+    const destHub = db.getTradeHub(destHubId, req.session.userId);
+    if (!sourceHub || !destHub) return res.status(404).json({ error: 'Hub not found' });
+
+    // Get all source prices
+    const allSourcePrices = db.db.prepare(
+      'SELECT type_id, sell_min, buy_max, sell_volume, buy_volume FROM hub_prices WHERE station_id = ? AND sell_min > 0'
+    ).all(sourceHub.station_id);
+
+    // Get all dest prices (what already exists at nullsec)
+    const allDestPrices = db.db.prepare(
+      'SELECT type_id, sell_min, buy_max, sell_volume, buy_volume FROM hub_prices WHERE station_id = ?'
+    ).all(destHub.station_id);
+    const destPriceMap = {};
+    for (const row of allDestPrices) {
+      destPriceMap[row.type_id] = row;
+    }
+
+    // Find items to stock: high volume at source, missing or overpriced at dest
+    const opportunities = [];
+    for (const src of allSourcePrices) {
+      if (src.sell_volume < minJitaVolume) continue;
+      if (maxPrice && src.sell_min > maxPrice) continue;
+
+      const dst = destPriceMap[src.type_id];
+      const suggestedSell = src.sell_min * (1 + markup / 100);
+      let status, currentDestPrice, profitPerUnit;
+
+      if (!dst || (dst.sell_min === 0 && dst.buy_max === 0)) {
+        // Not available at dest — prime opportunity
+        status = 'missing';
+        currentDestPrice = 0;
+        profitPerUnit = suggestedSell - src.sell_min;
+      } else if (dst.sell_min > suggestedSell) {
+        // Overpriced at dest — can undercut
+        status = 'overpriced';
+        currentDestPrice = dst.sell_min;
+        profitPerUnit = dst.sell_min * 0.95 - src.sell_min; // undercut by 5%
+      } else {
+        continue; // already well-stocked, skip
+      }
+
+      opportunities.push({
+        type_id: src.type_id,
+        jita_sell: src.sell_min,
+        jita_volume: src.sell_volume,
+        dest_sell: currentDestPrice,
+        suggested_sell: Math.round(suggestedSell * 100) / 100,
+        profit_per_unit: Math.round(profitPerUnit * 100) / 100,
+        roi: Math.round((profitPerUnit / src.sell_min) * 10000) / 100,
+        status,
+      });
+    }
+
+    // Sort: missing first, then by Jita volume descending (most in-demand)
+    opportunities.sort((a, b) => {
+      if (a.status !== b.status) return a.status === 'missing' ? -1 : 1;
+      return b.jita_volume - a.jita_volume;
+    });
+
+    // Resolve type names
+    const limited = opportunities.slice(0, limit * 2); // fetch more names for filtering
+    const typeIds = [...new Set(limited.map(o => o.type_id))];
+    const typeNames = typeIds.length > 0 ? await getTypeNames(typeIds) : {};
+
+    // Apply name filter and limit
+    let result = limited.map(o => ({ ...o, type_name: typeNames[o.type_id] || `Type ${o.type_id}` }));
+    if (nameFilter) {
+      result = result.filter(o => o.type_name.toLowerCase().includes(nameFilter));
+    }
+    result = result.slice(0, limit);
+
+    res.json({
+      source_hub: { id: sourceHub.id, name: sourceHub.name },
+      dest_hub: { id: destHub.id, name: destHub.name },
+      markup_pct: markup,
+      total: result.length,
+      opportunities: result,
+    });
+  } catch (error) {
+    console.error('Stock analysis error:', error.message);
+    res.status(500).json({ error: 'Failed to analyze stocking opportunities' });
+  }
+}
+
 module.exports = {
   requireTradeAccess,
   ensureHubsSeeded,
   searchTypes,
   searchStations,
+  stockAnalysis,
   getHubs,
   addHub,
   removeHub,

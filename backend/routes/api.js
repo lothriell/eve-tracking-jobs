@@ -398,6 +398,7 @@ router.get('/trading/find', ...tradeAuth, tradingController.findTrades);
 router.get('/trading/settings', ...tradeAuth, tradingController.getSettings);
 router.put('/trading/settings', ...tradeAuth, tradingController.updateSettings);
 router.get('/trading/settings/auto', ...tradeAuth, tradingController.autoDetectSkills);
+router.get('/trading/stock-analysis', ...tradeAuth, tradingController.stockAnalysis);
 router.get('/trading/types/search', ...tradeAuth, tradingController.searchTypes);
 router.get('/trading/stations/search', ...tradeAuth, tradingController.searchStations);
 

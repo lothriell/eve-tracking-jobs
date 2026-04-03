@@ -47,6 +47,35 @@
   background: rgba(72, 187, 120, 0.3);
 }
 
+/* Mode toggle */
+.trade-mode-toggle {
+  display: flex;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  margin-bottom: 12px;
+  width: fit-content;
+}
+
+.trade-mode-toggle button {
+  padding: 8px 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border: none;
+  color: #a0aec0;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.trade-mode-toggle button.active {
+  background: rgba(99, 179, 237, 0.2);
+  color: #90cdf4;
+}
+
+.trade-mode-toggle button + button {
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 /* Freshness */
 .trade-freshness {
   padding: 6px 12px;
@@ -431,6 +460,31 @@
 
 .roi-med {
   color: #fbd38d;
+}
+
+/* Stock status badges */
+.stock-status {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.stock-status.missing {
+  background: rgba(245, 101, 101, 0.15);
+  color: #fc8181;
+}
+
+.stock-status.overpriced {
+  background: rgba(237, 137, 54, 0.15);
+  color: #fbd38d;
+}
+
+.stock-hint {
+  font-size: 12px;
+  color: #4a5568;
+  margin-top: 4px;
 }
 
 .trade-empty, .trade-empty-initial {
