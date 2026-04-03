@@ -201,6 +201,7 @@ function TradeFinder({ onError, refreshKey }) {
   }) : [];
 
   const enabledHubs = hubs.filter(h => h.enabled);
+  const hasShipping = stockResults && (stockResults.isk_per_m3 > 0 || stockResults.collateral_pct > 0);
 
   // Data freshness check
   const oldestRefresh = enabledHubs.reduce((oldest, h) => {
@@ -530,11 +531,13 @@ function TradeFinder({ onError, refreshKey }) {
               <tr>
                 <th>Item</th>
                 <th>Status</th>
+                {hasShipping && <th>Haul</th>}
                 <th className="num">Jita Sell</th>
                 <th className="num">Dest Sell</th>
                 <th className="num">Suggested</th>
-                {(stockResults.isk_per_m3 > 0 || stockResults.collateral_pct > 0) && <th className="num">Shipping</th>}
-                {stockResults.isk_per_m3 > 0 && <th className="num">m³</th>}
+                {hasShipping && <th className="num">Shipping</th>}
+                {hasShipping && <th className="num">ISK/m³</th>}
+                {hasShipping && <th className="num">m³</th>}
                 <th className="num">Profit/unit</th>
                 <th className="num">ROI %</th>
                 <th className="num">Jita Vol</th>
@@ -542,7 +545,7 @@ function TradeFinder({ onError, refreshKey }) {
             </thead>
             <tbody>
               {stockResults.opportunities.map((opp, i) => (
-                <tr key={opp.type_id}>
+                <tr key={opp.type_id} className={opp.haul_grade === 'NEVER' ? 'row-dimmed' : ''}>
                   <td className="item-name">
                     <span>{opp.type_name}</span>
                     <ExternalLinks type="item" typeId={opp.type_id} />
@@ -552,11 +555,19 @@ function TradeFinder({ onError, refreshKey }) {
                       {opp.status === 'missing' ? 'MISSING' : 'OVERPRICED'}
                     </span>
                   </td>
+                  {hasShipping && (
+                    <td>
+                      <span className={`haul-grade grade-${(opp.haul_grade || 'GREAT').toLowerCase()}`}>
+                        {opp.haul_grade || 'GREAT'}
+                      </span>
+                    </td>
+                  )}
                   <td className="num">{formatISK(opp.jita_sell)}</td>
                   <td className="num">{opp.dest_sell > 0 ? formatISK(opp.dest_sell) : '—'}</td>
                   <td className="num">{formatISK(opp.suggested_sell)}</td>
-                  {(stockResults.isk_per_m3 > 0 || stockResults.collateral_pct > 0) && <td className="num shipping-cost">{formatISK(opp.shipping_cost)}</td>}
-                  {stockResults.isk_per_m3 > 0 && <td className="num">{opp.volume_m3 > 0 ? opp.volume_m3.toLocaleString() : '—'}</td>}
+                  {hasShipping && <td className="num shipping-cost">{formatISK(opp.shipping_cost)}</td>}
+                  {hasShipping && <td className="num isk-density">{opp.isk_per_m3 > 0 ? formatISK(opp.isk_per_m3) : '—'}</td>}
+                  {hasShipping && <td className="num">{opp.volume_m3 > 0 ? opp.volume_m3.toLocaleString() : '—'}</td>}
                   <td className="num profit">{formatISK(opp.profit_per_unit)}</td>
                   <td className={`num ${opp.roi >= 20 ? 'roi-high' : 'roi-med'}`}>{opp.roi.toFixed(1)}%</td>
                   <td className="num">{opp.jita_volume?.toLocaleString()}</td>

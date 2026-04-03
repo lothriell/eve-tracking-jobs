@@ -480,6 +480,18 @@ async function stockAnalysis(req, res) {
 
       if (profitPerUnit <= 0 && (iskPerM3 > 0 || collateralPct > 0)) continue; // skip unprofitable after shipping
 
+      // ISK/m³ density (value density — higher = better for hauling)
+      const iskPerM3Density = itemVolume > 0 ? src.sell_min / itemVolume : 0;
+
+      // Hauling grade based on shipping % of item value
+      let haulGrade = 'GREAT';
+      if (shippingPerUnit > 0 && src.sell_min > 0) {
+        const shipPct = (shippingPerUnit / src.sell_min) * 100;
+        if (shipPct > 50) haulGrade = 'NEVER';
+        else if (shipPct > 10) haulGrade = 'MARGINAL';
+        else if (shipPct > 2) haulGrade = 'GOOD';
+      }
+
       opportunities.push({
         type_id: src.type_id,
         jita_sell: src.sell_min,
@@ -487,9 +499,11 @@ async function stockAnalysis(req, res) {
         dest_sell: currentDestPrice,
         suggested_sell: Math.round(suggestedSell * 100) / 100,
         volume_m3: itemVolume,
+        isk_per_m3: Math.round(iskPerM3Density),
         shipping_cost: Math.round(shippingPerUnit * 100) / 100,
         profit_per_unit: Math.round(profitPerUnit * 100) / 100,
         roi: Math.round((profitPerUnit / (src.sell_min + shippingPerUnit)) * 10000) / 100,
+        haul_grade: haulGrade,
         status,
       });
     }
