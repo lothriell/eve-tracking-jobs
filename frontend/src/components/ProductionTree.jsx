@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useRef } from 'react';
-import { getBuildTree, searchTypes, searchSystems } from '../services/api';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { getBuildTree, searchTypes, searchSystems, getJobSlots } from '../services/api';
 import ExternalLinks from './ExternalLinks';
 import ExportButton from './ExportButton';
 import './ProductionTree.css';
@@ -21,6 +21,74 @@ function formatTime(seconds) {
   if (hours >= 24) return `${(hours / 24).toFixed(1)}d`;
   if (hours >= 1) return `${hours.toFixed(1)}h`;
   return `${Math.ceil(seconds / 60)}m`;
+}
+
+// Extract all BUILD nodes from tree as flat job list
+function extractBuildJobs(node, jobs = []) {
+  if (node.decision === 'build' && node.is_buildable && node.children?.length > 0) {
+    jobs.push({
+      type_id: node.type_id,
+      name: node.name,
+      category: node.category,
+      activity_id: node.activity_id,
+      runs_needed: node.runs_needed || 1,
+      batch_size: node.batch_size || 1,
+      job_time: node.job_time || 0, // per-run time from SDE
+      job_cost: node.job_cost || 0,
+      quantity: node.quantity,
+      depth: node.depth,
+    });
+    for (const child of node.children) {
+      extractBuildJobs(child, jobs);
+    }
+  }
+  return jobs;
+}
+
+// Schedule jobs: split across available slots, calculate parallel times
+function scheduleJobs(tree, mfgSlots, reactionSlots, dontSplitSeconds) {
+  if (!tree) return null;
+
+  const allJobs = extractBuildJobs(tree);
+  const mfgJobs = allJobs.filter(j => j.category === 'manufacturing');
+  const rxnJobs = allJobs.filter(j => j.category === 'reaction');
+
+  function splitAndSchedule(jobs, totalSlots) {
+    const scheduled = jobs.map(job => {
+      const timePerRun = job.job_time; // SDE time = per single run
+      const totalTime = timePerRun * job.runs_needed;
+
+      // Don't split if job is shorter than threshold or only 1 run
+      if (totalTime <= dontSplitSeconds || job.runs_needed <= 1) {
+        return { ...job, total_time: totalTime, split_into: 1, parallel_time: totalTime, time_per_run: timePerRun };
+      }
+
+      // Split runs across available slots
+      const splitInto = Math.min(totalSlots, job.runs_needed);
+      const runsPerSlot = Math.ceil(job.runs_needed / splitInto);
+      const parallelTime = runsPerSlot * timePerRun;
+
+      return { ...job, total_time: totalTime, split_into: splitInto, parallel_time: parallelTime, time_per_run: timePerRun };
+    });
+
+    // Total wall time: sum of all parallel times (jobs run sequentially, but each is parallelized across slots)
+    const totalSequential = scheduled.reduce((s, j) => s + j.total_time, 0);
+    const totalParallel = scheduled.reduce((s, j) => s + j.parallel_time, 0);
+    // Find bottleneck (longest parallel job)
+    const bottleneck = scheduled.length > 0
+      ? scheduled.reduce((a, b) => a.parallel_time > b.parallel_time ? a : b)
+      : null;
+
+    return { jobs: scheduled, totalSequential, totalParallel, slots: totalSlots, bottleneck };
+  }
+
+  const mfg = splitAndSchedule(mfgJobs, mfgSlots);
+  const rxn = splitAndSchedule(rxnJobs, reactionSlots);
+
+  // Wall-clock: reactions must finish before manufacturing that uses their outputs
+  const wallClock = rxn.totalParallel + mfg.totalParallel;
+
+  return { manufacturing: mfg, reactions: rxn, wallClock, totalJobs: allJobs.length };
 }
 
 // Recursive tree node component
@@ -141,6 +209,12 @@ function ProductionTree({ onError, refreshKey }) {
   const [systemResults, setSystemResults] = useState([]);
   const systemSearchTimeout = useRef(null);
 
+  // Industrial setup — job scheduling
+  const [mfgSlots, setMfgSlots] = useState(loadSaved('mfgSlots', ''));
+  const [reactionSlots, setReactionSlots] = useState(loadSaved('reactionSlots', ''));
+  const [dontSplitDays, setDontSplitDays] = useState(loadSaved('dontSplitDays', '1'));
+  const [detectedSlots, setDetectedSlots] = useState(null);
+
   // Save config to localStorage whenever it changes
   const saveConfig = (key, value, setter) => {
     setter(value);
@@ -152,6 +226,28 @@ function ProductionTree({ onError, refreshKey }) {
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState({});
   const [activeTab, setActiveTab] = useState('tree'); // 'tree' or 'shopping'
+
+  // Auto-detect industry slots from ESI on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const resp = await getJobSlots(null, true);
+        const slots = resp.data.slots;
+        setDetectedSlots(slots);
+        if (!mfgSlots) setMfgSlots(String(slots.manufacturing.max));
+        if (!reactionSlots) setReactionSlots(String(slots.reactions.max));
+      } catch {}
+    })();
+  }, [refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Job schedule — computed from tree + slot config
+  const jobSchedule = useMemo(() => {
+    if (!result?.tree) return null;
+    const s1 = parseInt(mfgSlots) || 1;
+    const s2 = parseInt(reactionSlots) || 1;
+    const threshold = (parseFloat(dontSplitDays) || 1) * 86400;
+    return scheduleJobs(result.tree, s1, s2, threshold);
+  }, [result, mfgSlots, reactionSlots, dontSplitDays]);
 
   const handleSearchInput = (value) => {
     setSearchText(value);
@@ -361,6 +457,20 @@ function ProductionTree({ onError, refreshKey }) {
             )}
           </div>
         </div>
+        <div className="ptree-row ptree-industry-setup">
+          <div className="ptree-field">
+            <label>MFG Slots {detectedSlots && <span className="slot-detected">({detectedSlots.manufacturing.max} detected)</span>}</label>
+            <input type="number" value={mfgSlots} onChange={e => saveConfig('mfgSlots', e.target.value, setMfgSlots)} placeholder={String(detectedSlots?.manufacturing.max || 1)} min="1" />
+          </div>
+          <div className="ptree-field">
+            <label>Reaction Slots {detectedSlots && <span className="slot-detected">({detectedSlots.reactions.max} detected)</span>}</label>
+            <input type="number" value={reactionSlots} onChange={e => saveConfig('reactionSlots', e.target.value, setReactionSlots)} placeholder={String(detectedSlots?.reactions.max || 1)} min="1" />
+          </div>
+          <div className="ptree-field">
+            <label>Don't split &lt; (days)</label>
+            <input type="number" value={dontSplitDays} onChange={e => saveConfig('dontSplitDays', e.target.value, setDontSplitDays)} placeholder="1" min="0" step="0.5" />
+          </div>
+        </div>
       </div>
 
       {/* Results */}
@@ -445,6 +555,9 @@ function ProductionTree({ onError, refreshKey }) {
                 Missing BPs ({result.missing_blueprints.length})
               </button>
             )}
+            <button className={activeTab === 'jobs' ? 'active' : ''} onClick={() => setActiveTab('jobs')}>
+              Jobs {jobSchedule ? `(${jobSchedule.totalJobs})` : ''}
+            </button>
           </div>
 
           {/* Tree View */}
@@ -569,6 +682,113 @@ function ProductionTree({ onError, refreshKey }) {
                   </tr>
                 </tfoot>
               </table>
+            </div>
+          )}
+
+          {/* Jobs Tab */}
+          {activeTab === 'jobs' && jobSchedule && (
+            <div className="ptree-jobs">
+              <div className="jobs-summary">
+                <div className="stat-box highlight">
+                  <span className="stat-label">Wall-clock Time</span>
+                  <span className="stat-value jobs-wallclock">{formatTime(jobSchedule.wallClock)}</span>
+                  {(jobSchedule.reactions.bottleneck || jobSchedule.manufacturing.bottleneck) && (
+                    <span className="jobs-bottleneck">
+                      Bottleneck: {(jobSchedule.reactions.bottleneck?.parallel_time || 0) >= (jobSchedule.manufacturing.bottleneck?.parallel_time || 0)
+                        ? jobSchedule.reactions.bottleneck?.name
+                        : jobSchedule.manufacturing.bottleneck?.name}
+                    </span>
+                  )}
+                </div>
+                <div className="stat-box">
+                  <span className="stat-label">Reactions (parallel)</span>
+                  <span className="stat-value">{formatTime(jobSchedule.reactions.totalParallel)}</span>
+                </div>
+                <div className="stat-box">
+                  <span className="stat-label">Manufacturing (parallel)</span>
+                  <span className="stat-value">{formatTime(jobSchedule.manufacturing.totalParallel)}</span>
+                </div>
+                <div className="stat-box">
+                  <span className="stat-label">Sequential Time</span>
+                  <span className="stat-value">{formatTime(jobSchedule.reactions.totalSequential + jobSchedule.manufacturing.totalSequential)}</span>
+                </div>
+                <div className="stat-box">
+                  <span className="stat-label">MFG Slots</span>
+                  <span className="stat-value">{mfgSlots || '?'}</span>
+                </div>
+                <div className="stat-box">
+                  <span className="stat-label">Reaction Slots</span>
+                  <span className="stat-value">{reactionSlots || '?'}</span>
+                </div>
+              </div>
+
+              {jobSchedule.reactions.jobs.length > 0 && (
+                <>
+                  <h4 className="jobs-section-title">Reaction Jobs ({jobSchedule.reactions.jobs.length})</h4>
+                  <table className="jobs-table">
+                    <thead>
+                      <tr>
+                        <th>Item</th>
+                        <th className="num">Runs</th>
+                        <th className="num">Time/Run</th>
+                        <th className="num">Total Time</th>
+                        <th className="num">Split</th>
+                        <th className="num">Parallel Time</th>
+                        <th className="num">Job Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {jobSchedule.reactions.jobs.map((job, i) => (
+                        <tr key={`rxn-${job.type_id}-${i}`}>
+                          <td>{job.name}</td>
+                          <td className="num">{job.runs_needed.toLocaleString()}</td>
+                          <td className="num">{formatTime(job.time_per_run)}</td>
+                          <td className="num">{formatTime(job.total_time)}</td>
+                          <td className="num">{job.split_into > 1 ? <span className="split-badge">{job.split_into} slots</span> : <span className="no-split">1</span>}</td>
+                          <td className="num">{formatTime(job.parallel_time)}</td>
+                          <td className="num">{job.job_cost > 0 ? formatISK(job.job_cost) : '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
+              )}
+
+              {jobSchedule.manufacturing.jobs.length > 0 && (
+                <>
+                  <h4 className="jobs-section-title">Manufacturing Jobs ({jobSchedule.manufacturing.jobs.length})</h4>
+                  <table className="jobs-table">
+                    <thead>
+                      <tr>
+                        <th>Item</th>
+                        <th className="num">Runs</th>
+                        <th className="num">Time/Run</th>
+                        <th className="num">Total Time</th>
+                        <th className="num">Split</th>
+                        <th className="num">Parallel Time</th>
+                        <th className="num">Job Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {jobSchedule.manufacturing.jobs.map((job, i) => (
+                        <tr key={`mfg-${job.type_id}-${i}`}>
+                          <td>{job.name}</td>
+                          <td className="num">{job.runs_needed.toLocaleString()}</td>
+                          <td className="num">{formatTime(job.time_per_run)}</td>
+                          <td className="num">{formatTime(job.total_time)}</td>
+                          <td className="num">{job.split_into > 1 ? <span className="split-badge">{job.split_into} slots</span> : <span className="no-split">1</span>}</td>
+                          <td className="num">{formatTime(job.parallel_time)}</td>
+                          <td className="num">{job.job_cost > 0 ? formatISK(job.job_cost) : '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
+              )}
+
+              {jobSchedule.totalJobs === 0 && (
+                <p style={{ color: '#718096', textAlign: 'center', padding: 20 }}>No BUILD jobs in the current tree. Toggle some nodes to BUILD to see job scheduling.</p>
+              )}
             </div>
           )}
         </>
