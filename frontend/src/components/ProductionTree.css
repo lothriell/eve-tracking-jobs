@@ -127,6 +127,12 @@
 .tree-decision.buy { background: rgba(99,179,237,0.15); border-color: rgba(99,179,237,0.3); color: #90cdf4; }
 .tree-decision.buy-only { background: rgba(99,179,237,0.08); border: none; color: #718096; font-size: 10px; font-weight: 600; padding: 2px 8px; }
 
+.tree-category {
+  padding: 1px 5px; border-radius: 3px; font-size: 8px; font-weight: 700;
+  text-transform: uppercase; flex-shrink: 0; letter-spacing: 0.5px;
+}
+.tree-category.reaction { background: rgba(159,122,234,0.2); color: #b794f4; }
+
 .tree-cost { width: 100px; text-align: right; flex-shrink: 0; }
 .tree-savings { font-size: 11px; color: #68d391; flex-shrink: 0; }
 .tree-time { font-size: 10px; color: #b794f4; flex-shrink: 0; }

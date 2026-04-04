@@ -585,33 +585,60 @@ async function buildVsBuy(req, res) {
 }
 
 // Resolve a build tree recursively
-function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache, priceCache, volumeCache) {
+function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache, priceCache, volumeCache, facilityMeReduction = 0) {
   const name = MINERAL_FIXES[typeId]?.name || nameCache[typeId] || `Type ${typeId}`;
   const price = priceCache[typeId]?.sell_min || 0;
   const volume = MINERAL_FIXES[typeId]?.volume || volumeCache[typeId] || DEFAULT_VOLUME;
   const buyCost = price * quantity;
 
-  // Base case: max depth or no blueprint
-  const bp = db.getBlueprintForProduct(typeId);
-  if (!bp || depth >= maxDepth) {
+  // Base case: max depth
+  if (depth >= maxDepth) {
+    const bp = db.getBlueprintForProduct(typeId);
     return {
       type_id: typeId, name, quantity, unit_price: price, buy_cost: buyCost,
       build_cost: null, volume, decision: 'buy', is_buildable: !!bp,
-      depth, children: [], job_time: 0,
+      depth, children: [], job_time: 0, category: 'raw',
     };
   }
 
-  const materials = db.getBlueprintMaterials(bp.blueprint_id);
+  // Check manufacturing blueprint first, then reaction formula
+  let bp = db.getBlueprintForProduct(typeId, 1); // activityID 1 = manufacturing
+  let activityId = 1;
+  let category = 'manufacturing';
+
+  if (!bp) {
+    bp = db.getBlueprintForProduct(typeId, 11); // activityID 11 = reaction
+    if (bp) {
+      activityId = 11;
+      category = 'reaction';
+    }
+  }
+
+  if (!bp) {
+    return {
+      type_id: typeId, name, quantity, unit_price: price, buy_cost: buyCost,
+      build_cost: null, volume, decision: 'buy', is_buildable: false,
+      depth, children: [], job_time: 0, category: 'raw',
+    };
+  }
+
+  const materials = db.getBlueprintMaterials(bp.blueprint_id, activityId);
   if (!materials || materials.length === 0) {
     return {
       type_id: typeId, name, quantity, unit_price: price, buy_cost: buyCost,
       build_cost: null, volume, decision: 'buy', is_buildable: false,
-      depth, children: [], job_time: 0,
+      depth, children: [], job_time: 0, category: 'raw',
     };
   }
 
-  const jobTime = db.getBlueprintActivityTime(bp.blueprint_id, 1);
-  const meFactor = 1 - meLevel / 100;
+  const jobTime = db.getBlueprintActivityTime(bp.blueprint_id, activityId);
+  // ME only applies to manufacturing, not reactions
+  // Total ME = blueprint ME + facility ME (structure + rig)
+  const totalMe = activityId === 1 ? meLevel + facilityMeReduction : 0;
+  const meFactor = activityId === 1 ? Math.max(0, 1 - totalMe / 100) : 1;
+  // Reactions produce in batches (e.g., 200 per run) — adjust quantity
+  const batchSize = bp.quantity || 1;
+  const runsNeeded = Math.ceil(quantity / batchSize);
 
   // Ensure prices/names/volumes are cached for all materials
   const matIds = materials.map(m => m.material_type_id);
@@ -641,11 +668,20 @@ function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache,
   }
 
   // Recurse into children
+  // For reactions: materials are per run, multiply by runsNeeded
+  // For manufacturing: materials are per unit, apply ME, multiply by quantity
   const children = materials.map(m => {
     const baseQty = m.quantity;
-    const meQty = Math.max(1, Math.ceil(baseQty * meFactor));
-    const totalQty = meQty * quantity;
-    return resolveBuildNode(m.material_type_id, totalQty, meLevel, depth + 1, maxDepth, nameCache, priceCache, volumeCache);
+    let totalQty;
+    if (activityId === 11) {
+      // Reaction: materials per run × runs needed
+      totalQty = baseQty * runsNeeded;
+    } else {
+      // Manufacturing: apply ME, multiply by quantity
+      const meQty = Math.max(1, Math.ceil(baseQty * meFactor));
+      totalQty = meQty * quantity;
+    }
+    return resolveBuildNode(m.material_type_id, totalQty, meLevel, depth + 1, maxDepth, nameCache, priceCache, volumeCache, facilityMeReduction);
   });
 
   const buildCost = children.reduce((sum, c) => sum + (c.decision === 'build' && c.build_cost !== null ? c.build_cost : c.buy_cost), 0);
@@ -657,7 +693,11 @@ function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache,
     volume, decision, is_buildable: true,
     depth, children, job_time: jobTime,
     blueprint_id: bp.blueprint_id,
-    me_level: meLevel,
+    me_level: activityId === 1 ? meLevel : 0,
+    category,
+    activity_id: activityId,
+    runs_needed: runsNeeded,
+    batch_size: batchSize,
   };
 }
 
@@ -698,6 +738,24 @@ async function getBuildTree(req, res) {
     const collateralPct = parseFloat(req.query.collateralPct) || 0;
     const jfCapacity = parseFloat(req.query.jfCapacity) || 225000;
 
+    // Facility config — structure rig bonuses reduce materials
+    const structure = req.query.structure || 'raitaru';
+    const rig = req.query.rig || 'none';
+    const sec = req.query.sec || 'null';
+
+    // Structure ME bonus (applied on top of blueprint ME)
+    const structureMeBonus = {
+      npc: 0, raitaru: 1, azbel: 1, sotiyo: 1, tatara: 1, athanor: 1
+    }[structure] || 0;
+
+    // Rig ME bonus × security multiplier
+    const rigMeBase = { none: 0, t1: 2.0, t2: 2.4 }[rig] || 0;
+    const secMultiplier = { high: 1.0, low: 1.9, null: 2.1 }[sec] || 2.1;
+    const rigMeBonus = rigMeBase * secMultiplier;
+
+    // Total facility ME reduction (%)
+    const facilityMeReduction = structureMeBonus + rigMeBonus;
+
     if (!productTypeId) return res.status(400).json({ error: 'typeId required' });
 
     // Warm caches
@@ -714,7 +772,7 @@ async function getBuildTree(req, res) {
     volumeCache[productTypeId] = pv?.extra_data ? parseFloat(pv.extra_data) : DEFAULT_VOLUME;
 
     // Build the tree
-    const tree = resolveBuildNode(productTypeId, quantity, meLevel, 0, maxDepth, nameCache, priceCache, volumeCache);
+    const tree = resolveBuildNode(productTypeId, quantity, meLevel, 0, maxDepth, nameCache, priceCache, volumeCache, facilityMeReduction);
 
     // Fetch owned blueprints and annotate tree nodes
     let ownedBlueprints = {};
@@ -826,7 +884,7 @@ async function getBuildTree(req, res) {
         recommendation: tree.buy_cost > (totalMaterialCost + shippingCost + collateralCost) ? 'BUILD' : 'IMPORT',
       },
       shopping_list: shoppingList,
-      config: { meLevel, maxDepth, shippingFee, collateralPct, jfCapacity },
+      config: { meLevel, maxDepth, shippingFee, collateralPct, jfCapacity, structure, rig, sec, facilityMeReduction: Math.round(facilityMeReduction * 100) / 100 },
     });
   } catch (error) {
     console.error('Build tree error:', error.message);

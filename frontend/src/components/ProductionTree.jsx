@@ -48,14 +48,19 @@ function TreeNode({ node, depth, expanded, onToggleExpand, onToggleDecision }) {
         {/* Quantity */}
         <span className="tree-qty">x{node.quantity.toLocaleString()}</span>
 
+        {/* Category badge */}
+        {node.category === 'reaction' && (
+          <span className="tree-category reaction" title={`Reaction: ${node.runs_needed} runs × ${node.batch_size}/run`}>REACT</span>
+        )}
+
         {/* Decision toggle */}
         {node.is_buildable && node.build_cost !== null && (
           <button
             className={`tree-decision ${node.decision}`}
             onClick={() => onToggleDecision(node)}
-            title={node.decision === 'build' ? 'Click to switch to BUY' : 'Click to switch to BUILD'}
+            title={node.decision === 'build' ? 'Click to switch to BUY' : node.category === 'reaction' ? 'Click to switch to REACT' : 'Click to switch to BUILD'}
           >
-            {node.decision === 'build' ? 'BUILD' : 'BUY'}
+            {node.decision === 'build' ? (node.category === 'reaction' ? 'REACT' : 'BUILD') : 'BUY'}
           </button>
         )}
         {!node.is_buildable && <span className="tree-decision buy-only">BUY</span>}
@@ -108,6 +113,9 @@ function ProductionTree({ onError, refreshKey }) {
   const [shippingFee, setShippingFee] = useState('25000000');
   const [collateralPct, setCollateralPct] = useState('1.5');
   const [jfCapacity, setJfCapacity] = useState('225000');
+  const [structureType, setStructureType] = useState('raitaru');
+  const [rigTier, setRigTier] = useState('none');
+  const [secStatus, setSecStatus] = useState('null'); // null, low, high
 
   // Results
   const [result, setResult] = useState(null);
@@ -146,6 +154,9 @@ function ProductionTree({ onError, refreshKey }) {
         shippingFee: parseFloat(shippingFee) || 25000000,
         collateralPct: parseFloat(collateralPct) || 0,
         jfCapacity: parseFloat(jfCapacity) || 225000,
+        structure: structureType,
+        rig: rigTier,
+        sec: secStatus,
       });
       setResult(resp.data);
       setExpanded({});
@@ -232,6 +243,35 @@ function ProductionTree({ onError, refreshKey }) {
             <button className="ptree-calc-btn" onClick={handleCalculate} disabled={loading || (!selectedType && !parseInt(searchText))}>
               {loading ? 'Building...' : 'Build Tree'}
             </button>
+          </div>
+        </div>
+        <div className="ptree-row" style={{ marginTop: 10 }}>
+          <div className="ptree-field">
+            <label>Structure</label>
+            <select value={structureType} onChange={e => setStructureType(e.target.value)}>
+              <option value="raitaru">Raitaru (S)</option>
+              <option value="azbel">Azbel (M)</option>
+              <option value="sotiyo">Sotiyo (L)</option>
+              <option value="tatara">Tatara (Reactions)</option>
+              <option value="athanor">Athanor (Reactions)</option>
+              <option value="npc">NPC Station</option>
+            </select>
+          </div>
+          <div className="ptree-field">
+            <label>Rig</label>
+            <select value={rigTier} onChange={e => setRigTier(e.target.value)}>
+              <option value="none">No Rig</option>
+              <option value="t1">T1 Rig (2% ME / 20% TE)</option>
+              <option value="t2">T2 Rig (2.4% ME / 24% TE)</option>
+            </select>
+          </div>
+          <div className="ptree-field">
+            <label>Security</label>
+            <select value={secStatus} onChange={e => setSecStatus(e.target.value)}>
+              <option value="null">Nullsec / WH (2.1x rig)</option>
+              <option value="low">Lowsec (1.9x rig)</option>
+              <option value="high">Highsec (1.0x rig)</option>
+            </select>
           </div>
         </div>
       </div>
