@@ -114,6 +114,7 @@ function ProductionTree({ onError, refreshKey }) {
   // Config
   const [quantity, setQuantity] = useState('1');
   const [meLevel, setMeLevel] = useState('0');
+  const [contractPrice, setContractPrice] = useState('');
   const [shippingFee, setShippingFee] = useState('25000000');
   const [collateralPct, setCollateralPct] = useState('1.5');
   const [jfCapacity, setJfCapacity] = useState('225000');
@@ -155,6 +156,7 @@ function ProductionTree({ onError, refreshKey }) {
       const resp = await getBuildTree(typeId, {
         quantity: parseInt(quantity) || 1,
         me: parseInt(meLevel) || 0,
+        contractPrice: parseFloat(contractPrice) || 0,
         shippingFee: parseFloat(shippingFee) || 25000000,
         collateralPct: parseFloat(collateralPct) || 0,
         jfCapacity: parseFloat(jfCapacity) || 225000,
@@ -231,6 +233,10 @@ function ProductionTree({ onError, refreshKey }) {
             <input type="number" value={meLevel} onChange={e => setMeLevel(e.target.value)} min="0" max="10" />
           </div>
           <div className="ptree-field">
+            <label>Contract Price</label>
+            <input type="number" value={contractPrice} onChange={e => setContractPrice(e.target.value)} placeholder="Jita contract" />
+          </div>
+          <div className="ptree-field">
             <label>JF Ship Fee</label>
             <input type="number" value={shippingFee} onChange={e => setShippingFee(e.target.value)} />
           </div>
@@ -299,16 +305,16 @@ function ProductionTree({ onError, refreshKey }) {
                 {s.buy_finished_cost === 0
                   ? `Not on market — must build | Materials: ${formatISK(s.material_cost)} + Shipping: ${formatISK(s.shipping_cost)} = ${formatISK(s.total_build_cost)}`
                   : s.recommendation === 'BUILD'
-                  ? `Building saves ${formatISK(s.savings)} | Materials: ${formatISK(s.material_cost)} + Shipping: ${formatISK(s.shipping_cost)} = ${formatISK(s.total_build_cost)}`
-                  : `Importing is cheaper: ${formatISK(s.buy_finished_cost)} vs building ${formatISK(s.total_build_cost)}`
+                  ? `Building saves ${formatISK(s.savings)} vs ${s.buy_source === 'contract' ? 'contract' : 'market'} (${formatISK(s.buy_finished_cost)})`
+                  : `${s.buy_source === 'contract' ? 'Contract' : 'Market'} buy cheaper: ${formatISK(s.buy_finished_cost)} vs building ${formatISK(s.total_build_cost)}`
                 }
               </span>
             </div>
 
             <div className="ptree-stats">
               <div className="stat-box">
-                <span className="stat-label">Buy Finished</span>
-                <span className="stat-value">{formatISK(s.buy_finished_cost)}</span>
+                <span className="stat-label">{s.buy_source === 'contract' ? 'Contract Price' : s.buy_source === 'market' ? 'Jita Market' : 'Buy Finished'}</span>
+                <span className="stat-value">{s.buy_finished_cost > 0 ? formatISK(s.buy_finished_cost) : 'N/A'}</span>
               </div>
               <div className="stat-box highlight">
                 <span className="stat-label">Build Cost</span>

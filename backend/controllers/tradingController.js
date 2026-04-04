@@ -737,6 +737,7 @@ async function getBuildTree(req, res) {
     const shippingFee = parseFloat(req.query.shippingFee) || 25000000;
     const collateralPct = parseFloat(req.query.collateralPct) || 0;
     const jfCapacity = parseFloat(req.query.jfCapacity) || 225000;
+    const contractPrice = parseFloat(req.query.contractPrice) || 0;
 
     // Facility config — structure rig bonuses reduce materials
     const structure = req.query.structure || 'raitaru';
@@ -861,29 +862,36 @@ async function getBuildTree(req, res) {
     }
     const ownedCount = countOwned(tree);
 
+    // Use contract price as buy price when market price is 0
+    const effectiveBuyPrice = tree.unit_price > 0 ? tree.unit_price : contractPrice;
+    const effectiveBuyCost = effectiveBuyPrice * quantity;
+
     res.json({
       product: {
         type_id: productTypeId,
         name: tree.name,
         quantity,
         jita_price: tree.unit_price,
+        contract_price: contractPrice > 0 ? contractPrice : null,
+        effective_buy_price: effectiveBuyPrice,
         item_type: itemType,
         owned_blueprint: tree.owned_blueprint || null,
       },
       tree,
       summary: {
-        buy_finished_cost: tree.buy_cost,
+        buy_finished_cost: effectiveBuyCost,
+        buy_source: tree.unit_price > 0 ? 'market' : contractPrice > 0 ? 'contract' : 'unavailable',
         build_cost: tree.build_cost,
         material_cost: totalMaterialCost,
         shipping_cost: shippingCost,
         collateral_cost: collateralCost,
         total_build_cost: totalMaterialCost + shippingCost + collateralCost,
-        savings: tree.buy_cost - (totalMaterialCost + shippingCost + collateralCost),
+        savings: effectiveBuyCost - (totalMaterialCost + shippingCost + collateralCost),
         total_volume_m3: totalVolume,
         jf_loads: jfLoads,
         total_jobs: totalJobs,
         owned_blueprints: ownedCount,
-        recommendation: tree.buy_cost === 0 ? 'BUILD' : tree.buy_cost > (totalMaterialCost + shippingCost + collateralCost) ? 'BUILD' : 'IMPORT',
+        recommendation: effectiveBuyCost === 0 ? 'BUILD' : effectiveBuyCost > (totalMaterialCost + shippingCost + collateralCost) ? 'BUILD' : 'IMPORT',
       },
       shopping_list: shoppingList,
       config: { meLevel, maxDepth, shippingFee, collateralPct, jfCapacity, structure, rig, sec, facilityMeReduction: Math.round(facilityMeReduction * 100) / 100 },
