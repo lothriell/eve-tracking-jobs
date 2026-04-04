@@ -115,9 +115,10 @@ function ProductionTree({ onError, refreshKey }) {
   const [quantity, setQuantity] = useState('1');
   const [meLevel, setMeLevel] = useState('0');
   const [contractPrice, setContractPrice] = useState('');
-  const [shippingFee, setShippingFee] = useState('25000000');
-  const [collateralPct, setCollateralPct] = useState('1.5');
-  const [jfCapacity, setJfCapacity] = useState('225000');
+  const [shippingMinFee, setShippingMinFee] = useState('25000000');
+  const [shippingPerM3, setShippingPerM3] = useState('600');
+  const [collateralPct, setCollateralPct] = useState('0');
+  const [maxVolume, setMaxVolume] = useState('375000');
   const [structureType, setStructureType] = useState('raitaru');
   const [rigTier, setRigTier] = useState('none');
   const [secStatus, setSecStatus] = useState('null'); // null, low, high
@@ -157,9 +158,10 @@ function ProductionTree({ onError, refreshKey }) {
         quantity: parseInt(quantity) || 1,
         me: parseInt(meLevel) || 0,
         contractPrice: parseFloat(contractPrice) || 0,
-        shippingFee: parseFloat(shippingFee) || 25000000,
+        shippingMinFee: parseFloat(shippingMinFee) || 25000000,
+        shippingPerM3: parseFloat(shippingPerM3) || 600,
         collateralPct: parseFloat(collateralPct) || 0,
-        jfCapacity: parseFloat(jfCapacity) || 225000,
+        maxVolume: parseFloat(maxVolume) || 375000,
         structure: structureType,
         rig: rigTier,
         sec: secStatus,
@@ -237,16 +239,20 @@ function ProductionTree({ onError, refreshKey }) {
             <input type="number" value={contractPrice} onChange={e => setContractPrice(e.target.value)} placeholder="Jita contract" />
           </div>
           <div className="ptree-field">
-            <label>JF Ship Fee</label>
-            <input type="number" value={shippingFee} onChange={e => setShippingFee(e.target.value)} />
+            <label>Min Fee</label>
+            <input type="number" value={shippingMinFee} onChange={e => setShippingMinFee(e.target.value)} placeholder="25M" />
+          </div>
+          <div className="ptree-field">
+            <label>ISK/m³</label>
+            <input type="number" value={shippingPerM3} onChange={e => setShippingPerM3(e.target.value)} placeholder="600" />
           </div>
           <div className="ptree-field">
             <label>Collateral %</label>
-            <input type="number" value={collateralPct} onChange={e => setCollateralPct(e.target.value)} />
+            <input type="number" value={collateralPct} onChange={e => setCollateralPct(e.target.value)} placeholder="0" />
           </div>
           <div className="ptree-field">
-            <label>JF Capacity</label>
-            <input type="number" value={jfCapacity} onChange={e => setJfCapacity(e.target.value)} />
+            <label>Max m³</label>
+            <input type="number" value={maxVolume} onChange={e => setMaxVolume(e.target.value)} placeholder="375000" />
           </div>
           <div className="ptree-field">
             <label>&nbsp;</label>
@@ -333,8 +339,8 @@ function ProductionTree({ onError, refreshKey }) {
                 <span className="stat-value">{s.total_volume_m3?.toLocaleString()} m3</span>
               </div>
               <div className="stat-box">
-                <span className="stat-label">JF Loads</span>
-                <span className="stat-value">{s.jf_loads}</span>
+                <span className="stat-label">Contracts</span>
+                <span className="stat-value">{s.shipping_contracts}</span>
               </div>
               <div className="stat-box">
                 <span className="stat-label">Jobs</span>

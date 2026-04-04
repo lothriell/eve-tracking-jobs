@@ -734,9 +734,10 @@ async function getBuildTree(req, res) {
     const quantity = parseInt(req.query.quantity) || 1;
     const meLevel = parseInt(req.query.me) || 0;
     const maxDepth = Math.min(parseInt(req.query.maxDepth) || 4, 6);
-    const shippingFee = parseFloat(req.query.shippingFee) || 25000000;
+    const shippingMinFee = parseFloat(req.query.shippingMinFee) || 25000000;
+    const shippingPerM3Rate = parseFloat(req.query.shippingPerM3) || 600;
     const collateralPct = parseFloat(req.query.collateralPct) || 0;
-    const jfCapacity = parseFloat(req.query.jfCapacity) || 225000;
+    const maxVolumePerContract = parseFloat(req.query.maxVolume) || 375000;
     const contractPrice = parseFloat(req.query.contractPrice) || 0;
 
     // Facility config — structure rig bonuses reduce materials
@@ -841,8 +842,10 @@ async function getBuildTree(req, res) {
 
     const totalMaterialCost = shoppingList.reduce((s, i) => s + i.total_cost, 0);
     const totalVolume = shoppingList.reduce((s, i) => s + i.total_volume, 0);
-    const jfLoads = Math.ceil(totalVolume / jfCapacity);
-    const shippingCost = jfLoads * shippingFee;
+    // Halo Logistics formula: max(minFee, volume × perM3) per contract, split by max volume
+    const contracts = Math.ceil(totalVolume / maxVolumePerContract) || 1;
+    const volumeShippingCost = totalVolume * shippingPerM3Rate;
+    const shippingCost = Math.max(shippingMinFee * contracts, volumeShippingCost);
     const collateralCost = totalMaterialCost * collateralPct / 100;
     const totalJobs = countJobs(tree);
 
@@ -913,14 +916,14 @@ async function getBuildTree(req, res) {
         total_build_cost: totalMaterialCost + shippingCost + collateralCost,
         savings: effectiveBuyCost - (totalMaterialCost + shippingCost + collateralCost),
         total_volume_m3: totalVolume,
-        jf_loads: jfLoads,
+        shipping_contracts: contracts,
         total_jobs: totalJobs,
         owned_blueprints: ownedCount,
         recommendation: effectiveBuyCost === 0 ? 'BUILD' : effectiveBuyCost > (totalMaterialCost + shippingCost + collateralCost) ? 'BUILD' : 'IMPORT',
       },
       shopping_list: shoppingList,
       missing_blueprints: missingBPList,
-      config: { meLevel, maxDepth, shippingFee, collateralPct, jfCapacity, structure, rig, sec, facilityMeReduction: Math.round(facilityMeReduction * 100) / 100 },
+      config: { meLevel, maxDepth, shippingMinFee, shippingPerM3Rate, collateralPct, maxVolumePerContract, structure, rig, sec, facilityMeReduction: Math.round(facilityMeReduction * 100) / 100 },
     });
   } catch (error) {
     console.error('Build tree error:', error.message);
