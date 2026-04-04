@@ -976,8 +976,13 @@ function getColonyStatus(pins, routes, now) {
   if (extracting) return { label: 'Extracting', class: 'status-extracting', reason: null };
   if (producing) return { label: 'Producing', class: 'status-producing', reason: null };
 
-  // Priority 4: Factories exist but idle (no extractors feeding them, or stopped)
+  // Priority 4: Factories exist but idle
   if (factoryIdle > 0) {
+    const hasExtractors = statuses.includes('extracting') || expired > 0 || statuses.includes('inactive');
+    if (!hasExtractors) {
+      // Factory-only planet — waiting for imported materials
+      return { label: 'Waiting', class: 'status-waiting', reason: `${factoryIdle} factories — no extractors (factory planet)` };
+    }
     return { label: 'Stopped', class: 'status-stopped', reason: `${factoryIdle} factories idle` };
   }
 

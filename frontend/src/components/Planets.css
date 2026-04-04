@@ -429,6 +429,10 @@
   color: #a0784c;
 }
 
+.colony-status-badge.status-waiting {
+  color: #90cdf4;
+}
+
 .colony-status-badge.status-attention {
   color: #AB324A;
 }
@@ -915,6 +919,10 @@
   border-color: rgba(160, 120, 60, 0.4);
 }
 
+.colony-card.status-waiting {
+  border-color: rgba(99, 179, 237, 0.4);
+}
+
 /* Planet icon with SVG gauge */
 .colony-card-planet {
   position: relative;
@@ -1095,6 +1103,10 @@
 
 .colony-card-status-label.status-stopped {
   color: #a0784c;
+}
+
+.colony-card-status-label.status-waiting {
+  color: #90cdf4;
 }
 
 .colony-card-status-label.status-attention {
