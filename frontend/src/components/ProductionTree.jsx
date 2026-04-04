@@ -38,6 +38,64 @@ function applyBuildAll(node) {
   return n;
 }
 
+// Flatten tree to shopping list (BUY leaf nodes aggregated)
+function flattenShopping(node, list = {}) {
+  if (node.decision === 'buy' || !node.children?.length) {
+    if (!list[node.type_id]) {
+      list[node.type_id] = { type_id: node.type_id, name: node.name, quantity: 0, unit_price: node.unit_price, volume: node.volume };
+    }
+    list[node.type_id].quantity += node.quantity;
+  } else {
+    for (const child of node.children) flattenShopping(child, list);
+  }
+  return list;
+}
+
+// Recalculate summary from effective tree
+function recalcSummary(tree, originalSummary, shippingConfig) {
+  const shopMap = flattenShopping(tree);
+  const shopList = Object.values(shopMap).map(item => ({
+    ...item, total_cost: item.unit_price * item.quantity, total_volume: item.volume * item.quantity,
+  })).sort((a, b) => b.total_cost - a.total_cost);
+
+  const materialCost = shopList.reduce((s, i) => s + i.total_cost, 0);
+  const totalVolume = shopList.reduce((s, i) => s + i.total_volume, 0);
+  const { shippingMinFee, shippingPerM3, collateralPct, maxVolume } = shippingConfig;
+  const contracts = Math.ceil(totalVolume / maxVolume) || 1;
+  const shippingCost = Math.max(shippingMinFee * contracts, totalVolume * shippingPerM3);
+  const collateralCost = materialCost * collateralPct / 100;
+
+  // Count jobs + job costs from tree
+  let totalJobs = 0, totalJobCost = 0;
+  function countJobs(n) {
+    if (n.decision === 'build' && n.is_buildable && n.children?.length > 0) {
+      totalJobs++; totalJobCost += n.job_cost || 0;
+      for (const c of n.children) countJobs(c);
+    }
+  }
+  countJobs(tree);
+
+  const totalBuildCost = materialCost + totalJobCost + shippingCost + collateralCost;
+  const buyFinishedCost = originalSummary.buy_finished_cost;
+
+  return {
+    summary: {
+      ...originalSummary,
+      material_cost: materialCost,
+      job_cost: totalJobCost,
+      shipping_cost: shippingCost,
+      collateral_cost: collateralCost,
+      total_build_cost: totalBuildCost,
+      total_volume_m3: totalVolume,
+      shipping_contracts: contracts,
+      total_jobs: totalJobs,
+      savings: buyFinishedCost - totalBuildCost,
+      recommendation: buyFinishedCost === 0 ? 'BUILD' : buyFinishedCost > totalBuildCost ? 'BUILD' : 'IMPORT',
+    },
+    shopping_list: shopList,
+  };
+}
+
 // Extract all BUILD nodes from tree as flat job list
 function extractBuildJobs(node, jobs = []) {
   if (node.decision === 'build' && node.is_buildable && node.children?.length > 0) {
@@ -263,6 +321,20 @@ function ProductionTree({ onError, refreshKey }) {
     return buildAll ? applyBuildAll(result.tree) : result.tree;
   }, [result, buildAll]);
 
+  // Effective summary + shopping list — recalculated when buildAll changes
+  const { effectiveSummary, effectiveShoppingList } = useMemo(() => {
+    if (!result || !tree) return { effectiveSummary: null, effectiveShoppingList: null };
+    if (!buildAll) return { effectiveSummary: result.summary, effectiveShoppingList: result.shopping_list };
+    const cfg = {
+      shippingMinFee: parseFloat(shippingMinFee) || 25000000,
+      shippingPerM3: parseFloat(shippingPerM3) || 600,
+      collateralPct: parseFloat(collateralPct) || 0,
+      maxVolume: parseFloat(maxVolume) || 375000,
+    };
+    const r = recalcSummary(tree, result.summary, cfg);
+    return { effectiveSummary: r.summary, effectiveShoppingList: r.shopping_list };
+  }, [result, tree, buildAll, shippingMinFee, shippingPerM3, collateralPct, maxVolume]);
+
   // Job schedule — computed from tree + slot config
   const jobSchedule = useMemo(() => {
     if (!tree) return null;
@@ -357,12 +429,12 @@ function ProductionTree({ onError, refreshKey }) {
   }, []);
 
   const handleCopyBuyAll = () => {
-    if (!result?.shopping_list) return;
-    const lines = result.shopping_list.map(item => `${item.name} ${item.quantity}`).join('\n');
+    if (!effectiveShoppingList) return;
+    const lines = effectiveShoppingList.map(item => `${item.name} ${item.quantity}`).join('\n');
     navigator.clipboard.writeText(lines).catch(() => onError?.('Failed to copy'));
   };
 
-  const s = result?.summary;
+  const s = effectiveSummary;
 
   return (
     <div className="ptree-container">
@@ -581,7 +653,7 @@ function ProductionTree({ onError, refreshKey }) {
               Build Tree
             </button>
             <button className={activeTab === 'shopping' ? 'active' : ''} onClick={() => setActiveTab('shopping')}>
-              Shopping List ({result.shopping_list?.length || 0})
+              Shopping List ({effectiveShoppingList?.length || 0})
             </button>
             {result.missing_blueprints?.length > 0 && (
               <button className={activeTab === 'blueprints' ? 'active' : ''} onClick={() => setActiveTab('blueprints')}>
@@ -613,14 +685,14 @@ function ProductionTree({ onError, refreshKey }) {
           )}
 
           {/* Shopping List */}
-          {activeTab === 'shopping' && result.shopping_list && (
+          {activeTab === 'shopping' && effectiveShoppingList && (
             <div className="ptree-shopping">
               <div className="shopping-header">
-                <span>Materials to buy ({result.shopping_list.length} items)</span>
+                <span>Materials to buy ({effectiveShoppingList.length} items)</span>
                 <div className="shopping-actions">
                   <button className="buy-all-btn" onClick={handleCopyBuyAll}>Copy Multi-Buy</button>
                   <ExportButton
-                    getData={() => result.shopping_list.map(i => ({
+                    getData={() => effectiveShoppingList.map(i => ({
                       item: i.name, quantity: i.quantity, unit_price: i.unit_price,
                       total_cost: i.total_cost, volume: i.total_volume,
                     }))}
@@ -644,7 +716,7 @@ function ProductionTree({ onError, refreshKey }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {result.shopping_list.map(item => (
+                  {effectiveShoppingList.map(item => (
                     <tr key={item.type_id}>
                       <td className="mat-name">
                         {item.name}
@@ -662,8 +734,8 @@ function ProductionTree({ onError, refreshKey }) {
                     <td>Total</td>
                     <td></td>
                     <td></td>
-                    <td className="num">{formatISK(result.shopping_list.reduce((s, i) => s + i.total_cost, 0))}</td>
-                    <td className="num">{result.shopping_list.reduce((s, i) => s + (i.total_volume || 0), 0).toFixed(1)}</td>
+                    <td className="num">{formatISK(effectiveShoppingList.reduce((s, i) => s + i.total_cost, 0))}</td>
+                    <td className="num">{effectiveShoppingList.reduce((s, i) => s + (i.total_volume || 0), 0).toFixed(1)}</td>
                   </tr>
                 </tfoot>
               </table>
