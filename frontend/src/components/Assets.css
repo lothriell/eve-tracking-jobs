@@ -365,7 +365,7 @@
 .assets-table td {
   padding: 7px 16px;
   color: #e2e8f0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid #252a38;
   vertical-align: middle;
   white-space: nowrap;
 }
