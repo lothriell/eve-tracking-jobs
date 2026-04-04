@@ -29,6 +29,11 @@ All notable changes to the EVE Industry Tracker will be documented in this file.
 - **"Build All" toggle** — forces all buildable nodes to BUILD (like Ravworks), recalculates summary, shopping list, and job counts client-side
 - **Jobs tab** — wall-clock time estimate, bottleneck identification, reaction + manufacturing job tables with runs, time/run, split info, parallel time, job cost
 - **Crosschecked with Ravworks** — Thanatos TE16+Sotiyo = 13.6d (Ravworks 14.0d), job scheduling and material costs align
+- **EVE-accurate job cost formula** — `EIV × CI × (1 - structure_bonus) + EIV × (facility_tax + SCC_surcharge)`, crosschecked against in-game 139.5M Thanatos job cost
+- **SCC surcharge (4%)** — fixed surcharge since 2022 industry update, auto-applied
+- **Structure job cost bonus** — Sotiyo -5%, Azbel -4%, Raitaru -3%, Tatara -4%, Athanor -3%
+- **Ravworks-style job categories** — collapsible groups: Intermediate/Composite/Biochem/Hybrid Reactions, Advanced Components, Capital Components, End Product
+- **EVE type icons** — item icons from images.evetech.net on tree nodes, job tables, and shopping list
 
 ### New ESI Scopes
 - `esi-characters.read_blueprints.v1` — BPO/BPC detection with ME/TE/runs
@@ -46,6 +51,7 @@ All notable changes to the EVE Industry Tracker will be documented in this file.
 - **BPO badges in Assets** — ESI omits `is_blueprint_copy` for originals (undefined, not false); fixed detection logic
 - **Assets table Safari rendering** — moved row separator border from `td` to `tr` to fix Safari subpixel rendering artifacts (dotted/broken lines)
 - **BPO/BPC badges in Assets** — searchable blueprint type indicators with (Original)/(Copy) in type name
+- **Import Calculator** — fixed blank screen (missing loadSaved) and undefined variable (importJfLoads, shippingFlatFee)
 
 ## [v5.8.0] - 2026-04-04
 

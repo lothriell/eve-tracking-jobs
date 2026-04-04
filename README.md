@@ -125,9 +125,11 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 - Reaction chains, facility config, missing blueprints tab, import calculator
 - Capital ship support with contract price comparison
 - Halo Logistics shipping formula with packaged ship volumes
-- Job installation cost (EIV × system cost index × tax), TE reduction with structure time bonuses
+- EVE-accurate job cost formula (EIV × CI × structure bonus + facility tax + SCC surcharge)
+- TE reduction with structure time bonuses, crosschecked against in-game Thanatos build
 - Job Scheduler: auto-detect 139 mfg / 122 react slots, split jobs, parallel time calc
-- "Build All" toggle, "Don't split" threshold, Jobs tab with wall-clock estimate
+- "Build All" toggle, "Don't split" threshold, Jobs tab with Ravworks-style categories
+- EVE type icons on tree nodes, job tables, and shopping list
 - PI factory planet status fix, BPO badges in Assets, Safari rendering fixes
 - New ESI scopes: blueprints + contracts
 
