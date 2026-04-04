@@ -797,7 +797,11 @@ function CharacterColonies({ characterData, alertMode }) {
                       ) : <StorageBar storage={storage} />}
                     </td>
                     <td>
-                      <LiveCountdown expiryTime={earliestExpiry} />
+                      {extractorPins.length > 0 ? (
+                        <LiveCountdown expiryTime={earliestExpiry} />
+                      ) : (
+                        <span className={`colony-status-badge ${status.class}`}>{status.label}</span>
+                      )}
                     </td>
                     <td>
                       <AlertBadges alerts={alerts} />
@@ -922,6 +926,8 @@ function getPinStatus(pin, routes, now) {
       // Consider producing if last cycle was within 2 cycle times (allows for brief gaps)
       if (now - lastCycle < cycleMs * 2) return 'producing';
     }
+    // Factory has contents = it ran and produced output (ESI often omits last_cycle_start)
+    if (pin.contents && pin.contents.length > 0) return 'producing';
     return 'factory-idle';
   }
 
@@ -983,7 +989,7 @@ function getColonyStatus(pins, routes, now) {
   if (factoryIdle > 0) {
     if (!hasExtractors) {
       // Factory-only planet — waiting for imported materials
-      return { label: 'Waiting', class: 'status-waiting', reason: `${factoryIdle} factories — needs P2 input` };
+      return { label: 'Waiting', class: 'status-waiting', reason: `${factoryIdle} factories — needs input materials` };
     }
     return { label: 'Stopped', class: 'status-stopped', reason: `${factoryIdle} factories idle` };
   }
