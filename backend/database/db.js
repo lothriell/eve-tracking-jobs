@@ -502,6 +502,14 @@ class DB {
 
   // ===== STATION/STRUCTURE SEARCH =====
 
+  searchSystems(query, limit = 20) {
+    return this.db.prepare(
+      `SELECT id, name, extra_data FROM name_cache
+       WHERE category = 'system' AND name LIKE ?
+       ORDER BY name ASC LIMIT ?`
+    ).all(`%${query}%`, limit);
+  }
+
   searchStations(query, limit = 20) {
     // Search both stations and structures in name_cache
     const rows = this.db.prepare(

@@ -227,4 +227,8 @@ export const searchStations = (query) => {
   return api.get(`/api/trading/stations/search?q=${encodeURIComponent(query)}`);
 };
 
+export const searchSystems = (query) => {
+  return api.get(`/api/trading/systems/search?q=${encodeURIComponent(query)}`);
+};
+
 export default api;

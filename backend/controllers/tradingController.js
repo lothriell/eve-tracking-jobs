@@ -586,7 +586,7 @@ async function buildVsBuy(req, res) {
 }
 
 // Resolve a build tree recursively
-function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache, priceCache, volumeCache, facilityMeReduction = 0) {
+function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache, priceCache, volumeCache, facilityMeReduction = 0, jobCostParams = null) {
   const name = MINERAL_FIXES[typeId]?.name || nameCache[typeId] || `Type ${typeId}`;
   const price = priceCache[typeId]?.sell_min || 0;
   const volume = MINERAL_FIXES[typeId]?.volume || volumeCache[typeId] || DEFAULT_VOLUME;
@@ -598,7 +598,7 @@ function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache,
     return {
       type_id: typeId, name, quantity, unit_price: price, buy_cost: buyCost,
       build_cost: null, volume, decision: 'buy', is_buildable: !!bp,
-      depth, children: [], job_time: 0, category: 'raw',
+      depth, children: [], job_time: 0, job_cost: 0, category: 'raw',
     };
   }
 
@@ -619,7 +619,7 @@ function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache,
     return {
       type_id: typeId, name, quantity, unit_price: price, buy_cost: buyCost,
       build_cost: null, volume, decision: 'buy', is_buildable: false,
-      depth, children: [], job_time: 0, category: 'raw',
+      depth, children: [], job_time: 0, job_cost: 0, category: 'raw',
     };
   }
 
@@ -628,7 +628,7 @@ function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache,
     return {
       type_id: typeId, name, quantity, unit_price: price, buy_cost: buyCost,
       build_cost: null, volume, decision: 'buy', is_buildable: false,
-      depth, children: [], job_time: 0, category: 'raw',
+      depth, children: [], job_time: 0, job_cost: 0, category: 'raw',
     };
   }
 
@@ -682,10 +682,36 @@ function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache,
       const meQty = Math.max(1, Math.ceil(baseQty * meFactor));
       totalQty = meQty * quantity;
     }
-    return resolveBuildNode(m.material_type_id, totalQty, meLevel, depth + 1, maxDepth, nameCache, priceCache, volumeCache, facilityMeReduction);
+    return resolveBuildNode(m.material_type_id, totalQty, meLevel, depth + 1, maxDepth, nameCache, priceCache, volumeCache, facilityMeReduction, jobCostParams);
   });
 
-  const buildCost = children.reduce((sum, c) => sum + (c.decision === 'build' && c.build_cost !== null ? c.build_cost : c.buy_cost), 0);
+  // Calculate job installation cost: EIV × cost_index × (1 + tax_rate) × runs
+  // EIV = sum of (adjusted_price × quantity) for all input materials (per single run)
+  let jobCost = 0;
+  if (jobCostParams) {
+    const { adjustedPrices, costIndices, taxRate } = jobCostParams;
+    const activity = activityId === 1 ? 'manufacturing' : 'reaction';
+    const costIndex = costIndices[activity] || 0;
+    // Lazy-load adjusted prices for materials we haven't seen yet
+    const needAdj = materials.map(m => m.material_type_id).filter(id => !(id in adjustedPrices));
+    if (needAdj.length > 0) {
+      const fetched = db.getMarketPrices(needAdj);
+      for (const id of needAdj) {
+        adjustedPrices[id] = fetched[id]?.adjusted_price || 0;
+      }
+    }
+    // EIV per run = sum of (adjusted_price × base_quantity) for each material
+    let eivPerRun = 0;
+    for (const m of materials) {
+      const adjPrice = adjustedPrices[m.material_type_id] || 0;
+      eivPerRun += adjPrice * m.quantity;
+    }
+    jobCost = eivPerRun * runsNeeded * costIndex * (1 + taxRate / 100);
+    jobCost = Math.round(jobCost * 100) / 100;
+  }
+
+  const childBuildCost = children.reduce((sum, c) => sum + (c.decision === 'build' && c.build_cost !== null ? c.build_cost : c.buy_cost), 0);
+  const buildCost = childBuildCost + jobCost;
   const decision = (price > 0 && buyCost < buildCost) ? 'buy' : 'build';
 
   return {
@@ -693,6 +719,7 @@ function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache,
     build_cost: Math.round(buildCost * 100) / 100,
     volume, decision, is_buildable: true,
     depth, children, job_time: jobTime,
+    job_cost: jobCost,
     blueprint_id: bp.blueprint_id,
     me_level: activityId === 1 ? meLevel : 0,
     category,
@@ -729,6 +756,18 @@ function countJobs(node) {
   return count;
 }
 
+// Sum job installation costs for all BUILD nodes in tree
+function sumJobCosts(node) {
+  let total = 0;
+  if (node.decision === 'build' && node.is_buildable && node.children.length > 0) {
+    total = node.job_cost || 0;
+    for (const child of node.children) {
+      total += sumJobCosts(child);
+    }
+  }
+  return total;
+}
+
 async function getBuildTree(req, res) {
   try {
     const productTypeId = parseInt(req.params.typeId || req.query.typeId);
@@ -745,6 +784,8 @@ async function getBuildTree(req, res) {
     const structure = req.query.structure || 'raitaru';
     const rig = req.query.rig || 'none';
     const sec = req.query.sec || 'nullsec';
+    const taxRate = parseFloat(req.query.taxRate) || 0; // facility tax %
+    const systemId = parseInt(req.query.systemId) || 0; // for cost index lookup
 
     // Structure ME bonus (applied on top of blueprint ME)
     const structureMeBonus = {
@@ -758,6 +799,13 @@ async function getBuildTree(req, res) {
 
     // Total facility ME reduction (%)
     const facilityMeReduction = structureMeBonus + rigMeBonus;
+
+    // Cost indices for job cost calculation
+    const costIndices = systemId ? db.getCostIndices(systemId) : {};
+
+    // Adjusted prices cache for EIV calculation
+    const adjustedPriceCache = {};
+    const jobCostParams = systemId ? { adjustedPrices: adjustedPriceCache, costIndices, taxRate } : null;
 
     if (!productTypeId) return res.status(400).json({ error: 'typeId required' });
 
@@ -775,7 +823,7 @@ async function getBuildTree(req, res) {
     volumeCache[productTypeId] = pv?.extra_data ? parseFloat(pv.extra_data) : DEFAULT_VOLUME;
 
     // Build the tree
-    const tree = resolveBuildNode(productTypeId, quantity, meLevel, 0, maxDepth, nameCache, priceCache, volumeCache, facilityMeReduction);
+    const tree = resolveBuildNode(productTypeId, quantity, meLevel, 0, maxDepth, nameCache, priceCache, volumeCache, facilityMeReduction, jobCostParams);
 
     // Fetch owned blueprints and annotate tree nodes
     let ownedBlueprints = {};
@@ -849,6 +897,7 @@ async function getBuildTree(req, res) {
     const shippingCost = Math.max(shippingMinFee * contracts, volumeShippingCost);
     const collateralCost = totalMaterialCost * collateralPct / 100;
     const totalJobs = countJobs(tree);
+    const totalJobCost = Math.round(sumJobCosts(tree) * 100) / 100;
 
     // Detect item type
     const bpCheck = db.getBlueprintForProduct(productTypeId);
@@ -912,19 +961,20 @@ async function getBuildTree(req, res) {
         buy_source: tree.unit_price > 0 ? 'market' : contractPrice > 0 ? 'contract' : 'unavailable',
         build_cost: tree.build_cost,
         material_cost: totalMaterialCost,
+        job_cost: totalJobCost,
         shipping_cost: shippingCost,
         collateral_cost: collateralCost,
-        total_build_cost: totalMaterialCost + shippingCost + collateralCost,
-        savings: effectiveBuyCost - (totalMaterialCost + shippingCost + collateralCost),
+        total_build_cost: totalMaterialCost + totalJobCost + shippingCost + collateralCost,
+        savings: effectiveBuyCost - (totalMaterialCost + totalJobCost + shippingCost + collateralCost),
         total_volume_m3: totalVolume,
         shipping_contracts: contracts,
         total_jobs: totalJobs,
         owned_blueprints: ownedCount,
-        recommendation: effectiveBuyCost === 0 ? 'BUILD' : effectiveBuyCost > (totalMaterialCost + shippingCost + collateralCost) ? 'BUILD' : 'IMPORT',
+        recommendation: effectiveBuyCost === 0 ? 'BUILD' : effectiveBuyCost > (totalMaterialCost + totalJobCost + shippingCost + collateralCost) ? 'BUILD' : 'IMPORT',
       },
       shopping_list: shoppingList,
       missing_blueprints: missingBPList,
-      config: { meLevel, maxDepth, shippingMinFee, shippingPerM3Rate, collateralPct, maxVolumePerContract, structure, rig, sec, facilityMeReduction: Math.round(facilityMeReduction * 100) / 100 },
+      config: { meLevel, maxDepth, shippingMinFee, shippingPerM3Rate, collateralPct, maxVolumePerContract, structure, rig, sec, taxRate, systemId, facilityMeReduction: Math.round(facilityMeReduction * 100) / 100 },
     });
   } catch (error) {
     console.error('Build tree error:', error.message);
@@ -1070,11 +1120,27 @@ async function stockAnalysis(req, res) {
   }
 }
 
+async function searchSystems(req, res) {
+  const query = (req.query.q || '').trim();
+  if (query.length < 2) return res.json([]);
+  try {
+    const rows = db.searchSystems(query, 15);
+    const results = rows.map(r => {
+      const extra = r.extra_data ? JSON.parse(r.extra_data) : {};
+      return { id: r.id, name: r.name, security: extra.security || 0 };
+    });
+    res.json(results);
+  } catch (error) {
+    res.status(500).json({ error: 'Search failed' });
+  }
+}
+
 module.exports = {
   requireTradeAccess,
   ensureHubsSeeded,
   searchTypes,
   searchStations,
+  searchSystems,
   buildVsBuy,
   getBuildTree,
   stockAnalysis,

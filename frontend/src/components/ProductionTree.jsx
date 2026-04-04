@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { getBuildTree, searchTypes } from '../services/api';
+import React, { useState, useCallback, useRef } from 'react';
+import { getBuildTree, searchTypes, searchSystems } from '../services/api';
 import ExternalLinks from './ExternalLinks';
 import ExportButton from './ExportButton';
 import './ProductionTree.css';
@@ -73,9 +73,12 @@ function TreeNode({ node, depth, expanded, onToggleExpand, onToggleDecision }) {
           <span className="tree-savings">-{formatISK(savings)}</span>
         )}
 
-        {/* Job time */}
+        {/* Job time + job cost */}
         {node.job_time > 0 && node.decision === 'build' && (
           <span className="tree-time">{formatTime(node.job_time)}</span>
+        )}
+        {node.job_cost > 0 && node.decision === 'build' && (
+          <span className="tree-job-cost" title="Installation cost">{formatISK(node.job_cost)}</span>
         )}
 
         {/* Owned blueprint indicator */}
@@ -132,6 +135,11 @@ function ProductionTree({ onError, refreshKey }) {
   const [structureType, setStructureType] = useState(loadSaved('structureType', 'raitaru'));
   const [rigTier, setRigTier] = useState(loadSaved('rigTier', 'none'));
   const [secStatus, setSecStatus] = useState(loadSaved('secStatus', 'nullsec'));
+  const [taxRate, setTaxRate] = useState(loadSaved('taxRate', '0'));
+  const [systemSearch, setSystemSearch] = useState(loadSaved('systemName', ''));
+  const [systemId, setSystemId] = useState(loadSaved('systemId', '0'));
+  const [systemResults, setSystemResults] = useState([]);
+  const systemSearchTimeout = useRef(null);
 
   // Save config to localStorage whenever it changes
   const saveConfig = (key, value, setter) => {
@@ -165,6 +173,29 @@ function ProductionTree({ onError, refreshKey }) {
     setTypeResults([]);
   };
 
+  const handleSystemSearch = (value) => {
+    setSystemSearch(value);
+    setSystemResults([]);
+    if (systemSearchTimeout.current) clearTimeout(systemSearchTimeout.current);
+    if (value.trim().length < 2) return;
+    systemSearchTimeout.current = setTimeout(async () => {
+      try {
+        const resp = await searchSystems(value.trim());
+        setSystemResults(resp.data || []);
+      } catch { setSystemResults([]); }
+    }, 300);
+  };
+
+  const handleSystemSelect = (sys) => {
+    setSystemId(String(sys.id));
+    setSystemSearch(sys.name);
+    setSystemResults([]);
+    try {
+      localStorage.setItem('prodPlanner_systemId', String(sys.id));
+      localStorage.setItem('prodPlanner_systemName', sys.name);
+    } catch {}
+  };
+
   const handleCalculate = async () => {
     const typeId = selectedType?.type_id || parseInt(searchText);
     if (!typeId) return;
@@ -181,6 +212,8 @@ function ProductionTree({ onError, refreshKey }) {
         structure: structureType,
         rig: rigTier,
         sec: secStatus,
+        taxRate: parseFloat(taxRate) || 0,
+        systemId: parseInt(systemId) || 0,
       });
       setResult(resp.data);
       setExpanded({});
@@ -305,6 +338,28 @@ function ProductionTree({ onError, refreshKey }) {
               <option value="high">Highsec (1.0x rig)</option>
             </select>
           </div>
+          <div className="ptree-field">
+            <label>Tax %</label>
+            <input type="number" value={taxRate} onChange={e => saveConfig('taxRate', e.target.value, setTaxRate)} placeholder="0" min="0" max="50" step="0.1" />
+          </div>
+          <div className="ptree-field" style={{ position: 'relative' }}>
+            <label>System (job cost)</label>
+            <input
+              type="text"
+              value={systemSearch}
+              onChange={e => handleSystemSearch(e.target.value)}
+              placeholder="Search system..."
+            />
+            {systemResults.length > 0 && (
+              <div className="ptree-dropdown">
+                {systemResults.map(sys => (
+                  <div key={sys.id} className="ptree-dropdown-item" onClick={() => handleSystemSelect(sys)}>
+                    {sys.name} <span style={{ opacity: 0.5, fontSize: 11 }}>{sys.security?.toFixed(1)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -346,6 +401,12 @@ function ProductionTree({ onError, refreshKey }) {
                 <span className="stat-label">Materials</span>
                 <span className="stat-value">{formatISK(s.material_cost)}</span>
               </div>
+              {s.job_cost > 0 && (
+                <div className="stat-box">
+                  <span className="stat-label">Job Cost</span>
+                  <span className="stat-value">{formatISK(s.job_cost)}</span>
+                </div>
+              )}
               <div className="stat-box">
                 <span className="stat-label">Shipping</span>
                 <span className="stat-value">{formatISK(s.shipping_cost)}</span>

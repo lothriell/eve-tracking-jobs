@@ -403,5 +403,6 @@ router.get('/trading/build-tree/:typeId', ...tradeAuth, tradingController.getBui
 router.get('/trading/stock-analysis', ...tradeAuth, tradingController.stockAnalysis);
 router.get('/trading/types/search', ...tradeAuth, tradingController.searchTypes);
 router.get('/trading/stations/search', ...tradeAuth, tradingController.searchStations);
+router.get('/trading/systems/search', ...tradeAuth, tradingController.searchSystems);
 
 module.exports = router;

@@ -139,6 +139,31 @@
 .tree-cost { width: 100px; text-align: right; flex-shrink: 0; }
 .tree-savings { font-size: 11px; color: #68d391; flex-shrink: 0; }
 .tree-time { font-size: 10px; color: #b794f4; flex-shrink: 0; }
+.tree-job-cost { font-size: 10px; color: #f6ad55; flex-shrink: 0; }
+.tree-job-cost::before { content: '⚙ '; }
+
+.ptree-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #1a1f2e;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  z-index: 100;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+.ptree-dropdown-item {
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #e2e8f0;
+}
+.ptree-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
 
 .tree-owned {
   padding: 1px 6px; border-radius: 3px; font-size: 9px; font-weight: 700;
