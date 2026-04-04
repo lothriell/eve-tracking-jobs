@@ -574,7 +574,7 @@ async function buildVsBuy(req, res) {
         savings_from_building: savings,
         savings_per_unit: savings / quantity,
         m3_saved: importTotalM3 - buildTotalM3,
-        jf_loads_saved: importJfLoads - buildJfLoads,
+        jf_loads_saved: importContracts - buildContracts,
         recommendation: savings > 0 ? 'BUILD' : 'IMPORT',
       },
       config: { shippingFlatFee, collateralPct, jfCapacity, bpcCost, meLevel },
