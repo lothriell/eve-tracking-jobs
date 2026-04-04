@@ -728,7 +728,8 @@ async function getBuildTree(req, res) {
             const productBp = db.db.prepare(
               'SELECT product_type_id FROM blueprint_products WHERE blueprint_id = ? AND activity_id = 1'
             ).get(bp.type_id);
-            const productTypeForBp = productBp?.product_type_id || bp.type_id;
+            if (!productBp) continue; // Skip BPs with no product mapping in SDE
+            const productTypeForBp = productBp.product_type_id;
             const existing = ownedBlueprints[productTypeForBp];
             // Keep the best ME BPO, or any BPC if no BPO
             if (!existing || (bp.runs === -1 && (!existing.is_bpo || bp.material_efficiency > existing.me))) {
