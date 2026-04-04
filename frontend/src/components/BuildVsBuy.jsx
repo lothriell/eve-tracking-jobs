@@ -3,6 +3,15 @@ import { getBuildVsBuy, searchTypes } from '../services/api';
 import ExternalLinks from './ExternalLinks';
 import './BuildVsBuy.css';
 
+function loadSaved(key, fallback) {
+  try {
+    const v = localStorage.getItem('prodPlanner_' + key);
+    return v !== null ? v : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 function formatISK(value) {
   if (!value && value !== 0) return '—';
   if (value === 0) return '0';
