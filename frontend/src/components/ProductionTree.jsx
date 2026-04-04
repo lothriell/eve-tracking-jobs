@@ -112,11 +112,7 @@ function classifyJob(job) {
     // Everything else (Carbon Fiber, Sulfuric Acid, etc.)
     return 'Intermediate Reactions';
   }
-  // Manufacturing — advanced capital (FTL communicators, neurolink conduits)
-  if (/Interlink Communicator|Trigger Neurolink/.test(n)) return 'Advanced Capital Components';
-  // Construction components (Seals, Backup Units, Regulators, Filters, etc.)
-  if (job.depth >= 1 && /Seal|Backup|Regulator|Reservoir|Filter|Preserver|Repairer|Inhibitor|Membrane|Fuel Block/.test(n))
-    return 'Construction Components';
+  // All non-capital manufacturing = Advanced Components (matches Ravworks grouping)
   return 'Advanced Components';
 }
 
@@ -191,8 +187,7 @@ function scheduleJobs(tree, mfgSlots, reactionSlots, dontSplitSeconds) {
   const allScheduled = [...rxn.jobs, ...mfg.jobs];
   const groupOrder = [
     'Intermediate Reactions', 'Composite Reactions', 'Biochem Reactions', 'Hybrid Reactions',
-    'Construction Components', 'Advanced Components', 'Advanced Capital Components',
-    'Capital Components', 'End Product',
+    'Advanced Components', 'Capital Components', 'End Product',
   ];
   const grouped = {};
   for (const job of allScheduled) {
