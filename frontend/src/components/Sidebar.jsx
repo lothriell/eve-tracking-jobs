@@ -263,9 +263,16 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
                 <div
                   className={`collapsed-nav-item ${currentView === 'production' ? 'active' : ''}`}
                   onClick={() => onViewChange('production')}
-                  title="Production"
+                  title="Build Planner"
                 >
                   🏭
+                </div>
+                <div
+                  className={`collapsed-nav-item ${currentView === 'build-vs-buy' ? 'active' : ''}`}
+                  onClick={() => onViewChange('build-vs-buy')}
+                  title="Import Calculator"
+                >
+                  🚚
                 </div>
               </>
             )}
@@ -411,7 +418,14 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
                   onClick={() => onViewChange('production')}
                 >
                   <span className="nav-icon">🏭</span>
-                  <span>Production</span>
+                  <span>Build Planner</span>
+                </div>
+                <div
+                  className={`nav-item ${currentView === 'build-vs-buy' ? 'active' : ''}`}
+                  onClick={() => onViewChange('build-vs-buy')}
+                >
+                  <span className="nav-icon">🚚</span>
+                  <span>Import Calculator</span>
                 </div>
               </>
             )}
