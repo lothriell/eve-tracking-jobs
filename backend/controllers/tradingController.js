@@ -854,13 +854,38 @@ async function getBuildTree(req, res) {
     const hasShipHull = tree.children.some(c => c.volume >= 2500);
     const itemType = hasCapitalComponent ? 'CAPITAL' : hasBPO ? 'T1' : hasShipHull ? 'T2' : 'FACTION';
 
-    // Count owned blueprints in tree
+    // Count owned blueprints and find missing ones
     function countOwned(node) {
       let c = node.owned_blueprint ? 1 : 0;
       if (node.children) for (const ch of node.children) c += countOwned(ch);
       return c;
     }
     const ownedCount = countOwned(tree);
+
+    // Find missing BPs (BUILD nodes without owned blueprint)
+    function findMissingBPs(node, missing) {
+      if (node.decision === 'build' && node.is_buildable && !node.owned_blueprint) {
+        if (!missing[node.type_id]) {
+          const bpId = node.blueprint_id;
+          const bpMarketPrice = bpId ? (db.getHubPrices(60003760, [bpId])?.[bpId]?.sell_min || 0) : 0;
+          missing[node.type_id] = {
+            type_id: node.type_id,
+            name: node.name,
+            blueprint_id: bpId,
+            bp_name: bpId ? (nameCache[bpId] || `BP ${bpId}`) : null,
+            bpo_market_price: bpMarketPrice,
+            category: node.category || 'manufacturing',
+            quantity_needed: node.quantity,
+          };
+        }
+      }
+      if (node.children) {
+        for (const ch of node.children) findMissingBPs(ch, missing);
+      }
+    }
+    const missingBPs = {};
+    findMissingBPs(tree, missingBPs);
+    const missingBPList = Object.values(missingBPs).sort((a, b) => b.bpo_market_price - a.bpo_market_price);
 
     // Use contract price as buy price when market price is 0
     const effectiveBuyPrice = tree.unit_price > 0 ? tree.unit_price : contractPrice;
@@ -894,6 +919,7 @@ async function getBuildTree(req, res) {
         recommendation: effectiveBuyCost === 0 ? 'BUILD' : effectiveBuyCost > (totalMaterialCost + shippingCost + collateralCost) ? 'BUILD' : 'IMPORT',
       },
       shopping_list: shoppingList,
+      missing_blueprints: missingBPList,
       config: { meLevel, maxDepth, shippingFee, collateralPct, jfCapacity, structure, rig, sec, facilityMeReduction: Math.round(facilityMeReduction * 100) / 100 },
     });
   } catch (error) {

@@ -357,6 +357,11 @@ function ProductionTree({ onError, refreshKey }) {
             <button className={activeTab === 'shopping' ? 'active' : ''} onClick={() => setActiveTab('shopping')}>
               Shopping List ({result.shopping_list?.length || 0})
             </button>
+            {result.missing_blueprints?.length > 0 && (
+              <button className={activeTab === 'blueprints' ? 'active' : ''} onClick={() => setActiveTab('blueprints')}>
+                Missing BPs ({result.missing_blueprints.length})
+              </button>
+            )}
           </div>
 
           {/* Tree View */}
@@ -430,6 +435,56 @@ function ProductionTree({ onError, refreshKey }) {
                     <td></td>
                     <td className="num">{formatISK(result.shopping_list.reduce((s, i) => s + i.total_cost, 0))}</td>
                     <td className="num">{result.shopping_list.reduce((s, i) => s + (i.total_volume || 0), 0).toFixed(1)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+
+          {/* Missing Blueprints */}
+          {activeTab === 'blueprints' && result.missing_blueprints && (
+            <div className="ptree-blueprints">
+              <div className="bp-header">
+                <span>Blueprints needed to build ({result.missing_blueprints.length})</span>
+              </div>
+              <table className="bp-table">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Type</th>
+                    <th className="num">BPO Market Price</th>
+                    <th>Source</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.missing_blueprints.map(bp => (
+                    <tr key={bp.type_id}>
+                      <td className="mat-name">
+                        {bp.name}
+                        <ExternalLinks type="item" typeId={bp.type_id} />
+                      </td>
+                      <td>
+                        <span className={`bp-type-badge ${bp.category}`}>
+                          {bp.category === 'reaction' ? 'REACTION' : 'MFG'}
+                        </span>
+                      </td>
+                      <td className="num">
+                        {bp.bpo_market_price > 0 ? formatISK(bp.bpo_market_price) : '—'}
+                      </td>
+                      <td className="bp-source">
+                        {bp.bpo_market_price > 0 ? 'Buy BPO on market' : 'BPC (contracts/LP/invention)'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td>Total BPO cost</td>
+                    <td></td>
+                    <td className="num">{formatISK(result.missing_blueprints.reduce((s, bp) => s + (bp.bpo_market_price || 0), 0))}</td>
+                    <td></td>
                   </tr>
                 </tfoot>
               </table>

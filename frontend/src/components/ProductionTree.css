@@ -171,6 +171,28 @@
 .shopping-table tfoot td { font-weight: 600; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; }
 .shopping-table .mat-name { display: flex; align-items: center; gap: 6px; }
 
+/* Missing Blueprints */
+.ptree-blueprints { }
+.bp-header { margin-bottom: 10px; font-size: 13px; color: #a0aec0; }
+
+.bp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.bp-table th {
+  padding: 8px 12px; text-align: left; color: #a0aec0; font-weight: 600;
+  font-size: 11px; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.bp-table th.num, .bp-table td.num { text-align: right; }
+.bp-table td { padding: 6px 12px; color: #e2e8f0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.bp-table tr:hover { background: rgba(255,255,255,0.03); }
+.bp-table tfoot td { font-weight: 600; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; }
+
+.bp-type-badge {
+  padding: 2px 6px; border-radius: 3px; font-size: 9px; font-weight: 700; text-transform: uppercase;
+}
+.bp-type-badge.manufacturing { background: rgba(72,187,120,0.2); color: #68d391; }
+.bp-type-badge.reaction { background: rgba(159,122,234,0.2); color: #b794f4; }
+
+.bp-source { font-size: 11px; color: #718096; }
+
 /* Empty */
 .ptree-empty { text-align: center; padding: 60px 20px; color: #718096; }
 .ptree-hint { font-size: 12px; color: #4a5568; margin-top: 4px; }
