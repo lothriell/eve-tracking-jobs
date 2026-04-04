@@ -111,17 +111,28 @@ function ProductionTree({ onError, refreshKey }) {
   const [searchTimeout, setSearchTimeout] = useState(null);
   const [selectedType, setSelectedType] = useState(null);
 
+  // Load saved config from localStorage
+  const loadSaved = (key, fallback) => {
+    try { const v = localStorage.getItem('prodPlanner_' + key); return v !== null ? v : fallback; } catch { return fallback; }
+  };
+
   // Config
   const [quantity, setQuantity] = useState('1');
-  const [meLevel, setMeLevel] = useState('0');
+  const [meLevel, setMeLevel] = useState(loadSaved('meLevel', '0'));
   const [contractPrice, setContractPrice] = useState('');
-  const [shippingMinFee, setShippingMinFee] = useState('25000000');
-  const [shippingPerM3, setShippingPerM3] = useState('600');
-  const [collateralPct, setCollateralPct] = useState('0');
-  const [maxVolume, setMaxVolume] = useState('375000');
-  const [structureType, setStructureType] = useState('raitaru');
-  const [rigTier, setRigTier] = useState('none');
-  const [secStatus, setSecStatus] = useState('null'); // null, low, high
+  const [shippingMinFee, setShippingMinFee] = useState(loadSaved('shippingMinFee', '25000000'));
+  const [shippingPerM3, setShippingPerM3] = useState(loadSaved('shippingPerM3', '600'));
+  const [collateralPct, setCollateralPct] = useState(loadSaved('collateralPct', '0'));
+  const [maxVolume, setMaxVolume] = useState(loadSaved('maxVolume', '375000'));
+  const [structureType, setStructureType] = useState(loadSaved('structureType', 'raitaru'));
+  const [rigTier, setRigTier] = useState(loadSaved('rigTier', 'none'));
+  const [secStatus, setSecStatus] = useState(loadSaved('secStatus', 'null'));
+
+  // Save config to localStorage whenever it changes
+  const saveConfig = (key, value, setter) => {
+    setter(value);
+    try { localStorage.setItem('prodPlanner_' + key, value); } catch {}
+  };
 
   // Results
   const [result, setResult] = useState(null);
@@ -232,7 +243,7 @@ function ProductionTree({ onError, refreshKey }) {
           </div>
           <div className="ptree-field">
             <label>ME (0-10)</label>
-            <input type="number" value={meLevel} onChange={e => setMeLevel(e.target.value)} min="0" max="10" />
+            <input type="number" value={meLevel} onChange={e => saveConfig('meLevel', e.target.value, setMeLevel)} min="0" max="10" />
           </div>
           <div className="ptree-field">
             <label>Contract Price</label>
@@ -240,19 +251,19 @@ function ProductionTree({ onError, refreshKey }) {
           </div>
           <div className="ptree-field">
             <label>Min Fee</label>
-            <input type="number" value={shippingMinFee} onChange={e => setShippingMinFee(e.target.value)} placeholder="25M" />
+            <input type="number" value={shippingMinFee} onChange={e => saveConfig('shippingMinFee', e.target.value, setShippingMinFee)} placeholder="25M" />
           </div>
           <div className="ptree-field">
             <label>ISK/m³</label>
-            <input type="number" value={shippingPerM3} onChange={e => setShippingPerM3(e.target.value)} placeholder="600" />
+            <input type="number" value={shippingPerM3} onChange={e => saveConfig('shippingPerM3', e.target.value, setShippingPerM3)} placeholder="600" />
           </div>
           <div className="ptree-field">
             <label>Collateral %</label>
-            <input type="number" value={collateralPct} onChange={e => setCollateralPct(e.target.value)} placeholder="0" />
+            <input type="number" value={collateralPct} onChange={e => saveConfig('collateralPct', e.target.value, setCollateralPct)} placeholder="0" />
           </div>
           <div className="ptree-field">
             <label>Max m³</label>
-            <input type="number" value={maxVolume} onChange={e => setMaxVolume(e.target.value)} placeholder="375000" />
+            <input type="number" value={maxVolume} onChange={e => saveConfig('maxVolume', e.target.value, setMaxVolume)} placeholder="375000" />
           </div>
           <div className="ptree-field">
             <label>&nbsp;</label>
@@ -264,7 +275,7 @@ function ProductionTree({ onError, refreshKey }) {
         <div className="ptree-row" style={{ marginTop: 10 }}>
           <div className="ptree-field">
             <label>Structure</label>
-            <select value={structureType} onChange={e => setStructureType(e.target.value)}>
+            <select value={structureType} onChange={e => saveConfig('structureType', e.target.value, setStructureType)}>
               <option value="raitaru">Raitaru (S)</option>
               <option value="azbel">Azbel (M)</option>
               <option value="sotiyo">Sotiyo (L)</option>
@@ -275,7 +286,7 @@ function ProductionTree({ onError, refreshKey }) {
           </div>
           <div className="ptree-field">
             <label>Rig</label>
-            <select value={rigTier} onChange={e => setRigTier(e.target.value)}>
+            <select value={rigTier} onChange={e => saveConfig('rigTier', e.target.value, setRigTier)}>
               <option value="none">No Rig</option>
               <option value="t1">T1 Rig (2% ME / 20% TE)</option>
               <option value="t2">T2 Rig (2.4% ME / 24% TE)</option>
@@ -283,7 +294,7 @@ function ProductionTree({ onError, refreshKey }) {
           </div>
           <div className="ptree-field">
             <label>Security</label>
-            <select value={secStatus} onChange={e => setSecStatus(e.target.value)}>
+            <select value={secStatus} onChange={e => saveConfig('secStatus', e.target.value, setSecStatus)}>
               <option value="null">Nullsec / WH (2.1x rig)</option>
               <option value="low">Lowsec (1.9x rig)</option>
               <option value="high">Highsec (1.0x rig)</option>
