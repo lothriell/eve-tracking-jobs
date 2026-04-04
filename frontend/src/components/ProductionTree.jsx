@@ -72,6 +72,13 @@ function TreeNode({ node, depth, expanded, onToggleExpand, onToggleDecision }) {
         {node.job_time > 0 && node.decision === 'build' && (
           <span className="tree-time">{formatTime(node.job_time)}</span>
         )}
+
+        {/* Owned blueprint indicator */}
+        {node.owned_blueprint && (
+          <span className={`tree-owned ${node.owned_blueprint.is_bpo ? 'bpo' : 'bpc'}`} title={`${node.owned_blueprint.owner}: ${node.owned_blueprint.is_bpo ? 'BPO' : 'BPC'} ME${node.owned_blueprint.me}/TE${node.owned_blueprint.te}${node.owned_blueprint.runs > 0 ? ' (' + node.owned_blueprint.runs + ' runs)' : ''}`}>
+            {node.owned_blueprint.is_bpo ? 'BPO' : 'BPC'} ME{node.owned_blueprint.me}
+          </span>
+        )}
       </div>
 
       {/* Children */}
@@ -281,6 +288,12 @@ function ProductionTree({ onError, refreshKey }) {
                 <span className="stat-label">Jobs</span>
                 <span className="stat-value">{s.total_jobs}</span>
               </div>
+              {s.owned_blueprints > 0 && (
+                <div className="stat-box owned">
+                  <span className="stat-label">Owned BPs</span>
+                  <span className="stat-value">{s.owned_blueprints}</span>
+                </div>
+              )}
             </div>
           </div>
 

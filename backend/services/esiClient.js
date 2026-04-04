@@ -849,6 +849,30 @@ async function getWalletJournal(characterId, accessToken) {
   }
 }
 
+// Get character blueprints (BPO/BPC with ME/TE/runs)
+async function getCharacterBlueprints(characterId, accessToken) {
+  try {
+    const allBlueprints = [];
+    let page = 1;
+    while (true) {
+      const url = `${ESI_BASE_URL}/characters/${characterId}/blueprints/`;
+      const data = await makeESIRequest(url, accessToken, { page });
+      if (!data || data.length === 0) break;
+      allBlueprints.push(...data);
+      if (data.length < 1000) break;
+      page++;
+    }
+    return { blueprints: allBlueprints, hasScope: true };
+  } catch (error) {
+    const status = error.response?.status;
+    if (status === 401 || status === 403) {
+      return { blueprints: [], hasScope: false };
+    }
+    console.error(`Get blueprints error (${characterId}):`, error.message);
+    return { blueprints: [], hasScope: false };
+  }
+}
+
 module.exports = {
   makeESIRequest,
   getCharacterIndustryJobs,
@@ -876,7 +900,8 @@ module.exports = {
   ACTIVITY_MAP,
   getCharacterWallet,
   getWalletJournal,
-  getWalletTransactions
+  getWalletTransactions,
+  getCharacterBlueprints
 };
 
 // Get wallet market transactions

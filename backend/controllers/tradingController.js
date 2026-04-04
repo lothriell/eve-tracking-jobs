@@ -4,7 +4,7 @@
  */
 
 const db = require('../database/db');
-const { getTypeNames, getCharacterSkills } = require('../services/esiClient');
+const { getTypeNames, getCharacterSkills, getCharacterBlueprints } = require('../services/esiClient');
 const { getValidAccessToken } = require('../services/tokenRefresh');
 const { calculateBrokerFee, calculateSalesTax, findTradeOpportunities } = require('../services/tradeCalculator');
 
@@ -716,6 +716,61 @@ async function getBuildTree(req, res) {
     // Build the tree
     const tree = resolveBuildNode(productTypeId, quantity, meLevel, 0, maxDepth, nameCache, priceCache, volumeCache);
 
+    // Fetch owned blueprints and annotate tree nodes
+    let ownedBlueprints = {};
+    try {
+      const allChars = db.getAllCharactersByUserId(req.session.userId);
+      for (const char of allChars) {
+        const token = await getValidAccessToken(char);
+        const result = await getCharacterBlueprints(char.character_id, token);
+        if (result.hasScope) {
+          for (const bp of result.blueprints) {
+            const productBp = db.db.prepare(
+              'SELECT product_type_id FROM blueprint_products WHERE blueprint_id = ? AND activity_id = 1'
+            ).get(bp.type_id);
+            const productTypeForBp = productBp?.product_type_id || bp.type_id;
+            const existing = ownedBlueprints[productTypeForBp];
+            // Keep the best ME BPO, or any BPC if no BPO
+            if (!existing || (bp.runs === -1 && (!existing.is_bpo || bp.material_efficiency > existing.me))) {
+              ownedBlueprints[productTypeForBp] = {
+                owner: char.character_name,
+                is_bpo: bp.runs === -1,
+                me: bp.material_efficiency,
+                te: bp.time_efficiency,
+                runs: bp.runs,
+                type_id: bp.type_id,
+              };
+            } else if (!existing.is_bpo && bp.runs > 0 && bp.runs > (existing.runs || 0)) {
+              ownedBlueprints[productTypeForBp] = {
+                owner: char.character_name,
+                is_bpo: false,
+                me: bp.material_efficiency,
+                te: bp.time_efficiency,
+                runs: bp.runs,
+                type_id: bp.type_id,
+              };
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Blueprint fetch error:', e.message);
+    }
+
+    // Annotate tree nodes with ownership
+    function annotateOwnership(node) {
+      const owned = ownedBlueprints[node.type_id];
+      if (owned) {
+        node.owned_blueprint = owned;
+      }
+      if (node.children) {
+        for (const child of node.children) {
+          annotateOwnership(child);
+        }
+      }
+    }
+    annotateOwnership(tree);
+
     // Shopping list
     const shoppingMap = flattenShoppingList(tree);
     const shoppingList = Object.values(shoppingMap).map(item => ({
@@ -737,6 +792,14 @@ async function getBuildTree(req, res) {
     const hasBPO = bpCheck && bpPrice[bpCheck.blueprint_id]?.sell_min > 0;
     const itemType = hasBPO ? 'T1' : tree.children.some(c => c.volume >= 2500) ? 'T2' : 'FACTION';
 
+    // Count owned blueprints in tree
+    function countOwned(node) {
+      let c = node.owned_blueprint ? 1 : 0;
+      if (node.children) for (const ch of node.children) c += countOwned(ch);
+      return c;
+    }
+    const ownedCount = countOwned(tree);
+
     res.json({
       product: {
         type_id: productTypeId,
@@ -744,6 +807,7 @@ async function getBuildTree(req, res) {
         quantity,
         jita_price: tree.unit_price,
         item_type: itemType,
+        owned_blueprint: tree.owned_blueprint || null,
       },
       tree,
       summary: {
@@ -757,6 +821,7 @@ async function getBuildTree(req, res) {
         total_volume_m3: totalVolume,
         jf_loads: jfLoads,
         total_jobs: totalJobs,
+        owned_blueprints: ownedCount,
         recommendation: tree.buy_cost > (totalMaterialCost + shippingCost + collateralCost) ? 'BUILD' : 'IMPORT',
       },
       shopping_list: shoppingList,
