@@ -50,6 +50,7 @@
 .type-t1 { background: rgba(99,179,237,0.2); color: #90cdf4; }
 .type-t2 { background: rgba(159,122,234,0.2); color: #b794f4; }
 .type-faction { background: rgba(237,137,54,0.2); color: #fbd38d; }
+.type-capital { background: rgba(245,101,101,0.2); color: #fc8181; }
 
 .ptree-verdict {
   display: flex; align-items: center; gap: 12px; padding: 12px 16px;

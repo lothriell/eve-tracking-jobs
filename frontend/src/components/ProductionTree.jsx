@@ -296,7 +296,9 @@ function ProductionTree({ onError, refreshKey }) {
             <div className={`ptree-verdict ${s.recommendation.toLowerCase()}`}>
               <span className="verdict-label">{s.recommendation}</span>
               <span className="verdict-detail">
-                {s.recommendation === 'BUILD'
+                {s.buy_finished_cost === 0
+                  ? `Not on market — must build | Materials: ${formatISK(s.material_cost)} + Shipping: ${formatISK(s.shipping_cost)} = ${formatISK(s.total_build_cost)}`
+                  : s.recommendation === 'BUILD'
                   ? `Building saves ${formatISK(s.savings)} | Materials: ${formatISK(s.material_cost)} + Shipping: ${formatISK(s.shipping_cost)} = ${formatISK(s.total_build_cost)}`
                   : `Importing is cheaper: ${formatISK(s.buy_finished_cost)} vs building ${formatISK(s.total_build_cost)}`
                 }

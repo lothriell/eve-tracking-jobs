@@ -849,7 +849,9 @@ async function getBuildTree(req, res) {
     const bpCheck = db.getBlueprintForProduct(productTypeId);
     const bpPrice = bpCheck ? db.getHubPrices(60003760, [bpCheck.blueprint_id]) : {};
     const hasBPO = bpCheck && bpPrice[bpCheck.blueprint_id]?.sell_min > 0;
-    const itemType = hasBPO ? 'T1' : tree.children.some(c => c.volume >= 2500) ? 'T2' : 'FACTION';
+    const hasCapitalComponent = tree.children.some(c => c.name && c.name.startsWith('Capital '));
+    const hasShipHull = tree.children.some(c => c.volume >= 2500);
+    const itemType = hasCapitalComponent ? 'CAPITAL' : hasBPO ? 'T1' : hasShipHull ? 'T2' : 'FACTION';
 
     // Count owned blueprints in tree
     function countOwned(node) {
@@ -881,7 +883,7 @@ async function getBuildTree(req, res) {
         jf_loads: jfLoads,
         total_jobs: totalJobs,
         owned_blueprints: ownedCount,
-        recommendation: tree.buy_cost > (totalMaterialCost + shippingCost + collateralCost) ? 'BUILD' : 'IMPORT',
+        recommendation: tree.buy_cost === 0 ? 'BUILD' : tree.buy_cost > (totalMaterialCost + shippingCost + collateralCost) ? 'BUILD' : 'IMPORT',
       },
       shopping_list: shoppingList,
       config: { meLevel, maxDepth, shippingFee, collateralPct, jfCapacity, structure, rig, sec, facilityMeReduction: Math.round(facilityMeReduction * 100) / 100 },
