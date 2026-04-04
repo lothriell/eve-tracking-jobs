@@ -397,6 +397,7 @@
 .item-name {
   color: #e2e8f0;
   font-weight: 500;
+  max-width: 0;
 }
 
 .qty-value {
