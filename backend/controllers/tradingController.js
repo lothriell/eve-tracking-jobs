@@ -577,7 +577,7 @@ async function buildVsBuy(req, res) {
         jf_loads_saved: importContracts - buildContracts,
         recommendation: savings > 0 ? 'BUILD' : 'IMPORT',
       },
-      config: { shippingFlatFee, collateralPct, jfCapacity, bpcCost, meLevel },
+      config: { shippingMinFee, shippingPerM3, collateralPct, maxVolPerContract, bpcCost, meLevel },
     });
   } catch (error) {
     console.error('Build vs Buy error:', error.message);
