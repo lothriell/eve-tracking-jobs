@@ -440,8 +440,6 @@ function ProductionTree({ onError, refreshKey }) {
               </table>
             </div>
           )}
-        </>
-      )}
 
           {/* Missing Blueprints */}
           {activeTab === 'blueprints' && result.missing_blueprints && (
@@ -493,7 +491,7 @@ function ProductionTree({ onError, refreshKey }) {
         </>
       )}
 
-      {!result && !loading && (
+     {!result && !loading && (
         <div className="ptree-empty">
           <p>Search for an item, configure ME and shipping, then click <strong>Build Tree</strong></p>
           <p className="ptree-hint">Recursively resolves materials — each component shows build vs buy with optimal decision</p>
