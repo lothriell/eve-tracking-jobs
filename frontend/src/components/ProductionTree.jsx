@@ -221,7 +221,8 @@ function TreeNode({ node, depth, expanded, onToggleExpand, onToggleDecision }) {
           {hasChildren ? (isExpanded ? '▼' : '▶') : '·'}
         </span>
 
-        {/* Name + links */}
+        {/* Icon + Name + links */}
+        <img className="tree-icon" src={`https://images.evetech.net/types/${node.type_id}/icon?size=32`} alt="" loading="lazy" />
         <span className="tree-name">
           {node.name}
           <ExternalLinks type="item" typeId={node.type_id} />
@@ -762,6 +763,7 @@ function ProductionTree({ onError, refreshKey }) {
                   {effectiveShoppingList.map(item => (
                     <tr key={item.type_id}>
                       <td className="mat-name">
+                        <img className="shop-icon" src={`https://images.evetech.net/types/${item.type_id}/icon?size=32`} alt="" loading="lazy" />
                         {item.name}
                         <ExternalLinks type="item" typeId={item.type_id} />
                       </td>
@@ -891,7 +893,7 @@ function ProductionTree({ onError, refreshKey }) {
                     <tbody>
                       {cat.jobs.map((job, i) => (
                         <tr key={`${job.type_id}-${i}`}>
-                          <td>{job.name}</td>
+                          <td><img className="jobs-icon" src={`https://images.evetech.net/types/${job.type_id}/icon?size=32`} alt="" loading="lazy" />{job.name}</td>
                           <td className="num">{job.runs_needed.toLocaleString()}</td>
                           <td className="num">{formatTime(job.time_per_run)}</td>
                           <td className="num">{formatTime(job.total_time)}</td>

@@ -136,6 +136,7 @@
 
 .tree-children-dimmed { opacity: 0.4; border-left: 2px solid rgba(99,179,237,0.2); margin-left: 12px; }
 
+.tree-icon { width: 20px; height: 20px; flex-shrink: 0; border-radius: 2px; vertical-align: middle; }
 .tree-cost { width: 100px; text-align: right; flex-shrink: 0; }
 .tree-savings { font-size: 11px; color: #68d391; flex-shrink: 0; }
 .tree-time { font-size: 10px; color: #b794f4; flex-shrink: 0; }
@@ -195,6 +196,7 @@
 .shopping-table tr:hover { background: rgba(255,255,255,0.03); }
 .shopping-table tfoot td { font-weight: 600; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; }
 .shopping-table .mat-name { display: flex; align-items: center; gap: 6px; }
+.shop-icon { width: 20px; height: 20px; flex-shrink: 0; border-radius: 2px; }
 
 /* Missing Blueprints */
 .ptree-blueprints { }
@@ -267,6 +269,7 @@
   padding: 6px 10px; color: #e2e8f0;
   border-bottom: 1px solid rgba(255,255,255,0.04);
 }
+.jobs-icon { width: 20px; height: 20px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
 .jobs-table tr:hover { background: rgba(255,255,255,0.03); }
 .jobs-table .split-badge {
   font-size: 10px; padding: 1px 5px; border-radius: 3px;
