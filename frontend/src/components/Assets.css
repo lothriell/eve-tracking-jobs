@@ -330,16 +330,14 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
-  table-layout: fixed;
 }
 
-/* Column widths — generous spacing */
-.assets-table .col-item      { width: auto; }
-.assets-table .col-qty       { width: 150px; }
-.assets-table .col-flag      { width: 140px; }
-.assets-table .col-state     { width: 120px; }
+/* Column widths */
+.assets-table .col-qty       { width: 100px; }
+.assets-table .col-flag      { width: 100px; }
+.assets-table .col-state     { width: 100px; }
 .assets-table .col-isk       { width: 100px; }
-.assets-table .col-character { width: 140px; }
+.assets-table .col-character { width: 120px; }
 
 .assets-table th {
   padding: 6px 16px;
@@ -369,8 +367,6 @@
   color: #e2e8f0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   vertical-align: middle;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -397,7 +393,6 @@
 .item-name {
   color: #e2e8f0;
   font-weight: 500;
-  max-width: 0;
 }
 
 .qty-value {
