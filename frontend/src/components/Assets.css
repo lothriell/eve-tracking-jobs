@@ -372,7 +372,7 @@
 
 .assets-table tbody tr {
   transition: background 0.15s;
-  box-shadow: inset 0 -1px 0 #2d3348;
+  border-bottom: 1px solid #2d3348;
 }
 
 .assets-table tbody tr:hover {
