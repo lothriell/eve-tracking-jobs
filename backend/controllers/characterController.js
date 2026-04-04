@@ -961,7 +961,7 @@ exports.getCharacterAssets = async (req, res) => {
           a.is_bpc = true;
           if (!typeName.includes('Blueprint')) typeName += ' Blueprint';
           typeName += ' (Copy)';
-        } else if (typeName.includes('Blueprint') && a.is_blueprint_copy === false) {
+        } else if (typeName.includes('Blueprint') && !a.is_blueprint_copy) {
           a.is_bpo = true;
           typeName += ' (Original)';
         }
