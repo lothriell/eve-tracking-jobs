@@ -403,14 +403,31 @@ async function searchStations(req, res) {
   }
 }
 
+// Known mineral names (SDE has corrupted names for some)
+const MINERAL_FIXES = {
+  34: { name: 'Tritanium', volume: 0.01 },
+  35: { name: 'Pyerite', volume: 0.01 },
+  36: { name: 'Mexallon', volume: 0.01 },
+  37: { name: 'Isogen', volume: 0.01 },
+  38: { name: 'Nocxium', volume: 0.01 },
+  39: { name: 'Zydrine', volume: 0.01 },
+  40: { name: 'Megacyte', volume: 0.01 },
+  11399: { name: 'Morphite', volume: 0.01 },
+};
+
+// Default volume for items with no SDE data (small components, tags, etc.)
+const DEFAULT_VOLUME = 0.01;
+
 async function buildVsBuy(req, res) {
   try {
     const productTypeId = parseInt(req.query.typeId);
     const quantity = parseInt(req.query.quantity) || 1;
+    const meLevel = parseInt(req.query.me) || 0; // Material Efficiency 0-10
     const shippingFlatFee = parseFloat(req.query.shippingFee) || 25000000;
     const collateralPct = parseFloat(req.query.collateralPct) || 0;
     const jfCapacity = parseFloat(req.query.jfCapacity) || 225000;
     const destSellPrice = parseFloat(req.query.destPrice) || 0;
+    const bpcCost = parseFloat(req.query.bpcCost) || 0;
 
     if (!productTypeId) return res.status(400).json({ error: 'typeId required' });
 
@@ -424,28 +441,48 @@ async function buildVsBuy(req, res) {
       return res.status(404).json({ error: 'No material requirements found' });
     }
 
+    // Detect item type: T1 (BPO on market), T2 (has ship hull in materials), Faction (BPC only)
+    const bpPrice = db.getHubPrices(60003760, [bp.blueprint_id]);
+    const hasBPO = bpPrice[bp.blueprint_id] && bpPrice[bp.blueprint_id].sell_min > 0;
+    const hasShipHullMaterial = materials.some(m => {
+      const vol = db.db.prepare('SELECT extra_data FROM name_cache WHERE id = ? AND category = ?').get(m.material_type_id, 'type');
+      return vol && vol.extra_data && parseFloat(vol.extra_data) >= 2500; // ship hulls are 2500+ m³
+    });
+    const itemType = hasBPO ? 'T1' : hasShipHullMaterial ? 'T2' : 'FACTION';
+
     // Get all type IDs we need prices and names for
-    const allTypeIds = [productTypeId, ...materials.map(m => m.material_type_id)];
+    const allTypeIds = [productTypeId, bp.blueprint_id, ...materials.map(m => m.material_type_id)];
     const typeNames = await getTypeNames(allTypeIds);
+
+    // Apply mineral name fixes
+    for (const [id, fix] of Object.entries(MINERAL_FIXES)) {
+      typeNames[parseInt(id)] = fix.name;
+    }
 
     // Get Jita prices for product + all materials
     const jitaPrices = {};
     for (const typeId of allTypeIds) {
-      const p = db.getHubPrices(60003760, [typeId]); // Jita
+      const p = db.getHubPrices(60003760, [typeId]);
       jitaPrices[typeId] = p[typeId] || null;
     }
 
-    // Get volumes from SDE
+    // Get volumes from SDE with fixes
     const volumes = {};
     const volRows = db.db.prepare(
       `SELECT id, extra_data FROM name_cache WHERE category = 'type' AND id IN (${allTypeIds.map(() => '?').join(',')})`
     ).all(...allTypeIds);
     for (const row of volRows) {
-      volumes[row.id] = row.extra_data ? parseFloat(row.extra_data) : 0;
+      const fix = MINERAL_FIXES[row.id];
+      if (fix) {
+        volumes[row.id] = fix.volume;
+      } else {
+        volumes[row.id] = row.extra_data ? parseFloat(row.extra_data) : DEFAULT_VOLUME;
+      }
     }
 
     const productJitaPrice = jitaPrices[productTypeId]?.sell_min || 0;
     const productVolume = volumes[productTypeId] || 0;
+    const bpoPrice = hasBPO ? bpPrice[bp.blueprint_id].sell_min : 0;
 
     // === PATH A: Import finished product ===
     const importTotalM3 = productVolume * quantity;
@@ -456,14 +493,21 @@ async function buildVsBuy(req, res) {
     const importTotalCost = importBuyCost + importShipping + importCollateral;
 
     // === PATH B: Import components, build locally ===
+    // Apply Material Efficiency: ME reduces materials by 1% per level (max 10%)
+    // Formula: actual_qty = max(1, ceil(base_qty * (1 - ME/100)))
+    const meFactor = 1 - meLevel / 100;
+
     const materialDetails = materials.map(m => {
-      const qtyNeeded = m.quantity * quantity;
+      const baseQty = m.quantity;
+      const meQty = Math.max(1, Math.ceil(baseQty * meFactor));
+      const qtyNeeded = meQty * quantity;
       const price = jitaPrices[m.material_type_id]?.sell_min || 0;
-      const vol = volumes[m.material_type_id] || 0;
+      const vol = volumes[m.material_type_id] || DEFAULT_VOLUME;
       return {
         type_id: m.material_type_id,
         type_name: typeNames[m.material_type_id] || `Type ${m.material_type_id}`,
-        quantity_per_unit: m.quantity,
+        quantity_base: baseQty,
+        quantity_me: meQty,
         quantity_total: qtyNeeded,
         unit_price: price,
         total_price: price * qtyNeeded,
@@ -477,7 +521,8 @@ async function buildVsBuy(req, res) {
     const buildJfLoads = Math.ceil(buildTotalM3 / jfCapacity);
     const buildShipping = buildJfLoads * shippingFlatFee;
     const buildCollateral = buildMaterialCost * collateralPct / 100;
-    const buildTotalCost = buildMaterialCost + buildShipping + buildCollateral;
+    const buildBpcCost = bpcCost * quantity;
+    const buildTotalCost = buildMaterialCost + buildShipping + buildCollateral + buildBpcCost;
 
     // === COMPARISON ===
     const savings = importTotalCost - buildTotalCost;
@@ -493,6 +538,9 @@ async function buildVsBuy(req, res) {
         jita_price: productJitaPrice,
         volume_m3: productVolume,
         dest_sell_price: destSellPrice || null,
+        item_type: itemType,
+        blueprint_name: typeNames[bp.blueprint_id] || `BP ${bp.blueprint_id}`,
+        bpo_price: bpoPrice || null,
       },
       import_finished: {
         buy_cost: importBuyCost,
@@ -507,6 +555,8 @@ async function buildVsBuy(req, res) {
       },
       build_locally: {
         material_cost: buildMaterialCost,
+        bpc_cost: buildBpcCost,
+        me_level: meLevel,
         total_m3: buildTotalM3,
         jf_loads: buildJfLoads,
         shipping: buildShipping,
@@ -524,7 +574,7 @@ async function buildVsBuy(req, res) {
         jf_loads_saved: importJfLoads - buildJfLoads,
         recommendation: savings > 0 ? 'BUILD' : 'IMPORT',
       },
-      config: { shippingFlatFee, collateralPct, jfCapacity },
+      config: { shippingFlatFee, collateralPct, jfCapacity, bpcCost, meLevel },
     });
   } catch (error) {
     console.error('Build vs Buy error:', error.message);

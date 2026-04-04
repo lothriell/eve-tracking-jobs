@@ -9,6 +9,7 @@ import Planets from '../components/Planets';
 import CharacterPage from '../components/CharacterPage';
 import HubComparison from '../components/HubComparison';
 import TradeFinder from '../components/TradeFinder';
+import BuildVsBuy from '../components/BuildVsBuy';
 import './Main.css';
 
 function ServerStatus() {
@@ -228,6 +229,8 @@ function Main({ onLogout, characterName }) {
         return <HubComparison onError={setError} refreshKey={refreshKey} />;
       case 'trade-finder':
         return <TradeFinder onError={setError} refreshKey={refreshKey} />;
+      case 'build-vs-buy':
+        return <BuildVsBuy onError={setError} refreshKey={refreshKey} />;
       case 'dashboard':
       default:
         return <Dashboard onError={setError} refreshKey={refreshKey} />;
