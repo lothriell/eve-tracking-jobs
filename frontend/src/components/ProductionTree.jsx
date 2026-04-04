@@ -315,16 +315,13 @@ function ProductionTree({ onError, refreshKey }) {
     })();
   }, [refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Effective tree — with buildAll applied if toggled
-  const tree = useMemo(() => {
-    if (!result?.tree) return null;
-    return buildAll ? applyBuildAll(result.tree) : result.tree;
-  }, [result, buildAll]);
-
-  // Effective summary + shopping list — recalculated when buildAll changes
-  const { effectiveSummary, effectiveShoppingList } = useMemo(() => {
-    if (!result || !tree) return { effectiveSummary: null, effectiveShoppingList: null };
-    if (!buildAll) return { effectiveSummary: result.summary, effectiveShoppingList: result.shopping_list };
+  // Effective tree + summary + shopping list — single memo to avoid stale refs
+  const { tree, effectiveSummary, effectiveShoppingList } = useMemo(() => {
+    if (!result?.tree) return { tree: null, effectiveSummary: null, effectiveShoppingList: null };
+    const effectiveTree = buildAll ? applyBuildAll(result.tree) : result.tree;
+    if (!buildAll) {
+      return { tree: effectiveTree, effectiveSummary: result.summary, effectiveShoppingList: result.shopping_list };
+    }
     try {
       const cfg = {
         shippingMinFee: parseFloat(shippingMinFee) || 25000000,
@@ -332,14 +329,13 @@ function ProductionTree({ onError, refreshKey }) {
         collateralPct: parseFloat(collateralPct) || 0,
         maxVolume: parseFloat(maxVolume) || 375000,
       };
-      const r = recalcSummary(tree, result.summary, cfg);
-      console.log('Build All recalc:', { materialCost: r.summary.material_cost, jobCost: r.summary.job_cost, jobs: r.summary.total_jobs, shopItems: r.shopping_list.length });
-      return { effectiveSummary: r.summary, effectiveShoppingList: r.shopping_list };
+      const r = recalcSummary(effectiveTree, result.summary, cfg);
+      return { tree: effectiveTree, effectiveSummary: r.summary, effectiveShoppingList: r.shopping_list };
     } catch (err) {
       console.error('recalcSummary error:', err);
-      return { effectiveSummary: result.summary, effectiveShoppingList: result.shopping_list };
+      return { tree: effectiveTree, effectiveSummary: result.summary, effectiveShoppingList: result.shopping_list };
     }
-  }, [result, tree, buildAll, shippingMinFee, shippingPerM3, collateralPct, maxVolume]);
+  }, [result, buildAll, shippingMinFee, shippingPerM3, collateralPct, maxVolume]);
 
   // Job schedule — computed from tree + slot config
   const jobSchedule = useMemo(() => {
