@@ -462,6 +462,31 @@ class DB {
     ).all(blueprintId, activityId);
   }
 
+  saveBlueprintActivities(entries) {
+    const stmt = this.db.prepare(
+      'INSERT OR REPLACE INTO blueprint_activities (blueprint_id, activity_id, time) VALUES (?, ?, ?)'
+    );
+    const batch = this.db.transaction((items) => {
+      for (const item of items) {
+        stmt.run(item.blueprint_id, item.activity_id, item.time);
+      }
+    });
+    batch(entries);
+    return entries.length;
+  }
+
+  getBlueprintActivityTime(blueprintId, activityId = 1) {
+    const row = this.db.prepare(
+      'SELECT time FROM blueprint_activities WHERE blueprint_id = ? AND activity_id = ?'
+    ).get(blueprintId, activityId);
+    return row?.time || 0;
+  }
+
+  getBlueprintActivitiesCount() {
+    const row = this.db.prepare('SELECT COUNT(*) as count FROM blueprint_activities').get();
+    return row?.count || 0;
+  }
+
   getBlueprintProductsCount() {
     const row = this.db.prepare('SELECT COUNT(*) as count FROM blueprint_products').get();
     return row?.count || 0;

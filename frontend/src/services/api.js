@@ -207,6 +207,10 @@ export const autoDetectTradeSkills = (characterId) => {
   return api.get(`/api/trading/settings/auto?characterId=${characterId}`);
 };
 
+export const getBuildTree = (typeId, params) => {
+  return api.get(`/api/trading/build-tree/${typeId}`, { params });
+};
+
 export const getBuildVsBuy = (params) => {
   return api.get('/api/trading/build-vs-buy', { params });
 };

@@ -167,6 +167,14 @@ CREATE TABLE IF NOT EXISTS hub_prices (
 );
 CREATE INDEX IF NOT EXISTS idx_hub_prices_station ON hub_prices(station_id);
 
+-- Blueprint activity times (job duration from SDE)
+CREATE TABLE IF NOT EXISTS blueprint_activities (
+    blueprint_id INTEGER NOT NULL,
+    activity_id INTEGER NOT NULL,
+    time INTEGER DEFAULT 0,
+    PRIMARY KEY (blueprint_id, activity_id)
+);
+
 -- Per-character trade skill settings (for fee calculation)
 CREATE TABLE IF NOT EXISTS trade_settings (
     character_id INTEGER PRIMARY KEY,

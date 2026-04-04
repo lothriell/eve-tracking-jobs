@@ -310,7 +310,28 @@ async function importBlueprints() {
       console.log(`[SDE] Blueprint materials: ${materialEntries.length} entries imported`);
     }
 
-    return productEntries.length + materialEntries.length;
+    // Activity times: blueprint_id → time per activity
+    const activityCsv = await downloadCSV('industryActivity.csv');
+    const activityRows = parseCSV(activityCsv);
+
+    const activityEntries = [];
+    for (const row of activityRows) {
+      const blueprintId = parseInt(row.typeID);
+      const activityId = parseInt(row.activityID);
+      const time = parseInt(row.time) || 0;
+      if (blueprintId && activityId && time > 0) {
+        activityEntries.push({ blueprint_id: blueprintId, activity_id: activityId, time });
+      }
+    }
+
+    if (activityEntries.length > 0) {
+      for (let i = 0; i < activityEntries.length; i += 5000) {
+        db.saveBlueprintActivities(activityEntries.slice(i, i + 5000));
+      }
+      console.log(`[SDE] Blueprint activities: ${activityEntries.length} entries imported`);
+    }
+
+    return productEntries.length + materialEntries.length + activityEntries.length;
   } catch (error) {
     console.error('[SDE] Failed to import blueprints:', error.message);
     return 0;
@@ -331,14 +352,15 @@ async function importSDE() {
   // Check if planet schematics and blueprints need importing
   const schematicsCount = db.getPlanetSchematicsCount();
   const blueprintsCount = db.getBlueprintProductsCount();
+  const activitiesCount = db.getBlueprintActivitiesCount();
 
-  if (typeCount > 50000 && hasVolumes && schematicsCount > 0 && blueprintsCount > 0) {
-    console.log(`[SDE] Already have ${typeCount} types + ${schematicsCount} schematics + ${blueprintsCount} blueprints, skipping SDE import`);
+  if (typeCount > 50000 && hasVolumes && schematicsCount > 0 && blueprintsCount > 0 && activitiesCount > 0) {
+    console.log(`[SDE] Already have ${typeCount} types + ${schematicsCount} schematics + ${blueprintsCount} blueprints + ${activitiesCount} activities, skipping SDE import`);
     return;
   }
 
-  if (typeCount > 50000 && hasVolumes && schematicsCount > 0 && blueprintsCount === 0) {
-    console.log(`[SDE] Types + schematics exist but blueprints missing — importing blueprints only`);
+  if (typeCount > 50000 && hasVolumes && schematicsCount > 0 && (blueprintsCount === 0 || activitiesCount === 0)) {
+    console.log(`[SDE] Types + schematics exist but blueprints/activities missing — importing blueprints`);
     const count = await importBlueprints();
     console.log(`[SDE] Blueprints: ${count} entries imported`);
     return;

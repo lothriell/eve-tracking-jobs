@@ -403,6 +403,8 @@ async function searchStations(req, res) {
   }
 }
 
+// ===== BUILD TREE =====
+
 // Known mineral names (SDE has corrupted names for some)
 const MINERAL_FIXES = {
   34: { name: 'Tritanium', volume: 0.01 },
@@ -582,6 +584,190 @@ async function buildVsBuy(req, res) {
   }
 }
 
+// Resolve a build tree recursively
+function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache, priceCache, volumeCache) {
+  const name = MINERAL_FIXES[typeId]?.name || nameCache[typeId] || `Type ${typeId}`;
+  const price = priceCache[typeId]?.sell_min || 0;
+  const volume = MINERAL_FIXES[typeId]?.volume || volumeCache[typeId] || DEFAULT_VOLUME;
+  const buyCost = price * quantity;
+
+  // Base case: max depth or no blueprint
+  const bp = db.getBlueprintForProduct(typeId);
+  if (!bp || depth >= maxDepth) {
+    return {
+      type_id: typeId, name, quantity, unit_price: price, buy_cost: buyCost,
+      build_cost: null, volume, decision: 'buy', is_buildable: !!bp,
+      depth, children: [], job_time: 0,
+    };
+  }
+
+  const materials = db.getBlueprintMaterials(bp.blueprint_id);
+  if (!materials || materials.length === 0) {
+    return {
+      type_id: typeId, name, quantity, unit_price: price, buy_cost: buyCost,
+      build_cost: null, volume, decision: 'buy', is_buildable: false,
+      depth, children: [], job_time: 0,
+    };
+  }
+
+  const jobTime = db.getBlueprintActivityTime(bp.blueprint_id, 1);
+  const meFactor = 1 - meLevel / 100;
+
+  // Ensure prices/names/volumes are cached for all materials
+  const matIds = materials.map(m => m.material_type_id);
+  const uncachedIds = matIds.filter(id => !priceCache[id]);
+  if (uncachedIds.length > 0) {
+    for (const id of uncachedIds) {
+      const p = db.getHubPrices(60003760, [id]);
+      priceCache[id] = p[id] || { sell_min: 0 };
+    }
+  }
+  const uncachedNames = matIds.filter(id => !nameCache[id] && !MINERAL_FIXES[id]);
+  if (uncachedNames.length > 0) {
+    const cached = db.getCachedNames(uncachedNames, 'type');
+    for (const id of uncachedNames) {
+      nameCache[id] = cached[id]?.name || `Type ${id}`;
+    }
+  }
+  const uncachedVols = matIds.filter(id => !volumeCache[id] && !MINERAL_FIXES[id]);
+  if (uncachedVols.length > 0) {
+    const placeholders = uncachedVols.map(() => '?').join(',');
+    const rows = db.db.prepare(
+      `SELECT id, extra_data FROM name_cache WHERE category = 'type' AND id IN (${placeholders})`
+    ).all(...uncachedVols);
+    for (const row of rows) {
+      volumeCache[row.id] = row.extra_data ? parseFloat(row.extra_data) : DEFAULT_VOLUME;
+    }
+  }
+
+  // Recurse into children
+  const children = materials.map(m => {
+    const baseQty = m.quantity;
+    const meQty = Math.max(1, Math.ceil(baseQty * meFactor));
+    const totalQty = meQty * quantity;
+    return resolveBuildNode(m.material_type_id, totalQty, meLevel, depth + 1, maxDepth, nameCache, priceCache, volumeCache);
+  });
+
+  const buildCost = children.reduce((sum, c) => sum + (c.decision === 'build' && c.build_cost !== null ? c.build_cost : c.buy_cost), 0);
+  const decision = (price > 0 && buyCost < buildCost) ? 'buy' : 'build';
+
+  return {
+    type_id: typeId, name, quantity, unit_price: price, buy_cost: buyCost,
+    build_cost: Math.round(buildCost * 100) / 100,
+    volume, decision, is_buildable: true,
+    depth, children, job_time: jobTime,
+    blueprint_id: bp.blueprint_id,
+    me_level: meLevel,
+  };
+}
+
+// Flatten tree to get shopping list (all leaf 'buy' nodes aggregated)
+function flattenShoppingList(node, list = {}) {
+  if (node.decision === 'buy' || node.children.length === 0) {
+    if (!list[node.type_id]) {
+      list[node.type_id] = { type_id: node.type_id, name: node.name, quantity: 0, unit_price: node.unit_price, volume: node.volume };
+    }
+    list[node.type_id].quantity += node.quantity;
+  } else {
+    for (const child of node.children) {
+      flattenShoppingList(child, list);
+    }
+  }
+  return list;
+}
+
+// Count total jobs in tree
+function countJobs(node) {
+  let count = 0;
+  if (node.decision === 'build' && node.is_buildable && node.children.length > 0) {
+    count = 1;
+    for (const child of node.children) {
+      count += countJobs(child);
+    }
+  }
+  return count;
+}
+
+async function getBuildTree(req, res) {
+  try {
+    const productTypeId = parseInt(req.params.typeId || req.query.typeId);
+    const quantity = parseInt(req.query.quantity) || 1;
+    const meLevel = parseInt(req.query.me) || 0;
+    const maxDepth = Math.min(parseInt(req.query.maxDepth) || 4, 6);
+    const shippingFee = parseFloat(req.query.shippingFee) || 25000000;
+    const collateralPct = parseFloat(req.query.collateralPct) || 0;
+    const jfCapacity = parseFloat(req.query.jfCapacity) || 225000;
+
+    if (!productTypeId) return res.status(400).json({ error: 'typeId required' });
+
+    // Warm caches
+    const nameCache = {};
+    const priceCache = {};
+    const volumeCache = {};
+
+    // Pre-cache the product
+    const productNames = await getTypeNames([productTypeId]);
+    nameCache[productTypeId] = productNames[productTypeId] || `Type ${productTypeId}`;
+    const pp = db.getHubPrices(60003760, [productTypeId]);
+    priceCache[productTypeId] = pp[productTypeId] || { sell_min: 0 };
+    const pv = db.db.prepare('SELECT extra_data FROM name_cache WHERE id = ? AND category = ?').get(productTypeId, 'type');
+    volumeCache[productTypeId] = pv?.extra_data ? parseFloat(pv.extra_data) : DEFAULT_VOLUME;
+
+    // Build the tree
+    const tree = resolveBuildNode(productTypeId, quantity, meLevel, 0, maxDepth, nameCache, priceCache, volumeCache);
+
+    // Shopping list
+    const shoppingMap = flattenShoppingList(tree);
+    const shoppingList = Object.values(shoppingMap).map(item => ({
+      ...item,
+      total_cost: item.unit_price * item.quantity,
+      total_volume: item.volume * item.quantity,
+    })).sort((a, b) => b.total_cost - a.total_cost);
+
+    const totalMaterialCost = shoppingList.reduce((s, i) => s + i.total_cost, 0);
+    const totalVolume = shoppingList.reduce((s, i) => s + i.total_volume, 0);
+    const jfLoads = Math.ceil(totalVolume / jfCapacity);
+    const shippingCost = jfLoads * shippingFee;
+    const collateralCost = totalMaterialCost * collateralPct / 100;
+    const totalJobs = countJobs(tree);
+
+    // Detect item type
+    const bpCheck = db.getBlueprintForProduct(productTypeId);
+    const bpPrice = bpCheck ? db.getHubPrices(60003760, [bpCheck.blueprint_id]) : {};
+    const hasBPO = bpCheck && bpPrice[bpCheck.blueprint_id]?.sell_min > 0;
+    const itemType = hasBPO ? 'T1' : tree.children.some(c => c.volume >= 2500) ? 'T2' : 'FACTION';
+
+    res.json({
+      product: {
+        type_id: productTypeId,
+        name: tree.name,
+        quantity,
+        jita_price: tree.unit_price,
+        item_type: itemType,
+      },
+      tree,
+      summary: {
+        buy_finished_cost: tree.buy_cost,
+        build_cost: tree.build_cost,
+        material_cost: totalMaterialCost,
+        shipping_cost: shippingCost,
+        collateral_cost: collateralCost,
+        total_build_cost: totalMaterialCost + shippingCost + collateralCost,
+        savings: tree.buy_cost - (totalMaterialCost + shippingCost + collateralCost),
+        total_volume_m3: totalVolume,
+        jf_loads: jfLoads,
+        total_jobs: totalJobs,
+        recommendation: tree.buy_cost > (totalMaterialCost + shippingCost + collateralCost) ? 'BUILD' : 'IMPORT',
+      },
+      shopping_list: shoppingList,
+      config: { meLevel, maxDepth, shippingFee, collateralPct, jfCapacity },
+    });
+  } catch (error) {
+    console.error('Build tree error:', error.message);
+    res.status(500).json({ error: 'Failed to build production tree' });
+  }
+}
+
 async function stockAnalysis(req, res) {
   try {
     const sourceHubId = parseInt(req.query.source);
@@ -726,6 +912,7 @@ module.exports = {
   searchTypes,
   searchStations,
   buildVsBuy,
+  getBuildTree,
   stockAnalysis,
   getHubs,
   addHub,
