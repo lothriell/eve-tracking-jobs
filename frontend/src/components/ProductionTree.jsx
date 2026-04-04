@@ -325,14 +325,20 @@ function ProductionTree({ onError, refreshKey }) {
   const { effectiveSummary, effectiveShoppingList } = useMemo(() => {
     if (!result || !tree) return { effectiveSummary: null, effectiveShoppingList: null };
     if (!buildAll) return { effectiveSummary: result.summary, effectiveShoppingList: result.shopping_list };
-    const cfg = {
-      shippingMinFee: parseFloat(shippingMinFee) || 25000000,
-      shippingPerM3: parseFloat(shippingPerM3) || 600,
-      collateralPct: parseFloat(collateralPct) || 0,
-      maxVolume: parseFloat(maxVolume) || 375000,
-    };
-    const r = recalcSummary(tree, result.summary, cfg);
-    return { effectiveSummary: r.summary, effectiveShoppingList: r.shopping_list };
+    try {
+      const cfg = {
+        shippingMinFee: parseFloat(shippingMinFee) || 25000000,
+        shippingPerM3: parseFloat(shippingPerM3) || 600,
+        collateralPct: parseFloat(collateralPct) || 0,
+        maxVolume: parseFloat(maxVolume) || 375000,
+      };
+      const r = recalcSummary(tree, result.summary, cfg);
+      console.log('Build All recalc:', { materialCost: r.summary.material_cost, jobCost: r.summary.job_cost, jobs: r.summary.total_jobs, shopItems: r.shopping_list.length });
+      return { effectiveSummary: r.summary, effectiveShoppingList: r.shopping_list };
+    } catch (err) {
+      console.error('recalcSummary error:', err);
+      return { effectiveSummary: result.summary, effectiveShoppingList: result.shopping_list };
+    }
   }, [result, tree, buildAll, shippingMinFee, shippingPerM3, collateralPct, maxVolume]);
 
   // Job schedule — computed from tree + slot config
