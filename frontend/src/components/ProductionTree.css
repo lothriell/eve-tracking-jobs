@@ -133,6 +133,8 @@
 }
 .tree-category.reaction { background: rgba(159,122,234,0.2); color: #b794f4; }
 
+.tree-children-dimmed { opacity: 0.4; border-left: 2px solid rgba(99,179,237,0.2); margin-left: 12px; }
+
 .tree-cost { width: 100px; text-align: right; flex-shrink: 0; }
 .tree-savings { font-size: 11px; color: #68d391; flex-shrink: 0; }
 .tree-time { font-size: 10px; color: #b794f4; flex-shrink: 0; }

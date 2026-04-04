@@ -87,16 +87,20 @@ function TreeNode({ node, depth, expanded, onToggleExpand, onToggleDecision }) {
       </div>
 
       {/* Children */}
-      {hasChildren && isExpanded && node.decision === 'build' && node.children.map((child, i) => (
-        <TreeNode
-          key={`${child.type_id}_${depth + 1}_${i}`}
-          node={child}
-          depth={depth + 1}
-          expanded={expanded}
-          onToggleExpand={onToggleExpand}
-          onToggleDecision={onToggleDecision}
-        />
-      ))}
+      {hasChildren && isExpanded && (
+        <div className={node.decision === 'buy' ? 'tree-children-dimmed' : ''}>
+          {node.children.map((child, i) => (
+            <TreeNode
+              key={`${child.type_id}_${depth + 1}_${i}`}
+              node={child}
+              depth={depth + 1}
+              expanded={expanded}
+              onToggleExpand={onToggleExpand}
+              onToggleDecision={onToggleDecision}
+            />
+          ))}
+        </div>
+      )}
     </>
   );
 }
