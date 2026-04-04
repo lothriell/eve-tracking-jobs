@@ -369,7 +369,15 @@
   color: #e2e8f0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Prevent text-overflow artifacts on the wide item name column */
+.assets-table td.item-name {
+  overflow: hidden;
+  text-overflow: clip;
 }
 
 .assets-table tbody tr {
