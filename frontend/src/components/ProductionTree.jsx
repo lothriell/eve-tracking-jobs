@@ -96,21 +96,47 @@ function recalcSummary(tree, originalSummary, shippingConfig) {
   };
 }
 
+// Classify job into Ravworks-style categories
+function classifyJob(job) {
+  const n = job.name;
+  if (job.depth === 0) return 'End Product';
+  if (n.startsWith('Capital ')) return 'Capital Components';
+  if (job.category === 'reaction') {
+    // Hybrid polymers (fullerene-based)
+    if (/Fullerene|Fullero|Graphene|C3-FTM|Carbon-86|Nano/.test(n)) return 'Hybrid Reactions';
+    // Biochem / molecular-forged
+    if (/Neurolink|Isotropic Neo/.test(n)) return 'Biochem Reactions';
+    // Composites (final reaction stage feeding into manufacturing)
+    if (/Reinforced|Pressurized|Fermionic|Photonic|Crystallite|Hafnite|Fluxed|Prometium|Caesarium|Dysporite/.test(n))
+      return 'Composite Reactions';
+    // Everything else (Carbon Fiber, Sulfuric Acid, etc.)
+    return 'Intermediate Reactions';
+  }
+  // Manufacturing — advanced capital (FTL communicators, neurolink conduits)
+  if (/Interlink Communicator|Trigger Neurolink/.test(n)) return 'Advanced Capital Components';
+  // Construction components (Seals, Backup Units, Regulators, Filters, etc.)
+  if (job.depth >= 1 && /Seal|Backup|Regulator|Reservoir|Filter|Preserver|Repairer|Inhibitor|Membrane|Fuel Block/.test(n))
+    return 'Construction Components';
+  return 'Advanced Components';
+}
+
 // Extract all BUILD nodes from tree as flat job list
 function extractBuildJobs(node, jobs = []) {
   if (node.decision === 'build' && node.is_buildable && node.children?.length > 0) {
-    jobs.push({
+    const job = {
       type_id: node.type_id,
       name: node.name,
       category: node.category,
       activity_id: node.activity_id,
       runs_needed: node.runs_needed || 1,
       batch_size: node.batch_size || 1,
-      job_time: node.job_time || 0, // per-run time from SDE
+      job_time: node.job_time || 0,
       job_cost: node.job_cost || 0,
       quantity: node.quantity,
       depth: node.depth,
-    });
+    };
+    job.group = classifyJob(job);
+    jobs.push(job);
     for (const child of node.children) {
       extractBuildJobs(child, jobs);
     }
@@ -161,7 +187,27 @@ function scheduleJobs(tree, mfgSlots, reactionSlots, dontSplitSeconds) {
   // Wall-clock: reactions must finish before manufacturing that uses their outputs
   const wallClock = rxn.totalParallel + mfg.totalParallel;
 
-  return { manufacturing: mfg, reactions: rxn, wallClock, totalJobs: allJobs.length };
+  // Group all scheduled jobs by category
+  const allScheduled = [...rxn.jobs, ...mfg.jobs];
+  const groupOrder = [
+    'Intermediate Reactions', 'Composite Reactions', 'Biochem Reactions', 'Hybrid Reactions',
+    'Construction Components', 'Advanced Components', 'Advanced Capital Components',
+    'Capital Components', 'End Product',
+  ];
+  const grouped = {};
+  for (const job of allScheduled) {
+    const g = job.group || 'Other';
+    if (!grouped[g]) grouped[g] = { name: g, jobs: [], longest: 0 };
+    grouped[g].jobs.push(job);
+    if (job.parallel_time > grouped[g].longest) grouped[g].longest = job.parallel_time;
+  }
+  const categories = groupOrder.filter(g => grouped[g]).map(g => grouped[g]);
+  // Add any uncategorized
+  for (const g of Object.keys(grouped)) {
+    if (!groupOrder.includes(g)) categories.push(grouped[g]);
+  }
+
+  return { manufacturing: mfg, reactions: rxn, wallClock, totalJobs: allJobs.length, categories };
 }
 
 // Recursive tree node component
@@ -829,9 +875,12 @@ function ProductionTree({ onError, refreshKey }) {
                 </div>
               </div>
 
-              {jobSchedule.reactions.jobs.length > 0 && (
-                <>
-                  <h4 className="jobs-section-title">Reaction Jobs ({jobSchedule.reactions.jobs.length})</h4>
+              {jobSchedule.categories.map(cat => (
+                <details key={cat.name} className="jobs-category" open>
+                  <summary className="jobs-category-header">
+                    <span className="jobs-category-name">{cat.name}</span>
+                    <span className="jobs-category-meta">Job count: {cat.jobs.length} &nbsp; Longest: {formatTime(cat.longest)}</span>
+                  </summary>
                   <table className="jobs-table">
                     <thead>
                       <tr>
@@ -845,8 +894,8 @@ function ProductionTree({ onError, refreshKey }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {jobSchedule.reactions.jobs.map((job, i) => (
-                        <tr key={`rxn-${job.type_id}-${i}`}>
+                      {cat.jobs.map((job, i) => (
+                        <tr key={`${job.type_id}-${i}`}>
                           <td>{job.name}</td>
                           <td className="num">{job.runs_needed.toLocaleString()}</td>
                           <td className="num">{formatTime(job.time_per_run)}</td>
@@ -858,40 +907,8 @@ function ProductionTree({ onError, refreshKey }) {
                       ))}
                     </tbody>
                   </table>
-                </>
-              )}
-
-              {jobSchedule.manufacturing.jobs.length > 0 && (
-                <>
-                  <h4 className="jobs-section-title">Manufacturing Jobs ({jobSchedule.manufacturing.jobs.length})</h4>
-                  <table className="jobs-table">
-                    <thead>
-                      <tr>
-                        <th>Item</th>
-                        <th className="num">Runs</th>
-                        <th className="num">Time/Run</th>
-                        <th className="num">Total Time</th>
-                        <th className="num">Split</th>
-                        <th className="num">Parallel Time</th>
-                        <th className="num">Job Cost</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {jobSchedule.manufacturing.jobs.map((job, i) => (
-                        <tr key={`mfg-${job.type_id}-${i}`}>
-                          <td>{job.name}</td>
-                          <td className="num">{job.runs_needed.toLocaleString()}</td>
-                          <td className="num">{formatTime(job.time_per_run)}</td>
-                          <td className="num">{formatTime(job.total_time)}</td>
-                          <td className="num">{job.split_into > 1 ? <span className="split-badge">{job.split_into} slots</span> : <span className="no-split">1</span>}</td>
-                          <td className="num">{formatTime(job.parallel_time)}</td>
-                          <td className="num">{job.job_cost > 0 ? formatISK(job.job_cost) : '—'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </>
-              )}
+                </details>
+              ))}
 
               {jobSchedule.totalJobs === 0 && (
                 <p style={{ color: '#718096', textAlign: 'center', padding: 20 }}>No BUILD jobs in the current tree. Toggle some nodes to BUILD to see job scheduling.</p>
