@@ -261,9 +261,9 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
                   💰
                 </div>
                 <div
-                  className={`collapsed-nav-item ${currentView === 'build-vs-buy' ? 'active' : ''}`}
-                  onClick={() => onViewChange('build-vs-buy')}
-                  title="Build vs Buy"
+                  className={`collapsed-nav-item ${currentView === 'production' ? 'active' : ''}`}
+                  onClick={() => onViewChange('production')}
+                  title="Production"
                 >
                   🏭
                 </div>
@@ -407,11 +407,11 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
                   <span>Trade Finder</span>
                 </div>
                 <div
-                  className={`nav-item ${currentView === 'build-vs-buy' ? 'active' : ''}`}
-                  onClick={() => onViewChange('build-vs-buy')}
+                  className={`nav-item ${currentView === 'production' ? 'active' : ''}`}
+                  onClick={() => onViewChange('production')}
                 >
                   <span className="nav-icon">🏭</span>
-                  <span>Build vs Buy</span>
+                  <span>Production</span>
                 </div>
               </>
             )}
