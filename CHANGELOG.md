@@ -2,6 +2,28 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.9.0] - 2026-04-04
+
+### Production Planner — Recursive Build Tree
+- **Recursive build tree** — resolves blueprint chains up to 4 levels deep (raw → reactions → components → assembly)
+- **Build-or-buy per node** — each component shows buy cost vs build cost, auto-picks cheapest
+- **Blueprint ownership** — fetches all characters' BPOs/BPCs via ESI, shows green BPO/orange BPC badges with ME level on tree nodes
+- **Shopping list** — flattens tree leaves into raw materials list with "Copy Multi-Buy" clipboard button
+- **Summary panel** — verdict (BUILD/IMPORT), savings, material cost, shipping, JF loads, job count, owned blueprints count
+- **Job times** — imported from SDE (19K activity entries), shown per buildable node
+- **Capital ship support** — tested on Moros (186 nodes, 35 materials), Thanatos (176 nodes), Cerberus (45 nodes)
+- **Production nav** — replaces Build vs Buy in sidebar under Trading
+
+### New ESI Scopes
+- `esi-characters.read_blueprints.v1` — BPO/BPC detection with ME/TE/runs
+- `esi-contracts.read_character_contracts.v1` — for future BPC purchasing support
+- Characters need to re-authenticate to grant new permissions
+
+### SDE Data
+- Blueprint activities (job times): 19,012 entries from industryActivity.csv
+- Blueprint products: 6,266 entries
+- Blueprint materials: 36,193 entries
+
 ## [v5.8.0] - 2026-04-04
 
 ### Trading Feature — Hub Comparison + Trade Finder (owner-locked)

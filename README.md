@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.8.0 | **Build Date:** 2026-04-04
+**Current Version:** v5.9.0 | **Build Date:** 2026-04-04
 
 A comprehensive web application for tracking EVE Online industry jobs, assets, planetary industry, and character management across multiple characters and corporations.
 
@@ -118,6 +118,11 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 ## Recent Updates
 
+### v5.9.0 (2026-04-04)
+- Production Planner — recursive build tree with BPO/BPC ownership badges
+- Resolves 4 levels deep, build-or-buy per component, shopping list with multi-buy
+- New ESI scopes: blueprints + contracts
+
 ### v5.8.0 (2026-04-04)
 - Trading Feature — multi-hub price comparison + trade finder (owner-locked)
 - Configurable hubs: 5 NPC defaults + custom player structures (nullsec)
@@ -177,6 +182,7 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| v5.9.0 | 2026-04-04 | Production Planner: recursive build tree, BPO/BPC ownership, shopping list, blueprint ESI scope |
 | v5.8.0 | 2026-04-04 | Trading: multi-hub comparison, trade finder, configurable hubs (incl. nullsec structures), skill-based fees |
 | v5.7.0 | 2026-04-03 | PI product icons + tier badges, enhanced colony statuses, storage tier colors, auto-refresh countdown |
 | v5.6.0 | 2026-04-02 | Unified wallet journal, wealth chart ranges, EVE skill boxes |

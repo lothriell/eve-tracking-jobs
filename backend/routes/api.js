@@ -6,7 +6,7 @@ const tradingController = require('../controllers/tradingController');
 // Version endpoint (for deployment verification)
 router.get('/version', (req, res) => {
   res.json({ 
-    version: '5.8.0',
+    version: '5.9.0',
     name: 'EVE Industry Tracker',
     buildDate: '2026-04-04'
   });

@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Current version:** v5.8.0 (2026-04-04)
+**Current version:** v5.9.0 (2026-04-04)
 
 ## Build & Deploy
 
@@ -50,7 +50,8 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 - `corporationService.js`: Corp-specific ESI (roles, jobs, customs offices)
 - `cacheRefresh.js`: Background scheduler — market prices, Jita prices, cost indices every 6 hours; hub prices every 30 minutes
 - `tradeCalculator.js`: Pure calculation module — broker fees, sales tax, trade opportunity finder
-- `tradingController.js`: Trading API endpoints (hub CRUD, price comparison, trade finder, settings) — locked to Lothriell
+- `tradingController.js`: Trading API endpoints (hub CRUD, price comparison, trade finder, settings, build tree) — locked to Lothriell
+- `ProductionTree.jsx`: Recursive build tree with BPO/BPC ownership badges, shopping list, summary
 - `sdeImport.js`: First-startup download of EVE SDE from Fuzzwork (~50K types with volumes, ~5K stations, ~8K systems)
 
 **Frontend**: React 18 + Vite 6 (migrated from CRA in v3.6.0)
@@ -109,6 +110,8 @@ esi-assets.read_corporation_assets.v1
 esi-planets.manage_planets.v1
 esi-universe.read_structures.v1
 esi-wallet.read_character_wallet.v1
+esi-characters.read_blueprints.v1
+esi-contracts.read_character_contracts.v1
 ```
 
 **Three EVE Developer Applications** — all must have these scopes enabled:
@@ -139,6 +142,9 @@ esi-wallet.read_character_wallet.v1
 - `hub_prices`: (type_id, station_id) PK — aggregated sell_min/buy_max/volumes per hub
 - `hub_refresh_status`: station_id PK — tracks last refresh time/status per hub
 - `trade_settings`: character_id PK — Accounting/Broker Relations skill levels + standings
+- `blueprint_products`: (blueprint_id, activity_id, product_type_id) — what each BP produces
+- `blueprint_materials`: (blueprint_id, activity_id, material_type_id) — manufacturing inputs
+- `blueprint_activities`: (blueprint_id, activity_id) — job times in seconds
 
 ## Environment
 
