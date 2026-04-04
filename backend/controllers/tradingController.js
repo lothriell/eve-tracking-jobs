@@ -743,7 +743,7 @@ async function getBuildTree(req, res) {
     // Facility config — structure rig bonuses reduce materials
     const structure = req.query.structure || 'raitaru';
     const rig = req.query.rig || 'none';
-    const sec = req.query.sec || 'null';
+    const sec = req.query.sec || 'nullsec';
 
     // Structure ME bonus (applied on top of blueprint ME)
     const structureMeBonus = {
@@ -752,7 +752,7 @@ async function getBuildTree(req, res) {
 
     // Rig ME bonus × security multiplier
     const rigMeBase = { none: 0, t1: 2.0, t2: 2.4 }[rig] || 0;
-    const secMultiplier = { high: 1.0, low: 1.9, null: 2.1 }[sec] || 2.1;
+    const secMultiplier = { high: 1.0, low: 1.9, nullsec: 2.1 }[sec] || 2.1;
     const rigMeBonus = rigMeBase * secMultiplier;
 
     // Total facility ME reduction (%)

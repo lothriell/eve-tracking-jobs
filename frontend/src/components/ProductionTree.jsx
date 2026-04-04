@@ -105,16 +105,21 @@ function TreeNode({ node, depth, expanded, onToggleExpand, onToggleDecision }) {
   );
 }
 
+// Load saved config from localStorage (outside component to avoid issues)
+function loadSaved(key, fallback) {
+  try {
+    const v = localStorage.getItem('prodPlanner_' + key);
+    return v !== null ? v : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 function ProductionTree({ onError, refreshKey }) {
   const [searchText, setSearchText] = useState('');
   const [typeResults, setTypeResults] = useState([]);
   const [searchTimeout, setSearchTimeout] = useState(null);
   const [selectedType, setSelectedType] = useState(null);
-
-  // Load saved config from localStorage
-  const loadSaved = (key, fallback) => {
-    try { const v = localStorage.getItem('prodPlanner_' + key); return v !== null ? v : fallback; } catch { return fallback; }
-  };
 
   // Config
   const [quantity, setQuantity] = useState('1');
@@ -126,7 +131,7 @@ function ProductionTree({ onError, refreshKey }) {
   const [maxVolume, setMaxVolume] = useState(loadSaved('maxVolume', '375000'));
   const [structureType, setStructureType] = useState(loadSaved('structureType', 'raitaru'));
   const [rigTier, setRigTier] = useState(loadSaved('rigTier', 'none'));
-  const [secStatus, setSecStatus] = useState(loadSaved('secStatus', 'null'));
+  const [secStatus, setSecStatus] = useState(loadSaved('secStatus', 'nullsec'));
 
   // Save config to localStorage whenever it changes
   const saveConfig = (key, value, setter) => {
@@ -295,7 +300,7 @@ function ProductionTree({ onError, refreshKey }) {
           <div className="ptree-field">
             <label>Security</label>
             <select value={secStatus} onChange={e => saveConfig('secStatus', e.target.value, setSecStatus)}>
-              <option value="null">Nullsec / WH (2.1x rig)</option>
+              <option value="nullsec">Nullsec / WH (2.1x rig)</option>
               <option value="low">Lowsec (1.9x rig)</option>
               <option value="high">Highsec (1.0x rig)</option>
             </select>
