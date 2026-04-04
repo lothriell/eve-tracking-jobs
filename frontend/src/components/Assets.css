@@ -367,10 +367,8 @@
 .assets-table td {
   padding: 7px 16px;
   color: #e2e8f0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   vertical-align: middle;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -389,8 +387,6 @@
 .item-name {
   color: #e2e8f0;
   font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .qty-value {
