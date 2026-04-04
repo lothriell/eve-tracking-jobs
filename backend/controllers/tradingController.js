@@ -425,9 +425,10 @@ async function buildVsBuy(req, res) {
     const productTypeId = parseInt(req.query.typeId);
     const quantity = parseInt(req.query.quantity) || 1;
     const meLevel = parseInt(req.query.me) || 0; // Material Efficiency 0-10
-    const shippingFlatFee = parseFloat(req.query.shippingFee) || 25000000;
+    const shippingMinFee = parseFloat(req.query.shippingFee) || parseFloat(req.query.shippingMinFee) || 25000000;
+    const shippingPerM3 = parseFloat(req.query.shippingPerM3) || 600;
     const collateralPct = parseFloat(req.query.collateralPct) || 0;
-    const jfCapacity = parseFloat(req.query.jfCapacity) || 225000;
+    const maxVolPerContract = parseFloat(req.query.jfCapacity) || parseFloat(req.query.maxVolume) || 375000;
     const destSellPrice = parseFloat(req.query.destPrice) || 0;
     const bpcCost = parseFloat(req.query.bpcCost) || 0;
 
@@ -488,8 +489,8 @@ async function buildVsBuy(req, res) {
 
     // === PATH A: Import finished product ===
     const importTotalM3 = productVolume * quantity;
-    const importJfLoads = Math.ceil(importTotalM3 / jfCapacity);
-    const importShipping = importJfLoads * shippingFlatFee;
+    const importContracts = Math.ceil(importTotalM3 / maxVolPerContract) || 1;
+    const importShipping = Math.max(shippingMinFee * importContracts, importTotalM3 * shippingPerM3);
     const importCollateral = productJitaPrice * quantity * collateralPct / 100;
     const importBuyCost = productJitaPrice * quantity;
     const importTotalCost = importBuyCost + importShipping + importCollateral;
@@ -520,8 +521,8 @@ async function buildVsBuy(req, res) {
 
     const buildMaterialCost = materialDetails.reduce((s, m) => s + m.total_price, 0);
     const buildTotalM3 = materialDetails.reduce((s, m) => s + m.total_volume, 0);
-    const buildJfLoads = Math.ceil(buildTotalM3 / jfCapacity);
-    const buildShipping = buildJfLoads * shippingFlatFee;
+    const buildContracts = Math.ceil(buildTotalM3 / maxVolPerContract) || 1;
+    const buildShipping = Math.max(shippingMinFee * buildContracts, buildTotalM3 * shippingPerM3);
     const buildCollateral = buildMaterialCost * collateralPct / 100;
     const buildBpcCost = bpcCost * quantity;
     const buildTotalCost = buildMaterialCost + buildShipping + buildCollateral + buildBpcCost;
@@ -547,7 +548,7 @@ async function buildVsBuy(req, res) {
       import_finished: {
         buy_cost: importBuyCost,
         total_m3: importTotalM3,
-        jf_loads: importJfLoads,
+        jf_loads: importContracts,
         shipping: importShipping,
         collateral: importCollateral,
         total_cost: importTotalCost,
@@ -560,7 +561,7 @@ async function buildVsBuy(req, res) {
         bpc_cost: buildBpcCost,
         me_level: meLevel,
         total_m3: buildTotalM3,
-        jf_loads: buildJfLoads,
+        jf_loads: buildContracts,
         shipping: buildShipping,
         collateral: buildCollateral,
         total_cost: buildTotalCost,

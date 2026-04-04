@@ -22,9 +22,10 @@ function BuildVsBuy({ onError, refreshKey }) {
   const [selectedType, setSelectedType] = useState(null);
   const [quantity, setQuantity] = useState('1');
   const [meLevel, setMeLevel] = useState('0');
-  const [shippingFee, setShippingFee] = useState('25000000');
-  const [collateralPct, setCollateralPct] = useState('1.5');
-  const [jfCapacity, setJfCapacity] = useState('225000');
+  const [shippingMinFee, setShippingMinFee] = useState(loadSaved('shippingMinFee', '25000000'));
+  const [shippingPerM3, setShippingPerM3] = useState(loadSaved('shippingPerM3', '600'));
+  const [collateralPct, setCollateralPct] = useState(loadSaved('collateralPct', '0'));
+  const [maxVolume, setMaxVolume] = useState(loadSaved('maxVolume', '375000'));
   const [destPrice, setDestPrice] = useState('');
   const [bpcCost, setBpcCost] = useState('');
   const [result, setResult] = useState(null);
@@ -59,9 +60,10 @@ function BuildVsBuy({ onError, refreshKey }) {
         typeId,
         quantity: parseInt(quantity) || 1,
         me: parseInt(meLevel) || 0,
-        shippingFee: parseFloat(shippingFee) || 25000000,
+        shippingMinFee: parseFloat(shippingMinFee) || 25000000,
+        shippingPerM3: parseFloat(shippingPerM3) || 600,
         collateralPct: parseFloat(collateralPct) || 0,
-        jfCapacity: parseFloat(jfCapacity) || 225000,
+        maxVolume: parseFloat(maxVolume) || 375000,
         destPrice: parseFloat(destPrice) || 0,
         bpcCost: parseFloat(bpcCost) || 0,
       });
@@ -129,16 +131,20 @@ function BuildVsBuy({ onError, refreshKey }) {
         </div>
         <div className="bvb-row">
           <div className="bvb-field">
-            <label>JF Shipping Fee</label>
-            <input type="number" value={shippingFee} onChange={e => setShippingFee(e.target.value)} />
+            <label>Min Fee</label>
+            <input type="number" value={shippingMinFee} onChange={e => setShippingMinFee(e.target.value)} />
+          </div>
+          <div className="bvb-field">
+            <label>ISK/m³</label>
+            <input type="number" value={shippingPerM3} onChange={e => setShippingPerM3(e.target.value)} />
           </div>
           <div className="bvb-field">
             <label>Collateral %</label>
             <input type="number" value={collateralPct} onChange={e => setCollateralPct(e.target.value)} />
           </div>
           <div className="bvb-field">
-            <label>JF Capacity (m3)</label>
-            <input type="number" value={jfCapacity} onChange={e => setJfCapacity(e.target.value)} />
+            <label>Max m³</label>
+            <input type="number" value={maxVolume} onChange={e => setMaxVolume(e.target.value)} />
           </div>
           <div className="bvb-field">
             <label>&nbsp;</label>
