@@ -365,17 +365,9 @@
 .assets-table td {
   padding: 7px 16px;
   color: #e2e8f0;
-  border-bottom: 1px solid #252a38;
+  border-bottom: none;
   vertical-align: middle;
   white-space: nowrap;
-}
-
-.item-name-inner {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  max-width: 100%;
-  overflow: hidden;
 }
 
 .assets-table tbody tr {
@@ -396,7 +388,6 @@
 }
 
 .qty-value {
-  font-family: 'Consolas', 'Monaco', monospace;
   color: #a0aec0;
 }
 
