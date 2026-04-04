@@ -310,6 +310,32 @@ async function importBlueprints() {
       console.log(`[SDE] Blueprint materials: ${materialEntries.length} entries imported`);
     }
 
+    // Packaged volumes: override SDE assembled volumes with packaged volumes for ships
+    const volumesCsv = await downloadCSV('invVolumes.csv');
+    const volumeRows = parseCSV(volumesCsv);
+
+    const volumeUpdates = [];
+    for (const row of volumeRows) {
+      const typeId = parseInt(row.typeID);
+      const volume = row.volume;
+      if (typeId && volume) {
+        volumeUpdates.push({ id: typeId, category: 'type', extra_data: volume });
+      }
+    }
+
+    if (volumeUpdates.length > 0) {
+      const stmt = db.db.prepare(
+        'UPDATE name_cache SET extra_data = ? WHERE id = ? AND category = ?'
+      );
+      const batch = db.db.transaction((items) => {
+        for (const item of items) {
+          stmt.run(item.extra_data, item.id, item.category);
+        }
+      });
+      batch(volumeUpdates);
+      console.log(`[SDE] Packaged volumes: ${volumeUpdates.length} ship volumes updated`);
+    }
+
     // Activity times: blueprint_id → time per activity
     const activityCsv = await downloadCSV('industryActivity.csv');
     const activityRows = parseCSV(activityCsv);
@@ -354,8 +380,19 @@ async function importSDE() {
   const blueprintsCount = db.getBlueprintProductsCount();
   const activitiesCount = db.getBlueprintActivitiesCount();
 
-  if (typeCount > 50000 && hasVolumes && schematicsCount > 0 && blueprintsCount > 0 && activitiesCount > 0) {
-    console.log(`[SDE] Already have ${typeCount} types + ${schematicsCount} schematics + ${blueprintsCount} blueprints + ${activitiesCount} activities, skipping SDE import`);
+  // Check if packaged volumes are imported (Procurer type 17480 should have volume)
+  const procurerVol = db.getCachedName(17480, 'type');
+  const hasPackagedVolumes = procurerVol && procurerVol.extra_data && parseFloat(procurerVol.extra_data) > 1;
+
+  if (typeCount > 50000 && hasVolumes && schematicsCount > 0 && blueprintsCount > 0 && activitiesCount > 0 && hasPackagedVolumes) {
+    console.log(`[SDE] Already have ${typeCount} types + ${schematicsCount} schematics + ${blueprintsCount} blueprints + ${activitiesCount} activities + packaged volumes, skipping SDE import`);
+    return;
+  }
+
+  if (typeCount > 50000 && hasVolumes && schematicsCount > 0 && blueprintsCount > 0 && activitiesCount > 0 && !hasPackagedVolumes) {
+    console.log(`[SDE] Missing packaged volumes — re-importing blueprints`);
+    const count = await importBlueprints();
+    console.log(`[SDE] Blueprints + volumes: ${count} entries imported`);
     return;
   }
 
