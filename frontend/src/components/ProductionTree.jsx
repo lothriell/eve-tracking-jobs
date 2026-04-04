@@ -23,6 +23,21 @@ function formatTime(seconds) {
   return `${Math.ceil(seconds / 60)}m`;
 }
 
+// Force all buildable nodes to BUILD (deep clone + override)
+function applyBuildAll(node) {
+  const n = { ...node };
+  if (n.is_buildable && n.build_cost !== null) {
+    n.decision = 'build';
+  }
+  if (n.children?.length > 0) {
+    n.children = n.children.map(c => applyBuildAll(c));
+    // Recalculate build_cost from children
+    const childCost = n.children.reduce((sum, c) => sum + (c.decision === 'build' && c.build_cost !== null ? c.build_cost : c.buy_cost), 0);
+    if (n.is_buildable) n.build_cost = childCost + (n.job_cost || 0);
+  }
+  return n;
+}
+
 // Extract all BUILD nodes from tree as flat job list
 function extractBuildJobs(node, jobs = []) {
   if (node.decision === 'build' && node.is_buildable && node.children?.length > 0) {
@@ -195,6 +210,7 @@ function ProductionTree({ onError, refreshKey }) {
   // Config
   const [quantity, setQuantity] = useState('1');
   const [meLevel, setMeLevel] = useState(loadSaved('meLevel', '0'));
+  const [teLevel, setTeLevel] = useState(loadSaved('teLevel', '0'));
   const [contractPrice, setContractPrice] = useState('');
   const [shippingMinFee, setShippingMinFee] = useState(loadSaved('shippingMinFee', '25000000'));
   const [shippingPerM3, setShippingPerM3] = useState(loadSaved('shippingPerM3', '600'));
@@ -213,6 +229,7 @@ function ProductionTree({ onError, refreshKey }) {
   const [mfgSlots, setMfgSlots] = useState(loadSaved('mfgSlots', ''));
   const [reactionSlots, setReactionSlots] = useState(loadSaved('reactionSlots', ''));
   const [dontSplitDays, setDontSplitDays] = useState(loadSaved('dontSplitDays', '1'));
+  const [buildAll, setBuildAll] = useState(loadSaved('buildAll', 'false') === 'true');
   const [detectedSlots, setDetectedSlots] = useState(null);
 
   // Save config to localStorage whenever it changes
@@ -240,14 +257,20 @@ function ProductionTree({ onError, refreshKey }) {
     })();
   }, [refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Effective tree — with buildAll applied if toggled
+  const tree = useMemo(() => {
+    if (!result?.tree) return null;
+    return buildAll ? applyBuildAll(result.tree) : result.tree;
+  }, [result, buildAll]);
+
   // Job schedule — computed from tree + slot config
   const jobSchedule = useMemo(() => {
-    if (!result?.tree) return null;
+    if (!tree) return null;
     const s1 = parseInt(mfgSlots) || 1;
     const s2 = parseInt(reactionSlots) || 1;
     const threshold = (parseFloat(dontSplitDays) || 1) * 86400;
-    return scheduleJobs(result.tree, s1, s2, threshold);
-  }, [result, mfgSlots, reactionSlots, dontSplitDays]);
+    return scheduleJobs(tree, s1, s2, threshold);
+  }, [tree, mfgSlots, reactionSlots, dontSplitDays]);
 
   const handleSearchInput = (value) => {
     setSearchText(value);
@@ -300,6 +323,7 @@ function ProductionTree({ onError, refreshKey }) {
       const resp = await getBuildTree(typeId, {
         quantity: parseInt(quantity) || 1,
         me: parseInt(meLevel) || 0,
+        te: parseInt(teLevel) || 0,
         contractPrice: parseFloat(contractPrice) || 0,
         shippingMinFee: parseFloat(shippingMinFee) || 25000000,
         shippingPerM3: parseFloat(shippingPerM3) || 600,
@@ -339,7 +363,6 @@ function ProductionTree({ onError, refreshKey }) {
   };
 
   const s = result?.summary;
-  const tree = result?.tree;
 
   return (
     <div className="ptree-container">
@@ -378,6 +401,10 @@ function ProductionTree({ onError, refreshKey }) {
           <div className="ptree-field">
             <label>ME (0-10)</label>
             <input type="number" value={meLevel} onChange={e => saveConfig('meLevel', e.target.value, setMeLevel)} min="0" max="10" />
+          </div>
+          <div className="ptree-field">
+            <label>TE (0-20)</label>
+            <input type="number" value={teLevel} onChange={e => saveConfig('teLevel', e.target.value, setTeLevel)} min="0" max="20" />
           </div>
           <div className="ptree-field">
             <label>Contract Price</label>
@@ -469,6 +496,12 @@ function ProductionTree({ onError, refreshKey }) {
           <div className="ptree-field">
             <label>Don't split &lt; (days)</label>
             <input type="number" value={dontSplitDays} onChange={e => saveConfig('dontSplitDays', e.target.value, setDontSplitDays)} placeholder="1" min="0" step="0.5" />
+          </div>
+          <div className="ptree-field ptree-checkbox">
+            <label>
+              <input type="checkbox" checked={buildAll} onChange={e => { setBuildAll(e.target.checked); try { localStorage.setItem('prodPlanner_buildAll', String(e.target.checked)); } catch {} }} />
+              Build All
+            </label>
           </div>
         </div>
       </div>

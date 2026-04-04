@@ -586,7 +586,7 @@ async function buildVsBuy(req, res) {
 }
 
 // Resolve a build tree recursively
-function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache, priceCache, volumeCache, facilityMeReduction = 0, jobCostParams = null) {
+function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache, priceCache, volumeCache, facilityMeReduction = 0, jobCostParams = null, teFactor = 1) {
   const name = MINERAL_FIXES[typeId]?.name || nameCache[typeId] || `Type ${typeId}`;
   const price = priceCache[typeId]?.sell_min || 0;
   const volume = MINERAL_FIXES[typeId]?.volume || volumeCache[typeId] || DEFAULT_VOLUME;
@@ -682,7 +682,7 @@ function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache,
       const meQty = Math.max(1, Math.ceil(baseQty * meFactor));
       totalQty = meQty * quantity;
     }
-    return resolveBuildNode(m.material_type_id, totalQty, meLevel, depth + 1, maxDepth, nameCache, priceCache, volumeCache, facilityMeReduction, jobCostParams);
+    return resolveBuildNode(m.material_type_id, totalQty, meLevel, depth + 1, maxDepth, nameCache, priceCache, volumeCache, facilityMeReduction, jobCostParams, teFactor);
   });
 
   // Calculate job installation cost: EIV × cost_index × (1 + tax_rate) × runs
@@ -718,7 +718,7 @@ function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache,
     type_id: typeId, name, quantity, unit_price: price, buy_cost: buyCost,
     build_cost: Math.round(buildCost * 100) / 100,
     volume, decision, is_buildable: true,
-    depth, children, job_time: jobTime,
+    depth, children, job_time: Math.round(jobTime * teFactor),
     job_cost: jobCost,
     blueprint_id: bp.blueprint_id,
     me_level: activityId === 1 ? meLevel : 0,
@@ -773,6 +773,7 @@ async function getBuildTree(req, res) {
     const productTypeId = parseInt(req.params.typeId || req.query.typeId);
     const quantity = parseInt(req.query.quantity) || 1;
     const meLevel = parseInt(req.query.me) || 0;
+    const teLevel = parseInt(req.query.te) || 0;
     const maxDepth = Math.min(parseInt(req.query.maxDepth) || 4, 6);
     const shippingMinFee = parseFloat(req.query.shippingMinFee) || 25000000;
     const shippingPerM3Rate = parseFloat(req.query.shippingPerM3) || 600;
@@ -800,6 +801,18 @@ async function getBuildTree(req, res) {
     // Total facility ME reduction (%)
     const facilityMeReduction = structureMeBonus + rigMeBonus;
 
+    // Structure TE bonus (time reduction %)
+    const structureTeBonus = {
+      npc: 0, raitaru: 0.15, azbel: 0.20, sotiyo: 0.30, tatara: 0.25, athanor: 0.20
+    }[structure] || 0;
+
+    // Rig TE bonus × security multiplier
+    const rigTeBase = { none: 0, t1: 0.20, t2: 0.24 }[rig] || 0;
+    const rigTeBonus = rigTeBase * secMultiplier;
+
+    // TE factor: base_time × (1 - TE/100) × (1 - structure_te) × (1 - rig_te)
+    const teFactor = (1 - teLevel / 100) * (1 - structureTeBonus) * (1 - rigTeBonus);
+
     // Cost indices for job cost calculation
     const costIndices = systemId ? db.getCostIndices(systemId) : {};
 
@@ -823,7 +836,7 @@ async function getBuildTree(req, res) {
     volumeCache[productTypeId] = pv?.extra_data ? parseFloat(pv.extra_data) : DEFAULT_VOLUME;
 
     // Build the tree
-    const tree = resolveBuildNode(productTypeId, quantity, meLevel, 0, maxDepth, nameCache, priceCache, volumeCache, facilityMeReduction, jobCostParams);
+    const tree = resolveBuildNode(productTypeId, quantity, meLevel, 0, maxDepth, nameCache, priceCache, volumeCache, facilityMeReduction, jobCostParams, teFactor);
 
     // Fetch owned blueprints and annotate tree nodes
     let ownedBlueprints = {};
@@ -974,7 +987,7 @@ async function getBuildTree(req, res) {
       },
       shopping_list: shoppingList,
       missing_blueprints: missingBPList,
-      config: { meLevel, maxDepth, shippingMinFee, shippingPerM3Rate, collateralPct, maxVolumePerContract, structure, rig, sec, taxRate, systemId, facilityMeReduction: Math.round(facilityMeReduction * 100) / 100 },
+      config: { meLevel, teLevel, maxDepth, shippingMinFee, shippingPerM3Rate, collateralPct, maxVolumePerContract, structure, rig, sec, taxRate, systemId, facilityMeReduction: Math.round(facilityMeReduction * 100) / 100, teFactor: Math.round(teFactor * 10000) / 10000 },
     });
   } catch (error) {
     console.error('Build tree error:', error.message);
