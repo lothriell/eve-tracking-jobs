@@ -19,7 +19,9 @@ const REQUIRED_SCOPES = [
   'esi-assets.read_corporation_assets.v1',   // Required for corporation asset inventory
   'esi-planets.manage_planets.v1',           // Required for planetary industry (colonies, layouts)
   'esi-universe.read_structures.v1',          // Required for resolving player structure names
-  'esi-wallet.read_character_wallet.v1'      // Required for wallet balance and journal
+  'esi-wallet.read_character_wallet.v1',      // Required for wallet balance and journal
+  'esi-characters.read_blueprints.v1',        // Required for BPO/BPC detection, ME/TE levels
+  'esi-contracts.read_character_contracts.v1' // Required for contracts (BPC purchases, capital prices)
 ];
 
 // PKCE helper functions
