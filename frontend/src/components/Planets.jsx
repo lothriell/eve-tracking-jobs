@@ -916,10 +916,11 @@ function getPinStatus(pin, routes, now) {
     const hasOutput = routes.some(r => r.source_pin_id === pinId);
     if (!hasOutput) return 'output-not-routed';
     // Check if actively producing using last_cycle_start + cycle_time
-    if (pin.last_cycle_start && pin.factory_details.cycle_time) {
+    if (pin.last_cycle_start) {
       const lastCycle = new Date(pin.last_cycle_start).getTime();
-      const cycleMs = pin.factory_details.cycle_time * 1000;
-      if (now - lastCycle < cycleMs) return 'producing';
+      const cycleMs = (pin.factory_details?.cycle_time || 3600) * 1000;
+      // Consider producing if last cycle was within 2 cycle times (allows for brief gaps)
+      if (now - lastCycle < cycleMs * 2) return 'producing';
     }
     return 'factory-idle';
   }
@@ -971,17 +972,18 @@ function getColonyStatus(pins, routes, now) {
   // Priority 3: Active states
   const extracting = statuses.includes('extracting');
   const producing = statuses.includes('producing');
+  const hasExtractors = pins.some(p => p.extractor_details);
 
   if (extracting && producing) return { label: 'Active', class: 'status-active', reason: null };
   if (extracting) return { label: 'Extracting', class: 'status-extracting', reason: null };
+  if (producing && !hasExtractors) return { label: 'Producing', class: 'status-producing', reason: 'Factory planet' };
   if (producing) return { label: 'Producing', class: 'status-producing', reason: null };
 
   // Priority 4: Factories exist but idle
   if (factoryIdle > 0) {
-    const hasExtractors = statuses.includes('extracting') || expired > 0 || statuses.includes('inactive');
     if (!hasExtractors) {
       // Factory-only planet — waiting for imported materials
-      return { label: 'Waiting', class: 'status-waiting', reason: `${factoryIdle} factories — no extractors (factory planet)` };
+      return { label: 'Waiting', class: 'status-waiting', reason: `${factoryIdle} factories — needs P2 input` };
     }
     return { label: 'Stopped', class: 'status-stopped', reason: `${factoryIdle} factories idle` };
   }
