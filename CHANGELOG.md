@@ -14,7 +14,7 @@ All notable changes to the EVE Industry Tracker will be documented in this file.
 - **Capital ship support** — tested on Moros (186 nodes, 35 materials), Thanatos (176 nodes), Cerberus (45 nodes)
 - **Production nav** — replaces Build vs Buy in sidebar under Trading
 - **Reaction chains** — T2 component sub-materials (moon goo → composites) resolve in tree via activityID 11
-- **Facility config** — structure type (Raitaru/Azbel/Sotiyo/Tatara/Athanor), rig tier (T1/T2), security multiplier applied to ME reduction (job cost/tax not yet implemented)
+- **Facility config** — structure type (Raitaru/Azbel/Sotiyo/Tatara/Athanor), rig tier (T1/T2), security multiplier applied to ME + TE reduction
 - **Missing Blueprints tab** — shows BPs needed for the build but not owned by any character
 - **Contract price field** — compare build cost vs contract buy price for capitals (not on regular market)
 - **Capital detection** — CAPITAL badge on ships with buy price 0 (not market-tradeable)
@@ -22,6 +22,13 @@ All notable changes to the EVE Industry Tracker will be documented in this file.
 - **Halo shipping formula** — real per-m³ rate + minimum fee + max volume cap
 - **Packaged ship volumes** — imported from `invVolumes.csv` for accurate shipping calculations
 - **localStorage persistence** — selected item, ME level, and config remembered across sessions
+- **Job installation cost** — EIV × system cost index × (1 + tax%) per BUILD node, system search autocomplete
+- **TE reduction** — Time Efficiency (0-20) + structure time bonus (Sotiyo 30%, Azbel 20%, etc.) + rig TE bonus applied to all job times
+- **Job Scheduler** — auto-detect MFG/Reaction slots from ESI (17 chars, 139 mfg / 122 react), split jobs across slots with parallel time calculation
+- **"Don't split jobs shorter than X days"** threshold — short jobs stay on 1 slot
+- **"Build All" toggle** — forces all buildable nodes to BUILD (like Ravworks), recalculates summary, shopping list, and job counts client-side
+- **Jobs tab** — wall-clock time estimate, bottleneck identification, reaction + manufacturing job tables with runs, time/run, split info, parallel time, job cost
+- **Crosschecked with Ravworks** — Thanatos TE16+Sotiyo = 13.6d (Ravworks 14.0d), job scheduling and material costs align
 
 ### New ESI Scopes
 - `esi-characters.read_blueprints.v1` — BPO/BPC detection with ME/TE/runs

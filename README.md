@@ -125,8 +125,10 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 - Reaction chains, facility config, missing blueprints tab, import calculator
 - Capital ship support with contract price comparison
 - Halo Logistics shipping formula with packaged ship volumes
-- PI factory planet status fix (Producing/Waiting instead of STOPPED)
-- BPO badges in Assets, Safari rendering fixes
+- Job installation cost (EIV × system cost index × tax), TE reduction with structure time bonuses
+- Job Scheduler: auto-detect 139 mfg / 122 react slots, split jobs, parallel time calc
+- "Build All" toggle, "Don't split" threshold, Jobs tab with wall-clock estimate
+- PI factory planet status fix, BPO badges in Assets, Safari rendering fixes
 - New ESI scopes: blueprints + contracts
 
 ### v5.8.0 (2026-04-04)
