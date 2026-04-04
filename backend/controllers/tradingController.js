@@ -685,11 +685,13 @@ function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache,
     return resolveBuildNode(m.material_type_id, totalQty, meLevel, depth + 1, maxDepth, nameCache, priceCache, volumeCache, facilityMeReduction, jobCostParams, teFactor);
   });
 
-  // Calculate job installation cost: EIV × cost_index × (1 + tax_rate) × runs
-  // EIV = sum of (adjusted_price × quantity) for all input materials (per single run)
+  // Calculate job installation cost using EVE's actual formula:
+  // Job Gross = EIV × system_cost_index × (1 - structure_job_cost_bonus)
+  // Taxes = EIV × (facility_tax% + SCC_surcharge%)
+  // Total = Job Gross + Taxes
   let jobCost = 0;
   if (jobCostParams) {
-    const { adjustedPrices, costIndices, taxRate } = jobCostParams;
+    const { adjustedPrices, costIndices, taxRate, structureJobCostBonus, sccSurcharge } = jobCostParams;
     const activity = activityId === 1 ? 'manufacturing' : 'reaction';
     const costIndex = costIndices[activity] || 0;
     // Lazy-load adjusted prices for materials we haven't seen yet
@@ -706,8 +708,10 @@ function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache,
       const adjPrice = adjustedPrices[m.material_type_id] || 0;
       eivPerRun += adjPrice * m.quantity;
     }
-    jobCost = eivPerRun * runsNeeded * costIndex * (1 + taxRate / 100);
-    jobCost = Math.round(jobCost * 100) / 100;
+    const eivTotal = eivPerRun * runsNeeded;
+    const jobGross = eivTotal * costIndex * (1 - (structureJobCostBonus || 0));
+    const taxes = eivTotal * ((taxRate / 100) + (sccSurcharge || 0));
+    jobCost = Math.round((jobGross + taxes) * 100) / 100;
   }
 
   const childBuildCost = children.reduce((sum, c) => sum + (c.decision === 'build' && c.build_cost !== null ? c.build_cost : c.buy_cost), 0);
@@ -813,12 +817,20 @@ async function getBuildTree(req, res) {
     // TE factor: base_time × (1 - TE/100) × (1 - structure_te) × (1 - rig_te)
     const teFactor = (1 - teLevel / 100) * (1 - structureTeBonus) * (1 - rigTeBonus);
 
+    // Structure job cost bonus (reduces gross cost)
+    const structureJobCostBonus = {
+      npc: 0, raitaru: 0.03, azbel: 0.04, sotiyo: 0.05, tatara: 0.04, athanor: 0.03
+    }[structure] || 0;
+
+    // SCC surcharge — fixed 4% since 2022 industry update
+    const sccSurcharge = 0.04;
+
     // Cost indices for job cost calculation
     const costIndices = systemId ? db.getCostIndices(systemId) : {};
 
     // Adjusted prices cache for EIV calculation
     const adjustedPriceCache = {};
-    const jobCostParams = systemId ? { adjustedPrices: adjustedPriceCache, costIndices, taxRate } : null;
+    const jobCostParams = systemId ? { adjustedPrices: adjustedPriceCache, costIndices, taxRate, structureJobCostBonus, sccSurcharge } : null;
 
     if (!productTypeId) return res.status(400).json({ error: 'typeId required' });
 

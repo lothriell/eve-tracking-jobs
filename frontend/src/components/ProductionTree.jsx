@@ -577,8 +577,8 @@ function ProductionTree({ onError, refreshKey }) {
             </select>
           </div>
           <div className="ptree-field">
-            <label>Tax %</label>
-            <input type="number" value={taxRate} onChange={e => saveConfig('taxRate', e.target.value, setTaxRate)} placeholder="0" min="0" max="50" step="0.1" />
+            <label>Facility Tax % <span style={{fontSize:9,color:'#718096'}}>+4% SCC</span></label>
+            <input type="number" value={taxRate} onChange={e => saveConfig('taxRate', e.target.value, setTaxRate)} placeholder="1" min="0" max="50" step="0.1" />
           </div>
           <div className="ptree-field" style={{ position: 'relative' }}>
             <label>System (job cost)</label>
