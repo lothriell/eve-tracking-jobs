@@ -374,10 +374,12 @@
   white-space: nowrap;
 }
 
-/* Prevent text-overflow artifacts on the wide item name column */
-.assets-table td.item-name {
+.item-name-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
   overflow: hidden;
-  text-overflow: clip;
 }
 
 .assets-table tbody tr {

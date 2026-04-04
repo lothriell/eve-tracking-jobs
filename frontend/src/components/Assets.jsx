@@ -215,7 +215,7 @@ function Assets({ onError, refreshKey }) {
         <tbody>
           {sorted.map((asset, idx) => (
             <tr key={asset.item_id || idx}>
-              <td className="item-name">{asset.type_name || `Type ${asset.type_id}`} {asset.is_bpo && <span className="bp-badge bpo">BPO</span>}{asset.is_bpc && <span className="bp-badge bpc">BPC</span>}<ExternalLinks type="item" typeId={asset.type_id} /></td>
+              <td className="item-name"><span className="item-name-inner">{asset.type_name || `Type ${asset.type_id}`}{asset.is_bpo && <span className="bp-badge bpo">BPO</span>}{asset.is_bpc && <span className="bp-badge bpc">BPC</span>}<ExternalLinks type="item" typeId={asset.type_id} /></span></td>
               <td className="text-right qty-value">{(asset.quantity || 1).toLocaleString()}</td>
               <td className="text-right isk-cell">{asset.total_price > 0 ? formatISK(asset.total_price) : '—'}</td>
               <td><span className="badge badge-blue">{asset.location_flag || '—'}</span></td>
@@ -279,7 +279,7 @@ function Assets({ onError, refreshKey }) {
 
               return (
                 <tr key={asset.item_id || idx}>
-                  <td className="item-name">{asset.type_name || `Type ${asset.type_id}`} {asset.is_bpo && <span className="bp-badge bpo">BPO</span>}{asset.is_bpc && <span className="bp-badge bpc">BPC</span>}<ExternalLinks type="item" typeId={asset.type_id} /></td>
+                  <td className="item-name"><span className="item-name-inner">{asset.type_name || `Type ${asset.type_id}`}{asset.is_bpo && <span className="bp-badge bpo">BPO</span>}{asset.is_bpc && <span className="bp-badge bpc">BPC</span>}<ExternalLinks type="item" typeId={asset.type_id} /></span></td>
                   <td className="text-right qty-value">{(asset.quantity || 1).toLocaleString()}</td>
                   <td className="text-right isk-cell">{asset.total_price > 0 ? formatISK(asset.total_price) : '—'}</td>
                   <td className="location-breadcrumb" title={breadcrumb}>{breadcrumb || '—'}</td>
