@@ -315,13 +315,13 @@ function ProductionTree({ onError, refreshKey }) {
     })();
   }, [refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Effective tree + summary + shopping list — single memo to avoid stale refs
-  const { tree, effectiveSummary, effectiveShoppingList } = useMemo(() => {
-    if (!result?.tree) return { tree: null, effectiveSummary: null, effectiveShoppingList: null };
-    const effectiveTree = buildAll ? applyBuildAll(result.tree) : result.tree;
-    if (!buildAll) {
-      return { tree: effectiveTree, effectiveSummary: result.summary, effectiveShoppingList: result.shopping_list };
-    }
+  // Effective tree — computed directly (no memo tricks)
+  const tree = result?.tree ? (buildAll ? applyBuildAll(result.tree) : result.tree) : null;
+
+  // Effective summary + shopping list
+  let effectiveSummary = result?.summary || null;
+  let effectiveShoppingList = result?.shopping_list || null;
+  if (buildAll && tree && result) {
     try {
       const cfg = {
         shippingMinFee: parseFloat(shippingMinFee) || 25000000,
@@ -329,13 +329,13 @@ function ProductionTree({ onError, refreshKey }) {
         collateralPct: parseFloat(collateralPct) || 0,
         maxVolume: parseFloat(maxVolume) || 375000,
       };
-      const r = recalcSummary(effectiveTree, result.summary, cfg);
-      return { tree: effectiveTree, effectiveSummary: r.summary, effectiveShoppingList: r.shopping_list };
+      const r = recalcSummary(tree, result.summary, cfg);
+      effectiveSummary = r.summary;
+      effectiveShoppingList = r.shopping_list;
     } catch (err) {
       console.error('recalcSummary error:', err);
-      return { tree: effectiveTree, effectiveSummary: result.summary, effectiveShoppingList: result.shopping_list };
     }
-  }, [result, buildAll, shippingMinFee, shippingPerM3, collateralPct, maxVolume]);
+  }
 
   // Job schedule — computed from tree + slot config
   const jobSchedule = useMemo(() => {
