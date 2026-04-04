@@ -955,7 +955,17 @@ exports.getCharacterAssets = async (req, res) => {
 
       // Enrich assets
       assets.forEach(a => {
-        a.type_name = typeNames[a.type_id] || `Type ${a.type_id}`;
+        let typeName = typeNames[a.type_id] || `Type ${a.type_id}`;
+        // Mark blueprints as BPO/BPC in the name for searchability
+        if (a.is_blueprint_copy === true) {
+          a.is_bpc = true;
+          if (!typeName.includes('Blueprint')) typeName += ' Blueprint';
+          typeName += ' (Copy)';
+        } else if (typeName.includes('Blueprint') && a.is_blueprint_copy === false) {
+          a.is_bpo = true;
+          typeName += ' (Original)';
+        }
+        a.type_name = typeName;
 
         let rootLocId;
         if (a.location_type === 'item') {

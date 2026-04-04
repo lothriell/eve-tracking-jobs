@@ -4,6 +4,17 @@
   flex-direction: column;
 }
 
+.bp-badge {
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.bp-badge.bpo { background: rgba(72,187,120,0.2); color: #68d391; }
+.bp-badge.bpc { background: rgba(237,137,54,0.2); color: #fbd38d; }
+
 .assets-loading {
   display: flex;
   flex-direction: column;
