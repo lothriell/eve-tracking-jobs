@@ -51,6 +51,7 @@ A comprehensive web application for tracking EVE Online industry jobs, assets, p
 - Personal and corporation asset inventory
 - Tree view (System > Station > Container > Items) and Value view (flat, sorted by ISK)
 - Three price modes: AVG Price, Jita Sell, Jita Buy
+- **BPO/BPC badges** — blueprint originals and copies labeled in search results
 - Character filter, text search, collapse/expand all
 - Manual structure naming for unresolved player structures
 - External lookups on item names
@@ -121,6 +122,11 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 ### v5.9.0 (2026-04-04)
 - Production Planner — recursive build tree with BPO/BPC ownership badges
 - Resolves 4 levels deep, build-or-buy per component, shopping list with multi-buy
+- Reaction chains, facility config, missing blueprints tab, import calculator
+- Capital ship support with contract price comparison
+- Halo Logistics shipping formula with packaged ship volumes
+- PI factory planet status fix (Producing/Waiting instead of STOPPED)
+- BPO badges in Assets, Safari rendering fixes
 - New ESI scopes: blueprints + contracts
 
 ### v5.8.0 (2026-04-04)

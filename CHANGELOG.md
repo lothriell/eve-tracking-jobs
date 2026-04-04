@@ -13,6 +13,15 @@ All notable changes to the EVE Industry Tracker will be documented in this file.
 - **Job times** — imported from SDE (19K activity entries), shown per buildable node
 - **Capital ship support** — tested on Moros (186 nodes, 35 materials), Thanatos (176 nodes), Cerberus (45 nodes)
 - **Production nav** — replaces Build vs Buy in sidebar under Trading
+- **Reaction chains** — T2 component sub-materials (moon goo → composites) resolve in tree via activityID 11
+- **Facility config** — structure type (Raitaru/Azbel/Sotiyo/Tatara/Athanor), rig tier (T1/T2), security multiplier applied to ME reduction (job cost/tax not yet implemented)
+- **Missing Blueprints tab** — shows BPs needed for the build but not owned by any character
+- **Contract price field** — compare build cost vs contract buy price for capitals (not on regular market)
+- **Capital detection** — CAPITAL badge on ships with buy price 0 (not market-tradeable)
+- **Import Calculator** — split nav: Build Planner (corp manufacturing) vs Import Calculator (Halo shipping)
+- **Halo shipping formula** — real per-m³ rate + minimum fee + max volume cap
+- **Packaged ship volumes** — imported from `invVolumes.csv` for accurate shipping calculations
+- **localStorage persistence** — selected item, ME level, and config remembered across sessions
 
 ### New ESI Scopes
 - `esi-characters.read_blueprints.v1` — BPO/BPC detection with ME/TE/runs
@@ -23,6 +32,13 @@ All notable changes to the EVE Industry Tracker will be documented in this file.
 - Blueprint activities (job times): 19,012 entries from industryActivity.csv
 - Blueprint products: 6,266 entries
 - Blueprint materials: 36,193 entries
+- Packaged ship volumes: from invVolumes.csv
+
+### Bug Fixes
+- **PI factory planet status** — factory-only planets now show "Producing" when factories have input materials (contents check) and "Waiting" when empty, instead of always showing "STOPPED"
+- **BPO badges in Assets** — ESI omits `is_blueprint_copy` for originals (undefined, not false); fixed detection logic
+- **Assets table Safari rendering** — moved row separator border from `td` to `tr` to fix Safari subpixel rendering artifacts (dotted/broken lines)
+- **BPO/BPC badges in Assets** — searchable blueprint type indicators with (Original)/(Copy) in type name
 
 ## [v5.8.0] - 2026-04-04
 
