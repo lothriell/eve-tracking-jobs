@@ -482,8 +482,8 @@ function ProductionTree({ onError, refreshKey }) {
                   {result.missing_blueprints.map(bp => (
                     <tr key={bp.type_id}>
                       <td className="mat-name">
-                        {bp.name}
-                        <ExternalLinks type="item" typeId={bp.type_id} />
+                        {bp.name} Blueprint
+                        <ExternalLinks type="item" typeId={bp.blueprint_id || bp.type_id} />
                       </td>
                       <td>
                         <span className={`bp-type-badge ${bp.category}`}>
