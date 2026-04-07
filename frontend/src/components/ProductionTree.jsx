@@ -140,36 +140,66 @@ function extractBuildJobs(node, jobs = []) {
   return jobs;
 }
 
-// Schedule jobs: split across available slots, calculate parallel times
-function scheduleJobs(tree, mfgSlots, reactionSlots, dontSplitSeconds) {
+// Consolidate duplicate jobs: merge same type_id + category into one job with summed runs
+function consolidateJobs(jobs) {
+  const map = new Map();
+  for (const job of jobs) {
+    const key = `${job.type_id}_${job.category}`;
+    if (map.has(key)) {
+      const existing = map.get(key);
+      existing.runs_needed += job.runs_needed;
+      existing.quantity += job.quantity;
+      existing.job_cost += job.job_cost;
+    } else {
+      map.set(key, { ...job });
+    }
+  }
+  return Array.from(map.values());
+}
+
+// Schedule jobs: consolidate duplicates, then split any that exceed max day limit
+function scheduleJobs(tree, mfgSlots, reactionSlots, maxJobSeconds) {
   if (!tree) return null;
 
   const allJobs = extractBuildJobs(tree);
-  const mfgJobs = allJobs.filter(j => j.category === 'manufacturing');
-  const rxnJobs = allJobs.filter(j => j.category === 'reaction');
+  const mfgJobs = consolidateJobs(allJobs.filter(j => j.category === 'manufacturing'));
+  const rxnJobs = consolidateJobs(allJobs.filter(j => j.category === 'reaction'));
 
   function splitAndSchedule(jobs, totalSlots) {
-    const scheduled = jobs.map(job => {
-      const timePerRun = job.job_time; // SDE time = per single run
+    const scheduled = [];
+    for (const job of jobs) {
+      const timePerRun = job.job_time;
       const totalTime = timePerRun * job.runs_needed;
 
-      // Don't split if job is shorter than threshold or only 1 run
-      if (totalTime <= dontSplitSeconds || job.runs_needed <= 1) {
-        return { ...job, total_time: totalTime, split_into: 1, parallel_time: totalTime, time_per_run: timePerRun };
+      // If total time fits within max limit or only 1 run, no split needed
+      if (totalTime <= maxJobSeconds || job.runs_needed <= 1) {
+        scheduled.push({ ...job, total_time: totalTime, split_into: 1, parallel_time: totalTime, time_per_run: timePerRun });
+      } else {
+        // How many runs fit in the max time window?
+        const runsPerChunk = Math.max(1, Math.floor(maxJobSeconds / timePerRun));
+        const numChunks = Math.ceil(job.runs_needed / runsPerChunk);
+        let runsLeft = job.runs_needed;
+
+        for (let i = 0; i < numChunks; i++) {
+          const chunkRuns = Math.min(runsPerChunk, runsLeft);
+          const chunkTime = chunkRuns * timePerRun;
+          const chunkCost = job.runs_needed > 0 ? job.job_cost * (chunkRuns / job.runs_needed) : 0;
+          scheduled.push({
+            ...job,
+            runs_needed: chunkRuns,
+            total_time: chunkTime,
+            split_into: numChunks,
+            parallel_time: chunkTime,
+            time_per_run: timePerRun,
+            job_cost: chunkCost,
+          });
+          runsLeft -= chunkRuns;
+        }
       }
+    }
 
-      // Split runs across available slots
-      const splitInto = Math.min(totalSlots, job.runs_needed);
-      const runsPerSlot = Math.ceil(job.runs_needed / splitInto);
-      const parallelTime = runsPerSlot * timePerRun;
-
-      return { ...job, total_time: totalTime, split_into: splitInto, parallel_time: parallelTime, time_per_run: timePerRun };
-    });
-
-    // Total wall time: sum of all parallel times (jobs run sequentially, but each is parallelized across slots)
     const totalSequential = scheduled.reduce((s, j) => s + j.total_time, 0);
     const totalParallel = scheduled.reduce((s, j) => s + j.parallel_time, 0);
-    // Find bottleneck (longest parallel job)
     const bottleneck = scheduled.length > 0
       ? scheduled.reduce((a, b) => a.parallel_time > b.parallel_time ? a : b)
       : null;
@@ -202,7 +232,7 @@ function scheduleJobs(tree, mfgSlots, reactionSlots, dontSplitSeconds) {
     if (!groupOrder.includes(g)) categories.push(grouped[g]);
   }
 
-  return { manufacturing: mfg, reactions: rxn, wallClock, totalJobs: allJobs.length, categories };
+  return { manufacturing: mfg, reactions: rxn, wallClock, totalJobs: allScheduled.length, categories };
 }
 
 // Recursive tree node component
@@ -610,7 +640,7 @@ function ProductionTree({ onError, refreshKey }) {
             <input type="number" value={reactionSlots} onChange={e => saveConfig('reactionSlots', e.target.value, setReactionSlots)} placeholder={String(detectedSlots?.reactions.max || 1)} min="1" />
           </div>
           <div className="ptree-field">
-            <label>Don't split &lt; (days)</label>
+            <label>Max job length (days)</label>
             <input type="number" value={dontSplitDays} onChange={e => saveConfig('dontSplitDays', e.target.value, setDontSplitDays)} placeholder="1" min="0" step="0.5" />
           </div>
           <div className="ptree-field ptree-checkbox">
@@ -897,7 +927,7 @@ function ProductionTree({ onError, refreshKey }) {
                           <td className="num">{job.runs_needed.toLocaleString()}</td>
                           <td className="num">{formatTime(job.time_per_run)}</td>
                           <td className="num">{formatTime(job.total_time)}</td>
-                          <td className="num">{job.split_into > 1 ? <span className="split-badge">{job.split_into} slots</span> : <span className="no-split">1</span>}</td>
+                          <td className="num">{job.split_into > 1 ? <span className="split-badge">{job.split_into}</span> : <span className="no-split">1</span>}</td>
                           <td className="num">{formatTime(job.parallel_time)}</td>
                           <td className="num">{job.job_cost > 0 ? formatISK(job.job_cost) : '—'}</td>
                         </tr>
