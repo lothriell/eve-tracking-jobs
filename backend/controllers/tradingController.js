@@ -960,6 +960,16 @@ async function getBuildTree(req, res) {
     const effectiveBuyPrice = tree.unit_price > 0 ? tree.unit_price : contractPrice;
     const effectiveBuyCost = effectiveBuyPrice * quantity;
 
+    // Import shipping: cost to ship the finished product from Jita
+    const isCapital = itemType === 'CAPITAL';
+    const importVolume = (tree.volume || 0) * quantity;
+    const importContracts = Math.ceil(importVolume / maxVolumePerContract) || 1;
+    const importShipping = isCapital ? 0 : Math.max(shippingMinFee * importContracts, importVolume * shippingPerM3Rate);
+    const importCollateral = isCapital ? 0 : effectiveBuyCost * collateralPct / 100;
+    const importTotalCost = effectiveBuyCost + importShipping + importCollateral;
+
+    const totalBuildCost = totalMaterialCost + totalJobCost + shippingCost + collateralCost;
+
     res.json({
       product: {
         type_id: productTypeId,
@@ -975,18 +985,24 @@ async function getBuildTree(req, res) {
       summary: {
         buy_finished_cost: effectiveBuyCost,
         buy_source: tree.unit_price > 0 ? 'market' : contractPrice > 0 ? 'contract' : 'unavailable',
+        import_shipping: importShipping,
+        import_collateral: importCollateral,
+        import_total_cost: importTotalCost,
+        import_volume_m3: importVolume,
+        import_contracts: importContracts,
+        is_capital: isCapital,
         build_cost: tree.build_cost,
         material_cost: totalMaterialCost,
         job_cost: totalJobCost,
         shipping_cost: shippingCost,
         collateral_cost: collateralCost,
-        total_build_cost: totalMaterialCost + totalJobCost + shippingCost + collateralCost,
-        savings: effectiveBuyCost - (totalMaterialCost + totalJobCost + shippingCost + collateralCost),
+        total_build_cost: totalBuildCost,
+        savings: importTotalCost - totalBuildCost,
         total_volume_m3: totalVolume,
         shipping_contracts: contracts,
         total_jobs: totalJobs,
         owned_blueprints: ownedCount,
-        recommendation: effectiveBuyCost === 0 ? 'BUILD' : effectiveBuyCost > (totalMaterialCost + totalJobCost + shippingCost + collateralCost) ? 'BUILD' : 'IMPORT',
+        recommendation: effectiveBuyCost === 0 ? 'BUILD' : importTotalCost > totalBuildCost ? 'BUILD' : 'IMPORT',
       },
       shopping_list: shoppingList,
       missing_blueprints: missingBPList,

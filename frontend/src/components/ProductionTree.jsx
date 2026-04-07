@@ -78,6 +78,11 @@ function recalcSummary(tree, originalSummary, shippingConfig) {
   const totalBuildCost = materialCost + totalJobCost + shippingCost + collateralCost;
   const buyFinishedCost = originalSummary.buy_finished_cost;
 
+  // Recalculate import shipping from original summary values (they don't change with build/buy toggles)
+  const importShipping = originalSummary.import_shipping || 0;
+  const importCollateral = originalSummary.import_collateral || 0;
+  const importTotalCost = buyFinishedCost + importShipping + importCollateral;
+
   return {
     summary: {
       ...originalSummary,
@@ -86,11 +91,14 @@ function recalcSummary(tree, originalSummary, shippingConfig) {
       shipping_cost: shippingCost,
       collateral_cost: collateralCost,
       total_build_cost: totalBuildCost,
+      import_shipping: importShipping,
+      import_collateral: importCollateral,
+      import_total_cost: importTotalCost,
       total_volume_m3: totalVolume,
       shipping_contracts: contracts,
       total_jobs: totalJobs,
-      savings: buyFinishedCost - totalBuildCost,
-      recommendation: buyFinishedCost === 0 ? 'BUILD' : buyFinishedCost > totalBuildCost ? 'BUILD' : 'IMPORT',
+      savings: importTotalCost - totalBuildCost,
+      recommendation: buyFinishedCost === 0 ? 'BUILD' : importTotalCost > totalBuildCost ? 'BUILD' : 'IMPORT',
     },
     shopping_list: shopList,
   };
@@ -669,18 +677,18 @@ function ProductionTree({ onError, refreshKey }) {
               <span className="verdict-label">{s.recommendation}</span>
               <span className="verdict-detail">
                 {s.buy_finished_cost === 0
-                  ? `Not on market — must build | Materials: ${formatISK(s.material_cost)} + Shipping: ${formatISK(s.shipping_cost)} = ${formatISK(s.total_build_cost)}`
+                  ? `Not on market — must build | Materials: ${formatISK(s.material_cost)} + Jobs: ${formatISK(s.job_cost)} + Shipping: ${formatISK(s.shipping_cost)} = ${formatISK(s.total_build_cost)}`
                   : s.recommendation === 'BUILD'
-                  ? `Building saves ${formatISK(s.savings)} vs ${s.buy_source === 'contract' ? 'contract' : 'market'} (${formatISK(s.buy_finished_cost)})`
-                  : `${s.buy_source === 'contract' ? 'Contract' : 'Market'} buy cheaper: ${formatISK(s.buy_finished_cost)} vs building ${formatISK(s.total_build_cost)}`
+                  ? `Building saves ${formatISK(s.savings)} | Build: ${formatISK(s.total_build_cost)} (Mat: ${formatISK(s.material_cost)} + Jobs: ${formatISK(s.job_cost)} + Ship: ${formatISK(s.shipping_cost)}) vs Import: ${formatISK(s.import_total_cost)}${s.is_capital ? ' (can\'t ship)' : ` (Buy: ${formatISK(s.buy_finished_cost)} + Ship: ${formatISK(s.import_shipping)})`}`
+                  : `Import saves ${formatISK(-s.savings)} | Import: ${formatISK(s.import_total_cost)}${s.is_capital ? ` (${formatISK(s.buy_finished_cost)} — can't ship)` : ` (Buy: ${formatISK(s.buy_finished_cost)} + Ship: ${formatISK(s.import_shipping)})`} vs Build: ${formatISK(s.total_build_cost)} (Mat: ${formatISK(s.material_cost)} + Jobs: ${formatISK(s.job_cost)} + Ship: ${formatISK(s.shipping_cost)})`
                 }
               </span>
             </div>
 
             <div className="ptree-stats">
               <div className="stat-box">
-                <span className="stat-label">{s.buy_source === 'contract' ? 'Contract Price' : s.buy_source === 'market' ? 'Jita Market' : 'Buy Finished'}</span>
-                <span className="stat-value">{s.buy_finished_cost > 0 ? formatISK(s.buy_finished_cost) : 'N/A'}</span>
+                <span className="stat-label">{s.buy_source === 'contract' ? 'Contract' : s.buy_source === 'market' ? 'Import Total' : 'Buy Finished'}</span>
+                <span className="stat-value">{s.buy_finished_cost > 0 ? (s.is_capital ? `${formatISK(s.buy_finished_cost)} (can't ship)` : formatISK(s.import_total_cost)) : 'N/A'}</span>
               </div>
               <div className="stat-box highlight">
                 <span className="stat-label">Build Cost</span>
@@ -697,7 +705,7 @@ function ProductionTree({ onError, refreshKey }) {
                 </div>
               )}
               <div className="stat-box">
-                <span className="stat-label">Shipping</span>
+                <span className="stat-label">Shipping (mats)</span>
                 <span className="stat-value">{formatISK(s.shipping_cost)}</span>
               </div>
               <div className="stat-box">
