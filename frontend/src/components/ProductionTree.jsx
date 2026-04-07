@@ -543,48 +543,6 @@ function ProductionTree({ onError, refreshKey }) {
       <div className="ptree-controls">
         <div className="ptree-row">
           <div className="ptree-field">
-            <label>Quantity</label>
-            <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} />
-          </div>
-          <div className="ptree-field">
-            <label>ME (0-10)</label>
-            <input type="number" value={meLevel} onChange={e => saveConfig('meLevel', e.target.value, setMeLevel)} min="0" max="10" />
-          </div>
-          <div className="ptree-field">
-            <label>TE (0-20)</label>
-            <input type="number" value={teLevel} onChange={e => saveConfig('teLevel', e.target.value, setTeLevel)} min="0" max="20" />
-          </div>
-          <div className="ptree-field">
-            <label>Contract Price</label>
-            <input type="number" value={contractPrice} onChange={e => setContractPrice(e.target.value)} placeholder="Jita contract" />
-          </div>
-          <div className="ptree-field">
-            <label>Min Fee</label>
-            <input type="number" value={shippingMinFee} onChange={e => saveConfig('shippingMinFee', e.target.value, setShippingMinFee)} placeholder="25M" />
-          </div>
-          <div className="ptree-field">
-            <label>ISK/m³</label>
-            <input type="number" value={shippingPerM3} onChange={e => saveConfig('shippingPerM3', e.target.value, setShippingPerM3)} placeholder="600" />
-          </div>
-          <div className="ptree-field">
-            <label>Collateral %</label>
-            <input type="number" value={collateralPct} onChange={e => saveConfig('collateralPct', e.target.value, setCollateralPct)} placeholder="0" />
-          </div>
-          <div className="ptree-field">
-            <label>Max m³</label>
-            <input type="number" value={maxVolume} onChange={e => saveConfig('maxVolume', e.target.value, setMaxVolume)} placeholder="375000" />
-          </div>
-          <div className="ptree-field">
-            <label>MFG Slots {detectedSlots && <span className="slot-detected">({detectedSlots.manufacturing.max} detected)</span>}</label>
-            <input type="number" value={mfgSlots} onChange={e => saveConfig('mfgSlots', e.target.value, setMfgSlots)} placeholder={String(detectedSlots?.manufacturing.max || 1)} min="1" />
-          </div>
-          <div className="ptree-field">
-            <label>Reaction Slots {detectedSlots && <span className="slot-detected">({detectedSlots.reactions.max} detected)</span>}</label>
-            <input type="number" value={reactionSlots} onChange={e => saveConfig('reactionSlots', e.target.value, setReactionSlots)} placeholder={String(detectedSlots?.reactions.max || 1)} min="1" />
-          </div>
-        </div>
-        <div className="ptree-row" style={{ marginTop: 10 }}>
-          <div className="ptree-field">
             <label>Structure</label>
             <select value={structureType} onChange={e => saveConfig('structureType', e.target.value, setStructureType)}>
               <option value="raitaru">Raitaru (S)</option>
@@ -632,6 +590,48 @@ function ProductionTree({ onError, refreshKey }) {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+        <div className="ptree-row" style={{ marginTop: 10 }}>
+          <div className="ptree-field">
+            <label>Quantity</label>
+            <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} />
+          </div>
+          <div className="ptree-field">
+            <label>ME (0-10)</label>
+            <input type="number" value={meLevel} onChange={e => saveConfig('meLevel', e.target.value, setMeLevel)} min="0" max="10" />
+          </div>
+          <div className="ptree-field">
+            <label>TE (0-20)</label>
+            <input type="number" value={teLevel} onChange={e => saveConfig('teLevel', e.target.value, setTeLevel)} min="0" max="20" />
+          </div>
+          <div className="ptree-field">
+            <label>Contract Price</label>
+            <input type="number" value={contractPrice} onChange={e => setContractPrice(e.target.value)} placeholder="Jita contract" />
+          </div>
+          <div className="ptree-field">
+            <label>Min Fee</label>
+            <input type="number" value={shippingMinFee} onChange={e => saveConfig('shippingMinFee', e.target.value, setShippingMinFee)} placeholder="25M" />
+          </div>
+          <div className="ptree-field">
+            <label>ISK/m³</label>
+            <input type="number" value={shippingPerM3} onChange={e => saveConfig('shippingPerM3', e.target.value, setShippingPerM3)} placeholder="600" />
+          </div>
+          <div className="ptree-field">
+            <label>Collateral %</label>
+            <input type="number" value={collateralPct} onChange={e => saveConfig('collateralPct', e.target.value, setCollateralPct)} placeholder="0" />
+          </div>
+          <div className="ptree-field">
+            <label>Max m³</label>
+            <input type="number" value={maxVolume} onChange={e => saveConfig('maxVolume', e.target.value, setMaxVolume)} placeholder="375000" />
+          </div>
+          <div className="ptree-field">
+            <label>MFG Slots {detectedSlots && <span className="slot-detected">({detectedSlots.manufacturing.max} detected)</span>}</label>
+            <input type="number" value={mfgSlots} onChange={e => saveConfig('mfgSlots', e.target.value, setMfgSlots)} placeholder={String(detectedSlots?.manufacturing.max || 1)} min="1" />
+          </div>
+          <div className="ptree-field">
+            <label>Reaction Slots {detectedSlots && <span className="slot-detected">({detectedSlots.reactions.max} detected)</span>}</label>
+            <input type="number" value={reactionSlots} onChange={e => saveConfig('reactionSlots', e.target.value, setReactionSlots)} placeholder={String(detectedSlots?.reactions.max || 1)} min="1" />
           </div>
           <div className="ptree-field">
             <label>Max job length (days)</label>
