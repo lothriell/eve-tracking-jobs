@@ -5,15 +5,50 @@
 
 const db = require('../database/db');
 const { FEATURES } = require('../middleware/featureAccess');
+const { getCharacterCorporation } = require('../services/corporationService');
+const { getCharacterNames } = require('../services/esiClient');
+const { getValidAccessToken } = require('../services/tokenRefresh');
 
-// GET /api/admin/users — list all users with their features
-exports.getUsers = (req, res) => {
-  const users = db.getAllUsers();
-  const result = users.map(u => ({
-    ...u,
-    features: db.getUserFeatures(u.id),
-  }));
-  res.json({ users: result });
+// GET /api/admin/users — list all users with their features + corporation
+exports.getUsers = async (req, res) => {
+  try {
+    const users = db.getAllUsers();
+
+    // Resolve corporation for each user's primary character
+    const corpIds = new Set();
+    const userCorpMap = {};
+
+    for (const user of users) {
+      if (!user.primary_character_id) continue;
+      const char = db.getCharacterById(user.primary_character_id);
+      if (!char) continue;
+      try {
+        const token = await getValidAccessToken(char);
+        const corpData = await getCharacterCorporation(char.character_id, token);
+        if (corpData?.corporation_id) {
+          userCorpMap[user.id] = corpData.corporation_id;
+          corpIds.add(corpData.corporation_id);
+        }
+      } catch {
+        // Skip if token expired
+      }
+    }
+
+    // Batch resolve corp names
+    const corpNames = corpIds.size > 0 ? await getCharacterNames([...corpIds]) : {};
+
+    const result = users.map(u => ({
+      ...u,
+      features: db.getUserFeatures(u.id),
+      corporation_id: userCorpMap[u.id] || null,
+      corporation_name: corpNames[userCorpMap[u.id]] || null,
+    }));
+
+    res.json({ users: result });
+  } catch (error) {
+    console.error('Admin getUsers error:', error.message);
+    res.status(500).json({ error: 'Failed to load users' });
+  }
 };
 
 // GET /api/admin/features — list available feature definitions

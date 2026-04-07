@@ -115,6 +115,8 @@ function AdminPanel() {
             <thead>
               <tr>
                 <th>User</th>
+                <th>Corporation</th>
+                <th>Corp ID</th>
                 <th>Characters</th>
                 <th>Admin</th>
                 {featureKeys.map(key => (
@@ -129,6 +131,8 @@ function AdminPanel() {
                 return (
                   <tr key={user.id}>
                     <td className="user-name">{user.primary_character_name || `User #${user.id}`}</td>
+                    <td>{user.corporation_name || '—'}</td>
+                    <td className="center">{user.corporation_id || '—'}</td>
                     <td className="center">{user.character_count}</td>
                     <td className="center">
                       <label className="toggle-switch">
