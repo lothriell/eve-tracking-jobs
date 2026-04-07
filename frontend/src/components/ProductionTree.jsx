@@ -574,6 +574,14 @@ function ProductionTree({ onError, refreshKey }) {
             <label>Max m³</label>
             <input type="number" value={maxVolume} onChange={e => saveConfig('maxVolume', e.target.value, setMaxVolume)} placeholder="375000" />
           </div>
+          <div className="ptree-field">
+            <label>MFG Slots {detectedSlots && <span className="slot-detected">({detectedSlots.manufacturing.max} detected)</span>}</label>
+            <input type="number" value={mfgSlots} onChange={e => saveConfig('mfgSlots', e.target.value, setMfgSlots)} placeholder={String(detectedSlots?.manufacturing.max || 1)} min="1" />
+          </div>
+          <div className="ptree-field">
+            <label>Reaction Slots {detectedSlots && <span className="slot-detected">({detectedSlots.reactions.max} detected)</span>}</label>
+            <input type="number" value={reactionSlots} onChange={e => saveConfig('reactionSlots', e.target.value, setReactionSlots)} placeholder={String(detectedSlots?.reactions.max || 1)} min="1" />
+          </div>
         </div>
         <div className="ptree-row" style={{ marginTop: 10 }}>
           <div className="ptree-field">
@@ -624,14 +632,6 @@ function ProductionTree({ onError, refreshKey }) {
                 ))}
               </div>
             )}
-          </div>
-          <div className="ptree-field">
-            <label>MFG Slots {detectedSlots && <span className="slot-detected">({detectedSlots.manufacturing.max} detected)</span>}</label>
-            <input type="number" value={mfgSlots} onChange={e => saveConfig('mfgSlots', e.target.value, setMfgSlots)} placeholder={String(detectedSlots?.manufacturing.max || 1)} min="1" />
-          </div>
-          <div className="ptree-field">
-            <label>Reaction Slots {detectedSlots && <span className="slot-detected">({detectedSlots.reactions.max} detected)</span>}</label>
-            <input type="number" value={reactionSlots} onChange={e => saveConfig('reactionSlots', e.target.value, setReactionSlots)} placeholder={String(detectedSlots?.reactions.max || 1)} min="1" />
           </div>
           <div className="ptree-field">
             <label>Max job length (days)</label>
