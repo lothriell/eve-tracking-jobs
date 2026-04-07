@@ -970,6 +970,12 @@ async function getBuildTree(req, res) {
 
     const totalBuildCost = totalMaterialCost + totalJobCost + shippingCost + collateralCost;
 
+    // Sell price: Jita sell_min for the finished product
+    const sellPrice = tree.unit_price || 0;
+    const sellTotal = sellPrice * quantity;
+    const buildProfit = sellTotal > 0 ? sellTotal - totalBuildCost : null;
+    const importProfit = sellTotal > 0 && !isCapital ? sellTotal - importTotalCost : null;
+
     res.json({
       product: {
         type_id: productTypeId,
@@ -991,6 +997,10 @@ async function getBuildTree(req, res) {
         import_volume_m3: importVolume,
         import_contracts: importContracts,
         is_capital: isCapital,
+        sell_price: sellPrice,
+        sell_total: sellTotal,
+        build_profit: buildProfit,
+        import_profit: importProfit,
         build_cost: tree.build_cost,
         material_cost: totalMaterialCost,
         job_cost: totalJobCost,

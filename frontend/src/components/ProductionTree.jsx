@@ -370,6 +370,9 @@ function ProductionTree({ onError, refreshKey }) {
     try { localStorage.setItem('prodPlanner_' + key, value); } catch {}
   };
 
+  // Sell price (auto-populated from Jita, editable)
+  const [sellPrice, setSellPrice] = useState('');
+
   // Results
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -409,6 +412,20 @@ function ProductionTree({ onError, refreshKey }) {
     } catch (err) {
       console.error('recalcSummary error:', err);
     }
+  }
+
+  // Profit calculation from sell price
+  if (effectiveSummary) {
+    const sp = parseFloat(sellPrice) || 0;
+    const qty = parseInt(quantity) || 1;
+    const sellTotal = sp * qty;
+    effectiveSummary = {
+      ...effectiveSummary,
+      sell_price: sp,
+      sell_total: sellTotal,
+      build_profit: sellTotal > 0 ? sellTotal - effectiveSummary.total_build_cost : null,
+      import_profit: sellTotal > 0 && !effectiveSummary.is_capital ? sellTotal - effectiveSummary.import_total_cost : null,
+    };
   }
 
   // Job schedule — computed from tree + slot config
@@ -484,6 +501,7 @@ function ProductionTree({ onError, refreshKey }) {
         systemId: parseInt(systemId) || 0,
       });
       setResult(resp.data);
+      setSellPrice(resp.data.summary?.sell_price > 0 ? String(resp.data.summary.sell_price) : '');
       setExpanded({});
     } catch (err) {
       onError?.(err.response?.data?.error || 'Failed to build production tree');
@@ -610,6 +628,10 @@ function ProductionTree({ onError, refreshKey }) {
             <input type="number" value={contractPrice} onChange={e => setContractPrice(e.target.value)} placeholder="Jita contract" />
           </div>
           <div className="ptree-field">
+            <label>Sell Price</label>
+            <input type="number" value={sellPrice} onChange={e => setSellPrice(e.target.value)} placeholder="Jita sell" />
+          </div>
+          <div className="ptree-field">
             <label>Min Fee</label>
             <input type="number" value={shippingMinFee} onChange={e => saveConfig('shippingMinFee', e.target.value, setShippingMinFee)} placeholder="25M" />
           </div>
@@ -700,6 +722,24 @@ function ProductionTree({ onError, refreshKey }) {
                 <span className="stat-label">Shipping (mats)</span>
                 <span className="stat-value">{formatISK(s.shipping_cost)}</span>
               </div>
+              {s.sell_total > 0 && (
+                <div className="stat-box">
+                  <span className="stat-label">Sell Revenue</span>
+                  <span className="stat-value">{formatISK(s.sell_total)}</span>
+                </div>
+              )}
+              {s.build_profit !== null && (
+                <div className={`stat-box ${s.build_profit > 0 ? 'profit-positive' : 'profit-negative'}`}>
+                  <span className="stat-label">Build Profit</span>
+                  <span className="stat-value">{s.build_profit > 0 ? '+' : ''}{formatISK(s.build_profit)}</span>
+                </div>
+              )}
+              {s.import_profit !== null && (
+                <div className={`stat-box ${s.import_profit > 0 ? 'profit-positive' : 'profit-negative'}`}>
+                  <span className="stat-label">Import Profit</span>
+                  <span className="stat-value">{s.import_profit > 0 ? '+' : ''}{formatISK(s.import_profit)}</span>
+                </div>
+              )}
               <div className="stat-box">
                 <span className="stat-label">Volume</span>
                 <span className="stat-value">{s.total_volume_m3?.toLocaleString()} m3</span>
