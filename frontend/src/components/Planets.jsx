@@ -919,7 +919,11 @@ function getPinStatus(pin, routes, now) {
     // Check output routing
     const hasOutput = routes.some(r => r.source_pin_id === pinId);
     if (!hasOutput) return 'output-not-routed';
-    // Check if actively producing using last_cycle_start + cycle_time
+    // If simulation has determined the factory state, use it
+    if (pin.factory_details?.simulated_idle !== undefined) {
+      return pin.factory_details.simulated_idle ? 'factory-idle' : 'producing';
+    }
+    // Fallback for non-simulated data: heuristic based on last_cycle_start
     if (pin.last_cycle_start) {
       const lastCycle = new Date(pin.last_cycle_start).getTime();
       const cycleMs = (pin.factory_details?.cycle_time || 3600) * 1000;

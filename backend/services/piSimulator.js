@@ -242,6 +242,26 @@ function simulateColony(layout, typeVolumes, schematicInputs, now) {
     console.warn(`[PI Sim] Hit iteration cap (${MAX_ITERATIONS}) — snapshot may be very stale`);
   }
 
+  // Mark factory idle/active state after simulation
+  for (const pin of pins) {
+    if (isFactoryPin(pin) && pin.factory_details) {
+      const schematicId = pin.schematic_id || pin.factory_details.schematic_id;
+      const inputs = schematicInputs[schematicId];
+      if (!inputs) {
+        pin.factory_details.simulated_idle = true;
+        continue;
+      }
+      let canRun = true;
+      for (const inp of inputs) {
+        if (getContentAmount(pin, inp.type_id) < inp.quantity) {
+          canRun = false;
+          break;
+        }
+      }
+      pin.factory_details.simulated_idle = !canRun;
+    }
+  }
+
   // Clean up internal fields
   for (const pin of pins) {
     delete pin._capacityUsed;
