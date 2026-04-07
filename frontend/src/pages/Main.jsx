@@ -11,6 +11,7 @@ import HubComparison from '../components/HubComparison';
 import TradeFinder from '../components/TradeFinder';
 import BuildVsBuy from '../components/BuildVsBuy';
 import ProductionTree from '../components/ProductionTree';
+import AdminPanel from '../components/AdminPanel';
 import './Main.css';
 
 function ServerStatus() {
@@ -105,7 +106,7 @@ function WealthIndicator() {
   );
 }
 
-function Main({ onLogout, characterName }) {
+function Main({ onLogout, characterName, features = [], isAdmin = false }) {
   const [error, setError] = useState('');
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
@@ -234,6 +235,8 @@ function Main({ onLogout, characterName }) {
         return <BuildVsBuy onError={setError} refreshKey={refreshKey} />;
       case 'production':
         return <ProductionTree onError={setError} refreshKey={refreshKey} />;
+      case 'admin':
+        return <AdminPanel />;
       case 'dashboard':
       default:
         return <Dashboard onError={setError} refreshKey={refreshKey} />;
@@ -251,6 +254,7 @@ function Main({ onLogout, characterName }) {
         collapsed={sidebarCollapsed}
         onCollapsedChange={setSidebarCollapsed}
         characterName={characterName}
+        features={features}
       />
 
       <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
@@ -284,6 +288,15 @@ function Main({ onLogout, characterName }) {
               )}
             </div>
             <button className="refresh-btn" onClick={handleRefresh}>↻</button>
+            {isAdmin && (
+              <button
+                className={`admin-btn ${currentView === 'admin' ? 'active' : ''}`}
+                onClick={() => setCurrentView('admin')}
+                title="Admin Console"
+              >
+                ⚙
+              </button>
+            )}
             <button onClick={handleLogout} className="logout-btn">
               Logout
             </button>

@@ -231,4 +231,19 @@ export const searchSystems = (query) => {
   return api.get(`/api/trading/systems/search?q=${encodeURIComponent(query)}`);
 };
 
+// ===== FEATURE PERMISSIONS =====
+
+export const getMyFeatures = () => api.get('/api/me/features');
+
+// ===== ADMIN ENDPOINTS =====
+
+export const getAdminUsers = () => api.get('/api/admin/users');
+export const getAdminFeatures = () => api.get('/api/admin/features');
+export const toggleUserAdmin = (userId, isAdmin) => api.put(`/api/admin/users/${userId}/admin`, { is_admin: isAdmin });
+export const grantUserFeature = (userId, featureName) => api.post(`/api/admin/users/${userId}/features`, { feature_name: featureName });
+export const revokeUserFeature = (userId, featureName) => api.delete(`/api/admin/users/${userId}/features/${featureName}`);
+export const getCorpGrants = () => api.get('/api/admin/corps');
+export const grantCorpFeature = (corpId, corpName, featureName) => api.post('/api/admin/corps', { corporation_id: corpId, corporation_name: corpName, feature_name: featureName });
+export const revokeCorpFeature = (corpId, featureName) => api.delete(`/api/admin/corps/${corpId}/features/${featureName}`);
+
 export default api;

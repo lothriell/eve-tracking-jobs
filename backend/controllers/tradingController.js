@@ -1,21 +1,12 @@
 /**
  * Trading Controller
- * All endpoints locked to Lothriell via requireTradeAccess middleware
+ * Access controlled via requireFeature('trading') middleware in api.js
  */
 
 const db = require('../database/db');
 const { getTypeNames, getCharacterSkills, getCharacterBlueprints } = require('../services/esiClient');
 const { getValidAccessToken } = require('../services/tokenRefresh');
 const { calculateBrokerFee, calculateSalesTax, findTradeOpportunities } = require('../services/tradeCalculator');
-
-// ===== ACCESS CONTROL =====
-
-function requireTradeAccess(req, res, next) {
-  if (req.session.characterName !== 'Lothriell') {
-    return res.status(403).json({ error: 'Trading feature not available' });
-  }
-  next();
-}
 
 // Ensure default hubs exist for this user (lazy init)
 function ensureHubsSeeded(req, res, next) {
@@ -1161,7 +1152,6 @@ async function searchSystems(req, res) {
 }
 
 module.exports = {
-  requireTradeAccess,
   ensureHubsSeeded,
   searchTypes,
   searchStations,

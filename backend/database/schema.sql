@@ -217,3 +217,31 @@ CREATE TABLE IF NOT EXISTS hub_refresh_status (
     status TEXT DEFAULT 'pending',
     error_message TEXT
 );
+
+-- ===== PREMIUM FEATURE ACCESS =====
+
+-- Per-user feature grants
+CREATE TABLE IF NOT EXISTS user_features (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    feature_name TEXT NOT NULL,
+    granted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    granted_by INTEGER,
+    UNIQUE(user_id, feature_name),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_user_features_user ON user_features(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_features_feature ON user_features(feature_name);
+
+-- Per-corporation feature grants
+CREATE TABLE IF NOT EXISTS corp_features (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    corporation_id INTEGER NOT NULL,
+    corporation_name TEXT,
+    feature_name TEXT NOT NULL,
+    granted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    granted_by INTEGER,
+    UNIQUE(corporation_id, feature_name)
+);
+CREATE INDEX IF NOT EXISTS idx_corp_features_corp ON corp_features(corporation_id);
+CREATE INDEX IF NOT EXISTS idx_corp_features_feature ON corp_features(feature_name);

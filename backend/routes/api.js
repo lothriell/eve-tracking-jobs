@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const characterController = require('../controllers/characterController');
 const tradingController = require('../controllers/tradingController');
+const adminController = require('../controllers/adminController');
+const { requireFeature, requireAdmin, getEnabledFeatures } = require('../middleware/featureAccess');
 
 // Version endpoint (for deployment verification)
 router.get('/version', (req, res) => {
@@ -386,8 +388,27 @@ router.get('/planets', requireAuth, characterController.getCharacterPlanets);
 router.get('/planets/customs', requireAuth, characterController.getCustomsOffices);
 router.get('/planets/layout', requireAuth, characterController.getColonyLayout);
 
-// ===== TRADING ENDPOINTS (locked to Lothriell) =====
-const tradeAuth = [requireAuth, tradingController.requireTradeAccess, tradingController.ensureHubsSeeded];
+// ===== USER FEATURES =====
+router.get('/me/features', requireAuth, async (req, res) => {
+  const db = require('../database/db');
+  const features = await getEnabledFeatures(req.session.userId);
+  const is_admin = db.isAdmin(req.session.userId);
+  res.json({ features, is_admin });
+});
+
+// ===== ADMIN ENDPOINTS =====
+const adminAuth = [requireAuth, requireAdmin];
+router.get('/admin/users', ...adminAuth, adminController.getUsers);
+router.get('/admin/features', ...adminAuth, adminController.getFeatures);
+router.put('/admin/users/:userId/admin', ...adminAuth, adminController.toggleAdmin);
+router.post('/admin/users/:userId/features', ...adminAuth, adminController.grantUserFeature);
+router.delete('/admin/users/:userId/features/:featureName', ...adminAuth, adminController.revokeUserFeature);
+router.get('/admin/corps', ...adminAuth, adminController.getCorpGrants);
+router.post('/admin/corps', ...adminAuth, adminController.grantCorpFeature);
+router.delete('/admin/corps/:corpId/features/:featureName', ...adminAuth, adminController.revokeCorpFeature);
+
+// ===== TRADING ENDPOINTS =====
+const tradeAuth = [requireAuth, requireFeature('trading'), tradingController.ensureHubsSeeded];
 
 router.get('/trading/hubs', ...tradeAuth, tradingController.getHubs);
 router.post('/trading/hubs', ...tradeAuth, tradingController.addHub);

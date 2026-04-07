@@ -1,0 +1,254 @@
+.admin-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #a0aec0;
+}
+
+.admin-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  margin-bottom: 10px;
+}
+
+.admin-toolbar h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #e2e8f0;
+}
+
+.admin-error {
+  background: rgba(245, 101, 101, 0.15);
+  border: 1px solid rgba(245, 101, 101, 0.3);
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  color: #feb2b2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-error .dismiss-btn {
+  background: none;
+  border: none;
+  color: #feb2b2;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 4px;
+}
+
+.admin-section {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.admin-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  color: #e2e8f0;
+}
+
+.admin-hint {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  color: #718096;
+}
+
+.admin-empty {
+  color: #718096;
+  font-size: 13px;
+  font-style: italic;
+  margin: 8px 0 0 0;
+}
+
+/* Table */
+.admin-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.admin-table th {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #a0aec0;
+  font-weight: 500;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.admin-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+}
+
+.admin-table td.center,
+.admin-table th.center {
+  text-align: center;
+}
+
+.admin-table td.user-name {
+  font-weight: 500;
+  color: #a3bffa;
+}
+
+.admin-table td.date-cell {
+  color: #718096;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.admin-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Toggle switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  transition: 0.2s;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background: #a0aec0;
+  border-radius: 50%;
+  transition: 0.2s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: rgba(102, 126, 234, 0.4);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(16px);
+  background: #a3bffa;
+}
+
+/* Corp grant form */
+.corp-grant-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-input {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: #e2e8f0;
+  font-size: 13px;
+  width: 140px;
+}
+
+.admin-input.corp-name-input {
+  width: 200px;
+}
+
+.admin-input:focus {
+  outline: none;
+  border-color: rgba(102, 126, 234, 0.5);
+}
+
+.admin-input::placeholder {
+  color: #4a5568;
+}
+
+.admin-select {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: #e2e8f0;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.admin-select option {
+  background: #1a202c;
+  color: #e2e8f0;
+}
+
+.admin-grant-btn {
+  padding: 6px 16px;
+  background: rgba(72, 187, 120, 0.15);
+  border: 1px solid rgba(72, 187, 120, 0.3);
+  border-radius: 6px;
+  color: #9ae6b4;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-grant-btn:hover:not(:disabled) {
+  background: rgba(72, 187, 120, 0.25);
+}
+
+.admin-grant-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.admin-revoke-btn {
+  padding: 4px 10px;
+  background: rgba(245, 101, 101, 0.1);
+  border: 1px solid rgba(245, 101, 101, 0.2);
+  border-radius: 4px;
+  color: #feb2b2;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-revoke-btn:hover {
+  background: rgba(245, 101, 101, 0.2);
+  border-color: rgba(245, 101, 101, 0.4);
+}

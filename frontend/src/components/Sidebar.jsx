@@ -22,8 +22,8 @@ function applySavedOrder(chars) {
   }
 }
 
-function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, currentView, onViewChange, onCharactersChange, collapsed, onCollapsedChange, characterName }) {
-  const isTradeEnabled = characterName === 'Lothriell';
+function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, currentView, onViewChange, onCharactersChange, collapsed, onCollapsedChange, characterName, features = [] }) {
+  const isTradeEnabled = features.includes('trading');
   const [characters, setCharacters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [linking, setLinking] = useState(false);

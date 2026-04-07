@@ -23,6 +23,25 @@ class DB {
     const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
     this.db.exec(schema);
     console.log('Database schema initialized');
+
+    // Migration: add is_admin column to users
+    try {
+      this.db.prepare('SELECT is_admin FROM users LIMIT 1').get();
+    } catch {
+      this.db.exec('ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0');
+      console.log('Migration: added is_admin column to users');
+    }
+
+    // Migration: seed initial admin if none exists
+    const adminCount = this.db.prepare('SELECT COUNT(*) as c FROM users WHERE is_admin = 1').get();
+    if (adminCount.c === 0) {
+      const lothriell = this.db.prepare("SELECT id FROM users WHERE primary_character_name = 'Lothriell'").get();
+      if (lothriell) {
+        this.db.prepare('UPDATE users SET is_admin = 1 WHERE id = ?').run(lothriell.id);
+        this.db.prepare("INSERT OR IGNORE INTO user_features (user_id, feature_name, granted_by) VALUES (?, 'trading', ?)").run(lothriell.id, lothriell.id);
+        console.log('Migration: seeded initial admin (Lothriell)');
+      }
+    }
   }
 
   // User operations
@@ -718,6 +737,71 @@ class DB {
     ).run(characterId, settings.accounting_level || 0, settings.broker_relations_level || 0,
           settings.advanced_broker_level || 0, settings.faction_standing || 0,
           settings.corp_standing || 0, settings.preferred_source_hub || null);
+  }
+
+  // ===== FEATURE PERMISSIONS =====
+
+  isAdmin(userId) {
+    const row = this.db.prepare('SELECT is_admin FROM users WHERE id = ?').get(userId);
+    return row?.is_admin === 1;
+  }
+
+  setAdmin(userId, isAdmin) {
+    return this.db.prepare('UPDATE users SET is_admin = ? WHERE id = ?').run(isAdmin ? 1 : 0, userId).changes;
+  }
+
+  getUserFeatures(userId) {
+    return this.db.prepare('SELECT feature_name, granted_at, granted_by FROM user_features WHERE user_id = ?').all(userId);
+  }
+
+  hasUserFeature(userId, featureName) {
+    return !!this.db.prepare('SELECT 1 FROM user_features WHERE user_id = ? AND feature_name = ?').get(userId, featureName);
+  }
+
+  grantUserFeature(userId, featureName, grantedBy) {
+    this.db.prepare('INSERT OR IGNORE INTO user_features (user_id, feature_name, granted_by) VALUES (?, ?, ?)').run(userId, featureName, grantedBy);
+  }
+
+  revokeUserFeature(userId, featureName) {
+    return this.db.prepare('DELETE FROM user_features WHERE user_id = ? AND feature_name = ?').run(userId, featureName).changes;
+  }
+
+  getCorpFeatures(corporationId) {
+    return this.db.prepare('SELECT feature_name, granted_at, granted_by FROM corp_features WHERE corporation_id = ?').all(corporationId);
+  }
+
+  hasCorpFeature(corporationId, featureName) {
+    return !!this.db.prepare('SELECT 1 FROM corp_features WHERE corporation_id = ? AND feature_name = ?').get(corporationId, featureName);
+  }
+
+  grantCorpFeature(corporationId, corporationName, featureName, grantedBy) {
+    this.db.prepare('INSERT OR IGNORE INTO corp_features (corporation_id, corporation_name, feature_name, granted_by) VALUES (?, ?, ?, ?)').run(corporationId, corporationName, featureName, grantedBy);
+  }
+
+  revokeCorpFeature(corporationId, featureName) {
+    return this.db.prepare('DELETE FROM corp_features WHERE corporation_id = ? AND feature_name = ?').run(corporationId, featureName).changes;
+  }
+
+  getAllCorpFeatures() {
+    return this.db.prepare('SELECT * FROM corp_features ORDER BY corporation_name, feature_name').all();
+  }
+
+  getAllUsers() {
+    return this.db.prepare(`
+      SELECT u.id, u.primary_character_id, u.primary_character_name, u.is_admin, u.created_at,
+             COUNT(c.id) as character_count
+      FROM users u
+      LEFT JOIN characters c ON c.user_id = u.id
+      GROUP BY u.id
+      ORDER BY u.primary_character_name
+    `).all();
+  }
+
+  getUserWithFeatures(userId) {
+    const user = this.db.prepare('SELECT id, primary_character_id, primary_character_name, is_admin, created_at FROM users WHERE id = ?').get(userId);
+    if (!user) return null;
+    user.features = this.getUserFeatures(userId);
+    return user;
   }
 
   close() {
