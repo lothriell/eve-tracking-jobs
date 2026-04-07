@@ -2,6 +2,19 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.10.0] - 2026-04-07
+
+### PI Colony Simulation
+- **Local PI simulation** — advances stale ESI planet snapshots to current time, showing accurate pin contents (produced outputs, consumed inputs, correct storage %)
+- **Event-driven simulation engine** (`piSimulator.js`) — modeled on RIFT's ColonySimulation.kt, replays factory and extractor cycles with proper routing
+- **Extractor degradation formula** — ported from RIFT, matches EVE's decay + noise oscillation for accurate extraction output prediction
+- **Route-based material flow** — factories pull inputs from storage via inbound routes, output routed to downstream factories (by buffer fill priority) then storage (distributed evenly)
+- **Storage capacity enforcement** — launchpad (10K m3), storage (12K m3), command center (500 m3) volumetric limits respected; excess stays in factory buffer
+- **Factory idle detection** — `simulated_idle` flag marks factories that can't run (insufficient inputs), fixes colony status showing "Producing" instead of "Waiting"
+- **Pulsing "Waiting" status** — factory-only planets with exhausted inputs show pulsing status badge for attention
+- **Safety cap** — 50K iteration limit prevents runaway simulation on very stale snapshots
+- **Schematic input queries** — new `getSchematicInputs` / `getSchematicInputsBatch` DB methods for factory input material lookup
+
 ## [v5.9.0] - 2026-04-04
 
 ### Production Planner — Recursive Build Tree
