@@ -100,8 +100,11 @@
 }
 .tree-header-name { flex: 1; }
 .tree-header-qty { width: 80px; text-align: right; }
-.tree-header-decision { width: 70px; text-align: center; }
-.tree-header-cost { width: 100px; text-align: right; }
+.tree-header-decision { width: 130px; text-align: center; }
+.tree-header-cost { width: 80px; text-align: right; }
+.tree-header-savings { width: 65px; text-align: right; }
+.tree-header-time { width: 40px; text-align: right; }
+.tree-header-jobcost { width: 65px; text-align: right; }
 
 .tree-node {
   display: flex; align-items: center; padding: 6px 8px; gap: 6px;
@@ -120,6 +123,8 @@
 .tree-name { flex: 1; display: flex; align-items: center; gap: 4px; min-width: 0; }
 .tree-qty { width: 80px; text-align: right; color: #a0aec0; font-size: 12px; flex-shrink: 0; }
 
+.tree-action { width: 130px; display: flex; align-items: center; justify-content: flex-end; gap: 4px; flex-shrink: 0; }
+
 .tree-decision {
   padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;
   text-transform: uppercase; cursor: pointer; border: 1px solid; flex-shrink: 0;
@@ -137,11 +142,11 @@
 .tree-children-dimmed { opacity: 0.4; border-left: 2px solid rgba(99,179,237,0.2); margin-left: 12px; }
 
 .tree-icon { width: 20px; height: 20px; flex-shrink: 0; border-radius: 2px; vertical-align: middle; }
-.tree-cost { width: 100px; text-align: right; flex-shrink: 0; }
-.tree-savings { font-size: 11px; color: #68d391; flex-shrink: 0; }
-.tree-time { font-size: 10px; color: #b794f4; flex-shrink: 0; }
-.tree-job-cost { font-size: 10px; color: #f6ad55; flex-shrink: 0; }
-.tree-job-cost::before { content: '⚙ '; }
+.tree-cost { width: 80px; text-align: right; flex-shrink: 0; }
+.tree-savings { width: 65px; text-align: right; font-size: 11px; color: #68d391; flex-shrink: 0; }
+.tree-time { width: 40px; text-align: right; font-size: 10px; color: #b794f4; flex-shrink: 0; }
+.tree-job-cost { width: 65px; text-align: right; font-size: 10px; color: #f6ad55; flex-shrink: 0; }
+.tree-job-cost:not(:empty)::before { content: '⚙ '; }
 
 .ptree-dropdown {
   position: absolute;

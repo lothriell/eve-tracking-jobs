@@ -269,45 +269,39 @@ function TreeNode({ node, depth, expanded, onToggleExpand, onToggleDecision }) {
         {/* Quantity */}
         <span className="tree-qty">x{node.quantity.toLocaleString()}</span>
 
-        {/* Category badge */}
-        {node.category === 'reaction' && (
-          <span className="tree-category reaction" title={`Reaction: ${node.runs_needed} runs × ${node.batch_size}/run`}>REACT</span>
-        )}
-
-        {/* Decision toggle */}
-        {node.is_buildable && node.build_cost !== null && (
-          <button
-            className={`tree-decision ${node.decision}`}
-            onClick={() => onToggleDecision(node)}
-            title={node.decision === 'build' ? 'Click to switch to BUY' : node.category === 'reaction' ? 'Click to switch to REACT' : 'Click to switch to BUILD'}
-          >
-            {node.decision === 'build' ? (node.category === 'reaction' ? 'REACT' : 'BUILD') : 'BUY'}
-          </button>
-        )}
-        {!node.is_buildable && <span className="tree-decision buy-only">BUY</span>}
+        {/* Action: category badge + decision toggle */}
+        <span className="tree-action">
+          {node.category === 'reaction' && (
+            <span className="tree-category reaction" title={`Reaction: ${node.runs_needed} runs × ${node.batch_size}/run`}>REACT</span>
+          )}
+          {node.is_buildable && node.build_cost !== null && (
+            <button
+              className={`tree-decision ${node.decision}`}
+              onClick={() => onToggleDecision(node)}
+              title={node.decision === 'build' ? 'Click to switch to BUY' : node.category === 'reaction' ? 'Click to switch to REACT' : 'Click to switch to BUILD'}
+            >
+              {node.decision === 'build' ? (node.category === 'reaction' ? 'REACT' : 'BUILD') : 'BUY'}
+            </button>
+          )}
+          {!node.is_buildable && <span className="tree-decision buy-only">BUY</span>}
+          {node.owned_blueprint && (
+            <span className={`tree-owned ${node.owned_blueprint.is_bpo ? 'bpo' : 'bpc'}`} title={`${node.owned_blueprint.owner}: ${node.owned_blueprint.is_bpo ? 'BPO' : 'BPC'} ME${node.owned_blueprint.me}/TE${node.owned_blueprint.te}${node.owned_blueprint.runs > 0 ? ' (' + node.owned_blueprint.runs + ' runs)' : ''}`}>
+              {node.owned_blueprint.is_bpo ? 'BPO' : 'BPC'} ME{node.owned_blueprint.me}
+            </span>
+          )}
+        </span>
 
         {/* Cost */}
         <span className="tree-cost">{formatISK(cost)}</span>
 
         {/* Savings indicator */}
-        {savings > 0 && node.decision === 'build' && (
-          <span className="tree-savings">-{formatISK(savings)}</span>
-        )}
+        <span className="tree-savings">{savings > 0 && node.decision === 'build' ? `-${formatISK(savings)}` : ''}</span>
 
-        {/* Job time + job cost */}
-        {node.job_time > 0 && node.decision === 'build' && (
-          <span className="tree-time">{formatTime(node.job_time)}</span>
-        )}
-        {node.job_cost > 0 && node.decision === 'build' && (
-          <span className="tree-job-cost" title="Installation cost">{formatISK(node.job_cost)}</span>
-        )}
+        {/* Job time */}
+        <span className="tree-time">{node.job_time > 0 && node.decision === 'build' ? formatTime(node.job_time) : ''}</span>
 
-        {/* Owned blueprint indicator */}
-        {node.owned_blueprint && (
-          <span className={`tree-owned ${node.owned_blueprint.is_bpo ? 'bpo' : 'bpc'}`} title={`${node.owned_blueprint.owner}: ${node.owned_blueprint.is_bpo ? 'BPO' : 'BPC'} ME${node.owned_blueprint.me}/TE${node.owned_blueprint.te}${node.owned_blueprint.runs > 0 ? ' (' + node.owned_blueprint.runs + ' runs)' : ''}`}>
-            {node.owned_blueprint.is_bpo ? 'BPO' : 'BPC'} ME{node.owned_blueprint.me}
-          </span>
-        )}
+        {/* Job cost */}
+        <span className="tree-job-cost">{node.job_cost > 0 && node.decision === 'build' ? formatISK(node.job_cost) : ''}</span>
       </div>
 
       {/* Children */}
@@ -755,6 +749,9 @@ function ProductionTree({ onError, refreshKey }) {
                 <span className="tree-header-qty">Qty</span>
                 <span className="tree-header-decision">Action</span>
                 <span className="tree-header-cost">Cost</span>
+                <span className="tree-header-savings">Savings</span>
+                <span className="tree-header-time">Time</span>
+                <span className="tree-header-jobcost">Job Cost</span>
               </div>
               <TreeNode
                 node={tree}
