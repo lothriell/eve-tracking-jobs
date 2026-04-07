@@ -1292,6 +1292,14 @@ exports.getColonyLayout = async (req, res) => {
     const accessToken = await getValidAccessToken(character);
     const layout = await getColonyLayout(character.character_id, parseInt(planetId), accessToken);
 
+    // Debug: log raw ESI contents for storage pins
+    const rawPins = layout.pins || [];
+    rawPins.forEach(pin => {
+      if (pin.contents && pin.contents.length > 0) {
+        console.log(`[PI Debug] Planet ${planetId} Pin ${pin.pin_id} (type ${pin.type_id}) contents:`, JSON.stringify(pin.contents));
+      }
+    });
+
     // Resolve type names for pins and contents
     const typeIds = new Set();
     const pins = layout.pins || [];
