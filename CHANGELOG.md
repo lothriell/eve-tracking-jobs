@@ -2,6 +2,18 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.11.0] - 2026-04-07
+
+### Production Planner Improvements
+- **Job consolidation** — duplicate jobs (same item appearing in multiple tree branches) are now merged into a single job with summed runs, dramatically reducing job count (e.g. 131 → ~30 for a Thanatos)
+- **Max job length splitting** — "Don't split < (days)" replaced with "Max job length (days)": consolidated jobs exceeding the limit are split into chunks that fit the time window, matching Ravworks behavior
+- **Import cost breakdown** — IMPORT recommendation now includes shipping cost for the finished product (buy + shipping + collateral), with "can't ship" for capitals
+- **BUILD/IMPORT full comparison** — both verdicts show complete cost breakdowns on both sides (materials, jobs, shipping)
+- **Sell price & profit** — Jita sell price auto-populated (editable), with sell revenue, build profit, and import profit stat boxes (green/red coloring)
+- **Build tree column alignment** — right-side columns (qty, action, cost, savings, time, job cost) now have fixed widths with proper headers
+- **UI layout consolidation** — config rows reorganized: structure/rig/security on row 1, all other params + Build Tree button on row 2
+- **Unified field styling** — select dropdowns match input styling (same height, background, border, radius)
+
 ## [v5.10.0] - 2026-04-07
 
 ### PI Colony Simulation

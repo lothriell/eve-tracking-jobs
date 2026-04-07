@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.10.0 | **Build Date:** 2026-04-07
+**Current Version:** v5.11.0 | **Build Date:** 2026-04-07
 
 A comprehensive web application for tracking EVE Online industry jobs, assets, planetary industry, and character management across multiple characters and corporations.
 
