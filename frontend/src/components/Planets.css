@@ -431,6 +431,12 @@
 
 .colony-status-badge.status-waiting {
   color: #90cdf4;
+  animation: waitingPulse 2s ease-in-out infinite;
+}
+
+@keyframes waitingPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }
 
 .colony-status-badge.status-attention {
@@ -1107,6 +1113,7 @@
 
 .colony-card-status-label.status-waiting {
   color: #90cdf4;
+  animation: waitingPulse 2s ease-in-out infinite;
 }
 
 .colony-card-status-label.status-attention {
