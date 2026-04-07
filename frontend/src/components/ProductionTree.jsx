@@ -574,12 +574,6 @@ function ProductionTree({ onError, refreshKey }) {
             <label>Max m³</label>
             <input type="number" value={maxVolume} onChange={e => saveConfig('maxVolume', e.target.value, setMaxVolume)} placeholder="375000" />
           </div>
-          <div className="ptree-field">
-            <label>&nbsp;</label>
-            <button className="ptree-calc-btn" onClick={handleCalculate} disabled={loading || (!selectedType && !parseInt(searchText))}>
-              {loading ? 'Building...' : 'Build Tree'}
-            </button>
-          </div>
         </div>
         <div className="ptree-row" style={{ marginTop: 10 }}>
           <div className="ptree-field">
@@ -631,8 +625,6 @@ function ProductionTree({ onError, refreshKey }) {
               </div>
             )}
           </div>
-        </div>
-        <div className="ptree-row ptree-industry-setup">
           <div className="ptree-field">
             <label>MFG Slots {detectedSlots && <span className="slot-detected">({detectedSlots.manufacturing.max} detected)</span>}</label>
             <input type="number" value={mfgSlots} onChange={e => saveConfig('mfgSlots', e.target.value, setMfgSlots)} placeholder={String(detectedSlots?.manufacturing.max || 1)} min="1" />
@@ -650,6 +642,12 @@ function ProductionTree({ onError, refreshKey }) {
               <input type="checkbox" checked={buildAll} onChange={e => { setBuildAll(e.target.checked); try { localStorage.setItem('prodPlanner_buildAll', String(e.target.checked)); } catch {} }} />
               Build All
             </label>
+          </div>
+          <div className="ptree-field">
+            <label>&nbsp;</label>
+            <button className="ptree-calc-btn" onClick={handleCalculate} disabled={loading || (!selectedType && !parseInt(searchText))}>
+              {loading ? 'Building...' : 'Build Tree'}
+            </button>
           </div>
         </div>
       </div>
