@@ -29,13 +29,13 @@
   border-radius: 8px; padding: 14px; margin-bottom: 16px;
 }
 .ptree-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
-.ptree-field { display: flex; flex-direction: column; gap: 4px; min-width: 100px; }
-.ptree-field label { font-size: 11px; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; }
-.ptree-field input {
+.ptree-field { display: flex; flex-direction: column; gap: 4px; min-width: 100px; flex: 1; }
+.ptree-field label { font-size: 11px; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+.ptree-field input, .ptree-field select {
   padding: 7px 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 6px; color: #e2e8f0; font-size: 13px;
+  border-radius: 6px; color: #e2e8f0; font-size: 13px; width: 100%; box-sizing: border-box;
 }
-.ptree-field input:focus { outline: none; border-color: rgba(99,179,237,0.5); }
+.ptree-field input:focus, .ptree-field select:focus { outline: none; border-color: rgba(99,179,237,0.5); }
 .ptree-calc-btn {
   padding: 7px 24px; background: rgba(99,179,237,0.25); border: 1px solid rgba(99,179,237,0.5);
   border-radius: 6px; color: #90cdf4; cursor: pointer; font-size: 13px; font-weight: 600;
@@ -230,7 +230,7 @@
   border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;
 }
 .ptree-industry-setup .slot-detected { font-size: 10px; color: #718096; }
-.ptree-checkbox { display: flex; align-items: flex-end; }
+.ptree-checkbox { display: flex; align-items: flex-end; flex: 0 0 auto; }
 .ptree-checkbox label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: #a0aec0; white-space: nowrap; }
 .ptree-checkbox input[type="checkbox"] { width: 16px; height: 16px; accent-color: #68d391; cursor: pointer; }
 
