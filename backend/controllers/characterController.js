@@ -1292,14 +1292,6 @@ exports.getColonyLayout = async (req, res) => {
     const accessToken = await getValidAccessToken(character);
     const layout = await getColonyLayout(character.character_id, parseInt(planetId), accessToken);
 
-    // Debug: log raw ESI contents for storage pins
-    const rawPins = layout.pins || [];
-    rawPins.forEach(pin => {
-      if (pin.contents && pin.contents.length > 0) {
-        console.log(`[PI Debug] Planet ${planetId} Pin ${pin.pin_id} (type ${pin.type_id}) contents:`, JSON.stringify(pin.contents));
-      }
-    });
-
     // Resolve type names for pins and contents
     const typeIds = new Set();
     const pins = layout.pins || [];
@@ -1328,6 +1320,11 @@ exports.getColonyLayout = async (req, res) => {
         if (info) {
           pin.factory_details.cycle_time = info.cycle_time;
           pin.factory_details.schematic_name = info.schematic_name;
+        }
+        // Also collect schematic input type IDs for simulation name resolution
+        const inputs = db.getSchematicInputs(pin.schematic_id);
+        if (inputs) {
+          for (const inp of inputs) typeIds.add(inp.type_id);
         }
       }
     });
@@ -1362,6 +1359,36 @@ exports.getColonyLayout = async (req, res) => {
         pin.factory_details.output_name = typeNames[pin.factory_details.output_type_id] || `Type ${pin.factory_details.output_type_id}`;
       }
     });
+
+    // Simulate colony forward to current time
+    const { simulateColony } = require('../services/piSimulator');
+    const schematicIds = [...new Set(pins.filter(p => p.schematic_id).map(p => p.schematic_id))];
+    const schematicInputs = db.getSchematicInputsBatch(schematicIds);
+    simulateColony(layout, typeVolumes, schematicInputs);
+
+    // Resolve names/volumes for any new type IDs introduced by simulation
+    const postSimTypeIds = new Set();
+    pins.forEach(pin => {
+      if (pin.contents) {
+        pin.contents.forEach(item => {
+          if (!item.type_name) postSimTypeIds.add(item.type_id);
+        });
+      }
+    });
+    if (postSimTypeIds.size > 0) {
+      const newNames = await getTypeNames([...postSimTypeIds]);
+      const cachedNew = db.getCachedNames([...postSimTypeIds], 'type');
+      pins.forEach(pin => {
+        if (pin.contents) {
+          pin.contents.forEach(item => {
+            if (!item.type_name) {
+              item.type_name = newNames[item.type_id] || `Type ${item.type_id}`;
+              item.volume = (cachedNew[item.type_id]?.extra_data ? parseFloat(cachedNew[item.type_id].extra_data) : 0) || 0;
+            }
+          });
+        }
+      });
+    }
 
     res.json(layout);
   } catch (error) {

@@ -282,6 +282,26 @@ class DB {
     return result;
   }
 
+  getSchematicInputs(schematicId) {
+    return this.db.prepare(
+      'SELECT type_id, quantity FROM planet_schematics WHERE schematic_id = ? AND is_input = 1'
+    ).all(schematicId);
+  }
+
+  getSchematicInputsBatch(schematicIds) {
+    if (!schematicIds || schematicIds.length === 0) return {};
+    const placeholders = schematicIds.map(() => '?').join(',');
+    const rows = this.db.prepare(
+      `SELECT schematic_id, type_id, quantity FROM planet_schematics WHERE is_input = 1 AND schematic_id IN (${placeholders})`
+    ).all(...schematicIds);
+    const result = {};
+    for (const row of rows) {
+      if (!result[row.schematic_id]) result[row.schematic_id] = [];
+      result[row.schematic_id].push({ type_id: row.type_id, quantity: row.quantity });
+    }
+    return result;
+  }
+
   getPlanetSchematicsCount() {
     const row = this.db.prepare('SELECT COUNT(*) as count FROM planet_schematics').get();
     return row?.count || 0;
