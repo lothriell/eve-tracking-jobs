@@ -318,6 +318,7 @@
 .colonies-table td {
   padding: 12px 16px;
   color: #e2e8f0;
+  font-size: 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   vertical-align: middle;
   height: 48px;
@@ -563,7 +564,7 @@
 
 .storage-bar-label {
   font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   min-width: 28px;
   text-align: right;

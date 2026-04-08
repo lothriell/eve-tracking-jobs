@@ -485,7 +485,7 @@ function StorageValue({ storage }) {
     .join('\n');
 
   return (
-    <span title={valueTitle} style={{ color: '#cbd5e0', fontSize: 11, fontFamily: 'monospace', cursor: 'default' }}>
+    <span title={valueTitle} style={{ color: '#cbd5e0', fontFamily: 'monospace', cursor: 'default' }}>
       {formatISK(storage.value)}
     </span>
   );
@@ -826,7 +826,7 @@ function CharacterColonies({ characterData, alertMode }) {
                       {loadingLayouts[colony.planet_id] ? (
                         <span className="spinner-small" style={{ width: 12, height: 12 }}></span>
                       ) : totalUPH > 0 ? (
-                        <span style={{ color: totalUPH < LOW_EXTRACTION_THRESHOLD ? '#fbd38d' : '#68d391', fontFamily: 'monospace', fontSize: 12 }}>
+                        <span style={{ color: totalUPH < LOW_EXTRACTION_THRESHOLD ? '#fbd38d' : '#68d391', fontFamily: 'monospace' }}>
                           {totalUPH.toLocaleString()}
                         </span>
                       ) : <span className="date-muted">—</span>}
