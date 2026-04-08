@@ -234,6 +234,7 @@ function simulateColony(layout, typeVolumes, schematicInputs, now) {
     if (isExtractorPin(pin)) {
       processExtractor(pin, event.time, now, queue, pinMap, outboundRoutes, typeVolumes, schematicInputs);
     } else if (isFactoryPin(pin)) {
+      pin._wasScheduled = true;
       processFactory(pin, event.time, now, queue, pinMap, inboundRoutes, outboundRoutes, typeVolumes, schematicInputs);
     }
   }
@@ -251,6 +252,25 @@ function simulateColony(layout, typeVolumes, schematicInputs, now) {
         pin.factory_details.simulated_idle = true;
         continue;
       }
+
+      // Check if factory is mid-cycle (currently producing)
+      const cycleTime = pin.factory_details.cycle_time;
+      if (cycleTime && pin.last_cycle_start) {
+        const lastCycleMs = new Date(pin.last_cycle_start).getTime();
+        const cycleMs = cycleTime * 1000;
+        if (lastCycleMs + cycleMs > now) {
+          // Factory is in the middle of a cycle — it's producing, not idle
+          pin.factory_details.simulated_idle = false;
+          continue;
+        }
+      }
+
+      // For factories that were never scheduled (no last_cycle_start or very old),
+      // try pulling inputs from storage so the idle check reflects available materials
+      if (!pin._wasScheduled) {
+        pullFactoryInputs(pin, pinMap, inboundRoutes, typeVolumes, schematicInputs);
+      }
+
       let canRun = true;
       for (const inp of inputs) {
         if (getContentAmount(pin, inp.type_id) < inp.quantity) {
@@ -265,6 +285,7 @@ function simulateColony(layout, typeVolumes, schematicInputs, now) {
   // Clean up internal fields
   for (const pin of pins) {
     delete pin._capacityUsed;
+    delete pin._wasScheduled;
   }
 
   layout.simulated = true;
