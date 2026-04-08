@@ -737,12 +737,27 @@ function CharacterColonies({ characterData, alertMode }) {
 
   const alertCount = colonies.filter(c => hasAnyAlert(colonyAlerts[c.planet_id] || {})).length;
 
+  // Sum estimated value across all colonies
+  let totalCharValue = 0;
+  for (const colony of colonies) {
+    const layout = colonyLayouts[colony.planet_id];
+    if (layout?.pins) {
+      const storage = calcStorageFill(layout.pins, layout.jita_prices);
+      if (storage?.value) totalCharValue += storage.value;
+    }
+  }
+
   return (
     <div className="character-colonies-section">
       <div className="colonies-card">
         <div className="colonies-card-header">
           <span className="colonies-card-title">
             {character_name} — {colonies.length} {colonies.length === 1 ? 'Colony' : 'Colonies'}
+            {totalCharValue > 0 && (
+              <span style={{ color: '#cbd5e0', fontWeight: 400, marginLeft: 8, fontFamily: 'monospace' }}>
+                {formatISK(totalCharValue)} ISK
+              </span>
+            )}
           </span>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             {alertCount > 0 && (
