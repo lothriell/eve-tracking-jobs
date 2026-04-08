@@ -286,15 +286,16 @@
 }
 
 /* Fixed column widths — percentages to fill full screen width */
-.colonies-table .col-planet  { width: 14%; }
-.colonies-table .col-type    { width: 9%; }
+.colonies-table .col-planet  { width: 13%; }
+.colonies-table .col-type    { width: 8%; }
 .colonies-table .col-level   { width: 10%; }
 .colonies-table .col-pins    { width: 6%; }
-.colonies-table .col-rate    { width: 8%; }
+.colonies-table .col-rate    { width: 7%; }
 .colonies-table .col-storage { width: 12%; }
-.colonies-table .col-expiry  { width: 12%; }
+.colonies-table .col-value   { width: 7%; }
+.colonies-table .col-expiry  { width: 11%; }
 .colonies-table .col-status  { width: auto; }
-.colonies-table .col-action  { width: 8%; text-align: right; }
+.colonies-table .col-action  { width: 7%; text-align: right; }
 
 .colonies-table th {
   background: rgba(0, 0, 0, 0.4);

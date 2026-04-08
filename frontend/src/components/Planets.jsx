@@ -462,26 +462,32 @@ function StorageBar({ storage }) {
 
   const pct = Math.round(storage.pct);
   const tierTitle = (storage.tiers || []).map(t => `${t.tier}: ${t.pct.toFixed(1)}%`).join(', ');
-  const storageTitle = `${storage.used.toFixed(0)} / ${storage.capacity.toFixed(0)} m³\n${tierTitle}`;
-  const valueTitle = (storage.valueBreakdown || [])
-    .map(item => `${item.name}: ${item.amount.toLocaleString()} × ${formatISK(item.value / item.amount)} = ${formatISK(item.value)}`)
-    .join('\n');
+  const title = `${storage.used.toFixed(0)} / ${storage.capacity.toFixed(0)} m³${tierTitle ? ' — ' + tierTitle : ''}`;
   const labelColor = pct > 80 ? '#AB324A' : pct > 60 ? '#fbd38d' : '#68d391';
 
   return (
-    <div className="storage-bar-container" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-      <div title={storageTitle} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        <div className="storage-bar-track">
-          {(storage.tiers || []).map((t, i) => (
-            <div key={t.tier} className="storage-bar-segment" style={{ width: `${t.pct}%`, backgroundColor: t.color }} />
-          ))}
-        </div>
-        <span className="storage-bar-label" style={{ color: labelColor }}>{pct}%</span>
+    <div className="storage-bar-container" title={title}>
+      <div className="storage-bar-track">
+        {(storage.tiers || []).map((t, i) => (
+          <div key={t.tier} className="storage-bar-segment" style={{ width: `${t.pct}%`, backgroundColor: t.color }} title={`${t.tier}: ${t.pct.toFixed(1)}%`} />
+        ))}
       </div>
-      {storage.value > 0 && (
-        <span title={valueTitle} style={{ color: '#cbd5e0', fontSize: 11, fontFamily: 'monospace', cursor: 'default' }}>{formatISK(storage.value)}</span>
-      )}
+      <span className="storage-bar-label" style={{ color: labelColor }}>{pct}%</span>
     </div>
+  );
+}
+
+function StorageValue({ storage }) {
+  if (!storage || !storage.value) return <span className="date-muted">—</span>;
+
+  const valueTitle = (storage.valueBreakdown || [])
+    .map(item => `${item.name}: ${item.amount.toLocaleString()} × ${formatISK(item.value / item.amount)} = ${formatISK(item.value)}`)
+    .join('\n');
+
+  return (
+    <span title={valueTitle} style={{ color: '#cbd5e0', fontSize: 11, fontFamily: 'monospace', cursor: 'default' }}>
+      {formatISK(storage.value)}
+    </span>
   );
 }
 
@@ -754,6 +760,7 @@ function CharacterColonies({ characterData, alertMode }) {
               <th className="col-product">Product</th>
               <th className="col-rate text-right">Rate</th>
               <th className="col-storage">Storage</th>
+              <th className="col-value text-right">Value</th>
               <th className="col-expiry">Expiry</th>
               <th className="col-alerts">Alerts</th>
               <th className="col-status">Status</th>
@@ -829,6 +836,11 @@ function CharacterColonies({ characterData, alertMode }) {
                         <span className="spinner-small" style={{ width: 12, height: 12 }}></span>
                       ) : <StorageBar storage={storage} />}
                     </td>
+                    <td className="text-right">
+                      {loadingLayouts[colony.planet_id] ? (
+                        <span className="spinner-small" style={{ width: 12, height: 12 }}></span>
+                      ) : <StorageValue storage={storage} />}
+                    </td>
                     <td>
                       {extractorPins.length > 0 ? (
                         <LiveCountdown expiryTime={earliestExpiry} />
@@ -853,7 +865,7 @@ function CharacterColonies({ characterData, alertMode }) {
                   </tr>
                   {openColony === colony.planet_id && (
                     <tr>
-                      <td colSpan={9} style={{ padding: '4px 8px 8px' }}>
+                      <td colSpan={10} style={{ padding: '4px 8px 8px' }}>
                         <ColonyDetail
                           characterId={character_id}
                           planetId={colony.planet_id}
