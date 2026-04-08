@@ -1082,18 +1082,18 @@
 
 .colony-card-expiry {
   font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
 }
 
 .colony-card-rate {
-  font-size: 10px;
+  font-size: 11px;
   color: #68d391;
   font-family: 'Consolas', 'Monaco', monospace;
 }
 
 .colony-card-value {
-  font-size: 10px;
+  font-size: 11px;
   color: #cbd5e0;
   font-family: 'Consolas', 'Monaco', monospace;
   cursor: default;
