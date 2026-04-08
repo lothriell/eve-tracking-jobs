@@ -1390,6 +1390,15 @@ exports.getColonyLayout = async (req, res) => {
       });
     }
 
+    // Attach Jita prices for all content types (for storage value calculation)
+    const contentTypeIds = new Set();
+    pins.forEach(pin => {
+      if (pin.contents) pin.contents.forEach(item => contentTypeIds.add(item.type_id));
+    });
+    if (contentTypeIds.size > 0) {
+      layout.jita_prices = db.getJitaPrices([...contentTypeIds]);
+    }
+
     res.json(layout);
   } catch (error) {
     console.error('Get colony layout error:', error);

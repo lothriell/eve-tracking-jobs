@@ -107,9 +107,10 @@ const TIER_COLORS = {
   P4: '#68d391',  // green
 };
 
-function calcStorageFill(pins) {
+function calcStorageFill(pins, jitaPrices) {
   let totalUsed = 0;
   let totalCapacity = 0;
+  let totalValue = 0;
   const tierUsed = { P0: 0, P1: 0, P2: 0, P3: 0, P4: 0 };
 
   for (const pin of pins) {
@@ -123,6 +124,9 @@ function calcStorageFill(pins) {
         const used = vol * item.amount;
         totalUsed += used;
         tierUsed[getItemTier(vol)] += used;
+        if (jitaPrices && jitaPrices[item.type_id]) {
+          totalValue += (jitaPrices[item.type_id].sell_min || 0) * item.amount;
+        }
       }
     }
   }
@@ -142,7 +146,7 @@ function calcStorageFill(pins) {
     }
   }
 
-  return { used: totalUsed, capacity: totalCapacity, pct: Math.min(100, (totalUsed / totalCapacity) * 100), tiers };
+  return { used: totalUsed, capacity: totalCapacity, pct: Math.min(100, (totalUsed / totalCapacity) * 100), tiers, value: totalValue };
 }
 
 function getAlertState(pins, expiryDate) {
@@ -432,12 +436,19 @@ function AlertBadges({ alerts }) {
 
 // ============== STORAGE BAR ==============
 
+function formatISK(value) {
+  if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
+  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
+  if (value >= 1e3) return `${(value / 1e3).toFixed(0)}K`;
+  return value.toFixed(0);
+}
+
 function StorageBar({ storage }) {
   if (!storage) return <span className="date-muted">—</span>;
 
   const pct = Math.round(storage.pct);
   const tierTitle = (storage.tiers || []).map(t => `${t.tier}: ${t.pct.toFixed(1)}%`).join(', ');
-  const title = `${storage.used.toFixed(0)} / ${storage.capacity.toFixed(0)} m³${tierTitle ? ' — ' + tierTitle : ''}`;
+  const title = `${storage.used.toFixed(0)} / ${storage.capacity.toFixed(0)} m³${tierTitle ? ' — ' + tierTitle : ''}${storage.value ? ` — ${storage.value.toLocaleString()} ISK` : ''}`;
   const labelColor = pct > 80 ? '#AB324A' : pct > 60 ? '#fbd38d' : '#68d391';
 
   return (
@@ -448,6 +459,9 @@ function StorageBar({ storage }) {
         ))}
       </div>
       <span className="storage-bar-label" style={{ color: labelColor }}>{pct}%</span>
+      {storage.value > 0 && (
+        <span className="storage-value-label" style={{ color: '#a0aec0', fontSize: 10, marginLeft: 4 }}>{formatISK(storage.value)}</span>
+      )}
     </div>
   );
 }
@@ -491,7 +505,7 @@ function ColonyDetail({ characterId, planetId, planetType, upgradeLevel, onClose
   const isOffBalance = extractorUPHs.length === 2 && Math.abs(extractorUPHs[0] - extractorUPHs[1]) > BALANCE_THRESHOLD;
 
   // Storage fill
-  const storage = calcStorageFill(pins);
+  const storage = calcStorageFill(pins, layout?.jita_prices);
 
   const style = getPlanetStyle(planetType);
 
@@ -737,7 +751,7 @@ function CharacterColonies({ characterData, alertMode }) {
               const layoutPins = layout?.pins || [];
               const extractorPins = layoutPins.filter(p => p.extractor_details);
               const totalUPH = extractorPins.reduce((sum, p) => sum + calcExtractorUPH(p), 0);
-              const storage = layoutPins.length > 0 ? calcStorageFill(layoutPins) : null;
+              const storage = layoutPins.length > 0 ? calcStorageFill(layoutPins, layout?.jita_prices) : null;
 
               // Find the earliest extractor expiry for this colony
               const extractorExpiries = extractorPins
@@ -1023,7 +1037,7 @@ function ColonyCard({ colony, characterName, characterId }) {
   const routes = layout?.routes || [];
   const extractorPins = pins.filter(p => p.extractor_details);
   const factoryPins = pins.filter(p => p.factory_details || p.schematic_id);
-  const storage = pins.length > 0 ? calcStorageFill(pins) : null;
+  const storage = pins.length > 0 ? calcStorageFill(pins, layout?.jita_prices) : null;
   const totalUPH = extractorPins.reduce((s, p) => s + calcExtractorUPH(p), 0);
   const finalProducts = getFinalProducts(pins);
 
