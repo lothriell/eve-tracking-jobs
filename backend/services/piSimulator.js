@@ -260,6 +260,12 @@ function simulateColony(layout, typeVolumes, schematicInputs, now) {
         const cycleMs = cycleTime * 1000;
         if (lastCycleMs + cycleMs > now) {
           // Factory is in the middle of a cycle — it's producing, not idle
+          // Populate contents with the inputs being processed
+          for (const inp of inputs) {
+            if (getContentAmount(pin, inp.type_id) < inp.quantity) {
+              addToContents(pin, inp.type_id, inp.quantity - getContentAmount(pin, inp.type_id));
+            }
+          }
           pin.factory_details.simulated_idle = false;
           continue;
         }
