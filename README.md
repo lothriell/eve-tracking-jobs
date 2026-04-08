@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.12.0 | **Build Date:** 2026-04-08
+**Current Version:** v5.13.0 | **Build Date:** 2026-04-08
 
 A comprehensive web application for tracking EVE Online industry jobs, assets, planetary industry, and character management across multiple characters and corporations.
 
@@ -134,6 +134,11 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 - PI factory planet status fix, BPO badges in Assets, Safari rendering fixes
 - New ESI scopes: blueprints + contracts
 
+### v5.13.0 (2026-04-08)
+- Blueprint data switched to Hoboleaks (live SDE, auto-refreshes with game patches)
+- Fixed stale material quantities for carriers and all ships (was 9 months outdated)
+- ME formula corrected to EVE's multiplicative formula
+
 ### v5.12.0 (2026-04-08)
 - PI factory status fix — mid-cycle factories correctly show "Producing"
 - Estimated Jita sell value of PI storage per planet and per character
@@ -199,6 +204,7 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| v5.13.0 | 2026-04-08 | Blueprint data switched to Hoboleaks live SDE, ME formula fix, stale data resolved |
 | v5.12.0 | 2026-04-08 | PI factory status fix, storage value estimates (Jita sell), unified Active status |
 | v5.9.0 | 2026-04-04 | Production Planner: recursive build tree, BPO/BPC ownership, shopping list, blueprint ESI scope |
 | v5.8.0 | 2026-04-04 | Trading: multi-hub comparison, trade finder, configurable hubs (incl. nullsec structures), skill-based fees |

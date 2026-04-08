@@ -3,19 +3,31 @@
  * Downloads EVE universe data from Fuzzwork SDE dumps and imports into SQLite
  *
  * Data sources:
- *   - invTypes.csv    → type names (~80K items, ships, modules)
- *   - staStations.csv → NPC station names + system IDs (~5K stations)
- *   - mapSolarSystems.csv → system names + security (~8K systems)
- *   - mapRegions.csv → region names (~100 regions)
- *   - mapConstellations.csv → constellation names (~1100 constellations)
+ *   - invTypes.csv    → type names (~80K items, ships, modules) [Fuzzwork]
+ *   - staStations.csv → NPC station names + system IDs (~5K stations) [Fuzzwork]
+ *   - mapSolarSystems.csv → system names + security (~8K systems) [Fuzzwork]
+ *   - mapRegions.csv → region names (~100 regions) [Fuzzwork]
+ *   - mapConstellations.csv → constellation names (~1100 constellations) [Fuzzwork]
+ *   - blueprints.json → blueprint products/materials/times [Hoboleaks — auto-updated after TQ patches]
  *
- * Runs on first startup if cache is empty. Data rarely changes (SDE updates ~quarterly).
+ * Fuzzwork data imported on first startup (rarely changes).
+ * Blueprint data from Hoboleaks is re-imported when a new game revision is detected.
  */
 
 const axios = require('axios');
 const db = require('../database/db');
 
 const SDE_BASE = 'https://www.fuzzwork.co.uk/dump/latest';
+const HOBOLEAKS_BASE = 'https://sde.hoboleaks.space/tq';
+
+const ACTIVITY_NAME_TO_ID = {
+  manufacturing: 1,
+  research_time: 3,
+  research_material: 4,
+  copying: 5,
+  invention: 8,
+  reaction: 11,
+};
 
 // Parse CSV line handling quoted fields
 function parseCSVLine(line) {
@@ -263,54 +275,108 @@ async function importPlanetSchematics() {
   }
 }
 
-// Import blueprint products + materials (manufacturing data)
+// Check Hoboleaks for current game revision
+async function getHoboleaksRevision() {
+  try {
+    const resp = await axios.get(`${HOBOLEAKS_BASE}/meta.json`, { timeout: 15000 });
+    return String(resp.data?.revision || '');
+  } catch {
+    return null;
+  }
+}
+
+// Import blueprint data from Hoboleaks (auto-updated after every TQ patch)
+async function importBlueprintsFromHoboleaks() {
+  console.log('[SDE] Downloading blueprints.json from Hoboleaks...');
+  const resp = await axios.get(`${HOBOLEAKS_BASE}/blueprints.json`, {
+    timeout: 60000,
+    maxContentLength: 50 * 1024 * 1024,
+  });
+  const data = resp.data;
+
+  const productEntries = [];
+  const materialEntries = [];
+  const activityEntries = [];
+
+  for (const [bpIdStr, bp] of Object.entries(data)) {
+    const blueprintId = parseInt(bpIdStr);
+    if (!blueprintId) continue;
+
+    for (const [actName, actData] of Object.entries(bp.activities || {})) {
+      const activityId = ACTIVITY_NAME_TO_ID[actName];
+      if (!activityId) continue;
+
+      // Products
+      for (const prod of actData.products || []) {
+        if (prod.typeID && prod.quantity) {
+          productEntries.push({
+            blueprint_id: blueprintId,
+            activity_id: activityId,
+            product_type_id: prod.typeID,
+            quantity: prod.quantity,
+          });
+        }
+      }
+
+      // Materials (only for manufacturing + reaction)
+      if (activityId === 1 || activityId === 11) {
+        for (const mat of actData.materials || []) {
+          if (mat.typeID && mat.quantity > 0) {
+            materialEntries.push({
+              blueprint_id: blueprintId,
+              activity_id: activityId,
+              material_type_id: mat.typeID,
+              quantity: mat.quantity,
+            });
+          }
+        }
+      }
+
+      // Activity time
+      if (actData.time > 0) {
+        activityEntries.push({
+          blueprint_id: blueprintId,
+          activity_id: activityId,
+          time: actData.time,
+        });
+      }
+    }
+  }
+
+  // Clear old data and insert fresh
+  db.clearBlueprintData();
+
+  for (let i = 0; i < productEntries.length; i += 5000) {
+    db.saveBlueprintProducts(productEntries.slice(i, i + 5000));
+  }
+  console.log(`[SDE] Blueprint products: ${productEntries.length} entries imported`);
+
+  for (let i = 0; i < materialEntries.length; i += 5000) {
+    db.saveBlueprintMaterials(materialEntries.slice(i, i + 5000));
+  }
+  console.log(`[SDE] Blueprint materials: ${materialEntries.length} entries imported`);
+
+  for (let i = 0; i < activityEntries.length; i += 5000) {
+    db.saveBlueprintActivities(activityEntries.slice(i, i + 5000));
+  }
+  console.log(`[SDE] Blueprint activities: ${activityEntries.length} entries imported`);
+
+  return productEntries.length + materialEntries.length + activityEntries.length;
+}
+
+// Import blueprint products + materials (from Hoboleaks, with packaged volumes from Fuzzwork)
 async function importBlueprints() {
   try {
-    // Products: blueprint_id → what it produces
-    const productsCsv = await downloadCSV('industryActivityProducts.csv');
-    const productRows = parseCSV(productsCsv);
+    const count = await importBlueprintsFromHoboleaks();
 
-    const productEntries = [];
-    for (const row of productRows) {
-      const blueprintId = parseInt(row.typeID);
-      const activityId = parseInt(row.activityID);
-      const productTypeId = parseInt(row.productTypeID);
-      const quantity = parseInt(row.quantity) || 1;
-      if (blueprintId && activityId && productTypeId) {
-        productEntries.push({ blueprint_id: blueprintId, activity_id: activityId, product_type_id: productTypeId, quantity });
-      }
-    }
-
-    if (productEntries.length > 0) {
-      for (let i = 0; i < productEntries.length; i += 5000) {
-        db.saveBlueprintProducts(productEntries.slice(i, i + 5000));
-      }
-      console.log(`[SDE] Blueprint products: ${productEntries.length} entries imported`);
-    }
-
-    // Materials: blueprint_id → what it requires
-    const materialsCsv = await downloadCSV('industryActivityMaterials.csv');
-    const materialRows = parseCSV(materialsCsv);
-
-    const materialEntries = [];
-    for (const row of materialRows) {
-      const blueprintId = parseInt(row.typeID);
-      const activityId = parseInt(row.activityID);
-      const materialTypeId = parseInt(row.materialTypeID);
-      const quantity = parseInt(row.quantity) || 0;
-      if (blueprintId && activityId && materialTypeId && quantity > 0) {
-        materialEntries.push({ blueprint_id: blueprintId, activity_id: activityId, material_type_id: materialTypeId, quantity });
-      }
-    }
-
-    if (materialEntries.length > 0) {
-      for (let i = 0; i < materialEntries.length; i += 5000) {
-        db.saveBlueprintMaterials(materialEntries.slice(i, i + 5000));
-      }
-      console.log(`[SDE] Blueprint materials: ${materialEntries.length} entries imported`);
+    // Store the Hoboleaks revision
+    const revision = await getHoboleaksRevision();
+    if (revision) {
+      db.setSdeMeta('hoboleaks_revision', revision);
     }
 
     // Packaged volumes: override SDE assembled volumes with packaged volumes for ships
+    // (Still from Fuzzwork — Hoboleaks doesn't have this in CSV format)
     const volumesCsv = await downloadCSV('invVolumes.csv');
     const volumeRows = parseCSV(volumesCsv);
 
@@ -336,31 +402,33 @@ async function importBlueprints() {
       console.log(`[SDE] Packaged volumes: ${volumeUpdates.length} ship volumes updated`);
     }
 
-    // Activity times: blueprint_id → time per activity
-    const activityCsv = await downloadCSV('industryActivity.csv');
-    const activityRows = parseCSV(activityCsv);
-
-    const activityEntries = [];
-    for (const row of activityRows) {
-      const blueprintId = parseInt(row.typeID);
-      const activityId = parseInt(row.activityID);
-      const time = parseInt(row.time) || 0;
-      if (blueprintId && activityId && time > 0) {
-        activityEntries.push({ blueprint_id: blueprintId, activity_id: activityId, time });
-      }
-    }
-
-    if (activityEntries.length > 0) {
-      for (let i = 0; i < activityEntries.length; i += 5000) {
-        db.saveBlueprintActivities(activityEntries.slice(i, i + 5000));
-      }
-      console.log(`[SDE] Blueprint activities: ${activityEntries.length} entries imported`);
-    }
-
-    return productEntries.length + materialEntries.length + activityEntries.length;
+    return count;
   } catch (error) {
     console.error('[SDE] Failed to import blueprints:', error.message);
     return 0;
+  }
+}
+
+// Check if blueprint data needs refreshing (new Hoboleaks revision available)
+async function refreshBlueprintsIfStale() {
+  try {
+    const currentRevision = await getHoboleaksRevision();
+    if (!currentRevision) {
+      console.log('[SDE] Could not reach Hoboleaks — skipping blueprint freshness check');
+      return false;
+    }
+    const storedRevision = db.getSdeMeta('hoboleaks_revision');
+    if (storedRevision === currentRevision) {
+      console.log(`[SDE] Blueprints up to date (revision ${currentRevision})`);
+      return false;
+    }
+    console.log(`[SDE] New blueprint data available: ${storedRevision || 'none'} → ${currentRevision}`);
+    const count = await importBlueprints();
+    console.log(`[SDE] Blueprint refresh complete: ${count} entries`);
+    return true;
+  } catch (error) {
+    console.error('[SDE] Blueprint refresh failed:', error.message);
+    return false;
   }
 }
 
@@ -385,7 +453,9 @@ async function importSDE() {
   const hasPackagedVolumes = procurerVol && procurerVol.extra_data && parseFloat(procurerVol.extra_data) > 1;
 
   if (typeCount > 50000 && hasVolumes && schematicsCount > 0 && blueprintsCount > 0 && activitiesCount > 0 && hasPackagedVolumes) {
-    console.log(`[SDE] Already have ${typeCount} types + ${schematicsCount} schematics + ${blueprintsCount} blueprints + ${activitiesCount} activities + packaged volumes, skipping SDE import`);
+    console.log(`[SDE] Already have ${typeCount} types + ${schematicsCount} schematics + ${blueprintsCount} blueprints + ${activitiesCount} activities + packaged volumes`);
+    // Check if blueprint data is stale (new Hoboleaks revision available)
+    await refreshBlueprintsIfStale();
     return;
   }
 
@@ -448,5 +518,8 @@ module.exports = {
   importRegions,
   importConstellations,
   importPlanetSchematics,
-  importBlueprints
+  importBlueprints,
+  refreshBlueprintsIfStale,
+  importBlueprintsFromHoboleaks,
+  getHoboleaksRevision,
 };

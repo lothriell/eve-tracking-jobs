@@ -207,6 +207,13 @@ CREATE TABLE IF NOT EXISTS blueprint_materials (
 );
 CREATE INDEX IF NOT EXISTS idx_bp_materials ON blueprint_materials(blueprint_id, activity_id);
 
+-- SDE metadata (tracks data source revision for staleness checks)
+CREATE TABLE IF NOT EXISTS sde_meta (
+    key TEXT PRIMARY KEY,
+    value TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Hub refresh tracking (keyed by station_id, shared globally)
 CREATE TABLE IF NOT EXISTS hub_refresh_status (
     station_id INTEGER PRIMARY KEY,

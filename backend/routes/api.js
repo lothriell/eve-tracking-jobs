@@ -8,7 +8,7 @@ const { requireFeature, requireAdmin, getEnabledFeatures } = require('../middlew
 // Version endpoint (for deployment verification)
 router.get('/version', (req, res) => {
   res.json({ 
-    version: '5.12.0',
+    version: '5.13.0',
     name: 'EVE Industry Tracker',
     buildDate: '2026-04-08'
   });
@@ -406,6 +406,20 @@ router.delete('/admin/users/:userId/features/:featureName', ...adminAuth, adminC
 router.get('/admin/corps', ...adminAuth, adminController.getCorpGrants);
 router.post('/admin/corps', ...adminAuth, adminController.grantCorpFeature);
 router.delete('/admin/corps/:corpId/features/:featureName', ...adminAuth, adminController.revokeCorpFeature);
+router.post('/admin/sde/refresh', ...adminAuth, async (req, res) => {
+  try {
+    const { importBlueprintsFromHoboleaks } = require('../services/sdeImport');
+    const db = require('../database/db');
+    db.clearBlueprintData();
+    const count = await importBlueprintsFromHoboleaks();
+    const { getHoboleaksRevision } = require('../services/sdeImport');
+    const revision = await getHoboleaksRevision();
+    if (revision) db.setSdeMeta('hoboleaks_revision', revision);
+    res.json({ success: true, entries: count, revision });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // ===== TRADING ENDPOINTS =====
 const tradeAuth = [requireAuth, requireFeature('trading'), tradingController.ensureHubsSeeded];

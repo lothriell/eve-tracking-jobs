@@ -2,6 +2,16 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.13.0] - 2026-04-08
+
+### Blueprint Data Fix — Hoboleaks Live SDE
+- **Stale SDE data fixed** — blueprint material data was imported from Fuzzwork (last updated July 2025) and never refreshed. CCP has since rebalanced many ships (all carriers, likely more). Quantities were significantly wrong (e.g. Nidhoggur G-O Trigger: 28 instead of correct 11)
+- **Switched to Hoboleaks** — blueprint data now sourced from `sde.hoboleaks.space/tq/blueprints.json`, which auto-updates within minutes of every TQ patch
+- **Auto-refresh on startup** — backend checks Hoboleaks revision on each startup and re-imports if a new game patch is detected
+- **Admin SDE refresh** — `POST /api/admin/sde/refresh` endpoint for manual blueprint data refresh
+- **ME formula fix** — changed from additive percentages to EVE's actual multiplicative formula: `(1 - ME/100) × (1 - struct/100) × (1 - rig/100)`
+- **Per-run material rounding fix** — now uses EVE's actual formula `max(runs, ceil(runs × baseQty × meFactor))` instead of ceiling per-unit then multiplying
+
 ## [v5.12.0] - 2026-04-08
 
 ### PI Factory Status Fix & Storage Value

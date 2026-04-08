@@ -488,13 +488,13 @@ async function buildVsBuy(req, res) {
 
     // === PATH B: Import components, build locally ===
     // Apply Material Efficiency: ME reduces materials by 1% per level (max 10%)
-    // Formula: actual_qty = max(1, ceil(base_qty * (1 - ME/100)))
+    // EVE formula: max(runs, ceil(runs × baseQty × (1 - ME/100)))
     const meFactor = 1 - meLevel / 100;
 
     const materialDetails = materials.map(m => {
       const baseQty = m.quantity;
+      const qtyNeeded = Math.max(quantity, Math.ceil(quantity * baseQty * meFactor));
       const meQty = Math.max(1, Math.ceil(baseQty * meFactor));
-      const qtyNeeded = meQty * quantity;
       const price = jitaPrices[m.material_type_id]?.sell_min || 0;
       const vol = volumes[m.material_type_id] || DEFAULT_VOLUME;
       return {
@@ -577,7 +577,7 @@ async function buildVsBuy(req, res) {
 }
 
 // Resolve a build tree recursively
-function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache, priceCache, volumeCache, facilityMeReduction = 0, jobCostParams = null, teFactor = 1) {
+function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache, priceCache, volumeCache, facilityMeFactor = 1, jobCostParams = null, teFactor = 1) {
   const name = MINERAL_FIXES[typeId]?.name || nameCache[typeId] || `Type ${typeId}`;
   const price = priceCache[typeId]?.sell_min || 0;
   const volume = MINERAL_FIXES[typeId]?.volume || volumeCache[typeId] || DEFAULT_VOLUME;
@@ -625,9 +625,8 @@ function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache,
 
   const jobTime = db.getBlueprintActivityTime(bp.blueprint_id, activityId);
   // ME only applies to manufacturing, not reactions
-  // Total ME = blueprint ME + facility ME (structure + rig)
-  const totalMe = activityId === 1 ? meLevel + facilityMeReduction : 0;
-  const meFactor = activityId === 1 ? Math.max(0, 1 - totalMe / 100) : 1;
+  // EVE uses multiplicative bonuses: (1 - ME/100) × (1 - struct/100) × (1 - rig/100)
+  const meFactor = activityId === 1 ? (1 - meLevel / 100) * facilityMeFactor : 1;
   // Reactions produce in batches (e.g., 200 per run) — adjust quantity
   const batchSize = bp.quantity || 1;
   const runsNeeded = Math.ceil(quantity / batchSize);
@@ -661,7 +660,7 @@ function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache,
 
   // Recurse into children
   // For reactions: materials are per run, multiply by runsNeeded
-  // For manufacturing: materials are per unit, apply ME, multiply by quantity
+  // For manufacturing: EVE formula = max(runs, ceil(runs × baseQty × meFactor))
   const children = materials.map(m => {
     const baseQty = m.quantity;
     let totalQty;
@@ -669,11 +668,10 @@ function resolveBuildNode(typeId, quantity, meLevel, depth, maxDepth, nameCache,
       // Reaction: materials per run × runs needed
       totalQty = baseQty * runsNeeded;
     } else {
-      // Manufacturing: apply ME, multiply by quantity
-      const meQty = Math.max(1, Math.ceil(baseQty * meFactor));
-      totalQty = meQty * quantity;
+      // Manufacturing: EVE's actual formula — ceiling applied to total, not per-unit
+      totalQty = Math.max(runsNeeded, Math.ceil(runsNeeded * baseQty * meFactor));
     }
-    return resolveBuildNode(m.material_type_id, totalQty, meLevel, depth + 1, maxDepth, nameCache, priceCache, volumeCache, facilityMeReduction, jobCostParams, teFactor);
+    return resolveBuildNode(m.material_type_id, totalQty, meLevel, depth + 1, maxDepth, nameCache, priceCache, volumeCache, facilityMeFactor, jobCostParams, teFactor);
   });
 
   // Calculate job installation cost using EVE's actual formula:
@@ -793,8 +791,8 @@ async function getBuildTree(req, res) {
     const secMultiplier = { high: 1.0, low: 1.9, nullsec: 2.1 }[sec] || 2.1;
     const rigMeBonus = rigMeBase * secMultiplier;
 
-    // Total facility ME reduction (%)
-    const facilityMeReduction = structureMeBonus + rigMeBonus;
+    // Facility ME factor (multiplicative, matching EVE's actual formula)
+    const facilityMeFactor = (1 - structureMeBonus / 100) * (1 - rigMeBonus / 100);
 
     // Structure TE bonus (time reduction %)
     const structureTeBonus = {
@@ -839,7 +837,7 @@ async function getBuildTree(req, res) {
     volumeCache[productTypeId] = pv?.extra_data ? parseFloat(pv.extra_data) : DEFAULT_VOLUME;
 
     // Build the tree
-    const tree = resolveBuildNode(productTypeId, quantity, meLevel, 0, maxDepth, nameCache, priceCache, volumeCache, facilityMeReduction, jobCostParams, teFactor);
+    const tree = resolveBuildNode(productTypeId, quantity, meLevel, 0, maxDepth, nameCache, priceCache, volumeCache, facilityMeFactor, jobCostParams, teFactor);
 
     // Fetch owned blueprints and annotate tree nodes
     let ownedBlueprints = {};
@@ -1016,7 +1014,7 @@ async function getBuildTree(req, res) {
       },
       shopping_list: shoppingList,
       missing_blueprints: missingBPList,
-      config: { meLevel, teLevel, maxDepth, shippingMinFee, shippingPerM3Rate, collateralPct, maxVolumePerContract, structure, rig, sec, taxRate, systemId, facilityMeReduction: Math.round(facilityMeReduction * 100) / 100, teFactor: Math.round(teFactor * 10000) / 10000 },
+      config: { meLevel, teLevel, maxDepth, shippingMinFee, shippingPerM3Rate, collateralPct, maxVolumePerContract, structure, rig, sec, taxRate, systemId, facilityMeFactor: Math.round(facilityMeFactor * 10000) / 10000, teFactor: Math.round(teFactor * 10000) / 10000 },
     });
   } catch (error) {
     console.error('Build tree error:', error.message);

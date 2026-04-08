@@ -531,6 +531,25 @@ class DB {
     return row?.count || 0;
   }
 
+  clearBlueprintData() {
+    this.db.exec(`
+      DELETE FROM blueprint_products;
+      DELETE FROM blueprint_materials;
+      DELETE FROM blueprint_activities;
+    `);
+  }
+
+  getSdeMeta(key) {
+    const row = this.db.prepare('SELECT value FROM sde_meta WHERE key = ?').get(key);
+    return row?.value || null;
+  }
+
+  setSdeMeta(key, value) {
+    this.db.prepare(
+      'INSERT OR REPLACE INTO sde_meta (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)'
+    ).run(key, value);
+  }
+
   // ===== TYPE SEARCH =====
 
   searchTypes(query, limit = 20) {
