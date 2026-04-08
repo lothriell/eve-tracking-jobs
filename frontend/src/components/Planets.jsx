@@ -1060,7 +1060,7 @@ function getColonyStatus(pins, routes, now) {
   return { label: 'Idle', class: 'status-idle', reason: null };
 }
 
-function ColonyCard({ colony, characterName, characterId }) {
+function ColonyCard({ colony, characterName, characterId, onValueUpdate }) {
   const [layout, setLayout] = useState(null);
   const [now, setNow] = useState(Date.now());
 
@@ -1086,6 +1086,11 @@ function ColonyCard({ colony, characterName, characterId }) {
   const storage = pins.length > 0 ? calcStorageFill(pins, layout?.jita_prices) : null;
   const totalUPH = extractorPins.reduce((s, p) => s + calcExtractorUPH(p), 0);
   const finalProducts = getFinalProducts(pins);
+
+  // Report value up to parent for character total
+  useEffect(() => {
+    if (onValueUpdate) onValueUpdate(colony.planet_id, storage?.value || 0);
+  }, [storage?.value]);
 
   // Find earliest extractor expiry
   const extractorExpiries = extractorPins.map(p => p.expiry_time).filter(Boolean);
@@ -1195,6 +1200,9 @@ function ColonyCard({ colony, characterName, characterId }) {
         {totalUPH > 0 && (
           <div className="colony-card-rate">{totalUPH.toLocaleString()} u/h</div>
         )}
+        {storage?.value > 0 && (
+          <div className="colony-card-value" title={(storage.valueBreakdown || []).map(item => `${item.name}: ${formatISK(item.value)}`).join('\n')}>{formatISK(storage.value)}</div>
+        )}
       </div>
 
       {/* Status reason */}
@@ -1202,6 +1210,45 @@ function ColonyCard({ colony, characterName, characterId }) {
         <div className="colony-card-reason">{colonyStatus.reason}</div>
       )}
 
+    </div>
+  );
+}
+
+// ============== GRID CHARACTER ROW ==============
+
+function GridCharacterRow({ charData }) {
+  const [colonyValues, setColonyValues] = useState({});
+
+  const handleValueUpdate = useCallback((planetId, value) => {
+    setColonyValues(prev => {
+      if (prev[planetId] === value) return prev;
+      return { ...prev, [planetId]: value };
+    });
+  }, []);
+
+  const totalValue = Object.values(colonyValues).reduce((s, v) => s + v, 0);
+
+  return (
+    <div className="pi-grid-row">
+      <div className="pi-grid-character">
+        {charData.character_name}
+        {totalValue > 0 && (
+          <span style={{ color: '#cbd5e0', fontWeight: 400, marginLeft: 8, fontFamily: 'monospace', fontSize: 12 }}>
+            {formatISK(totalValue)} ISK
+          </span>
+        )}
+      </div>
+      <div className="pi-grid-colonies">
+        {charData.colonies.map(colony => (
+          <ColonyCard
+            key={colony.planet_id}
+            colony={colony}
+            characterName={charData.character_name}
+            characterId={charData.character_id}
+            onValueUpdate={handleValueUpdate}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -1330,19 +1377,7 @@ function Planets({ onError, refreshKey }) {
       ) : viewMode === 'grid' ? (
         <div className="pi-grid-container">
           {filteredPlanetData.filter(c => c.colonies?.length > 0).map(charData => (
-            <div className="pi-grid-row" key={charData.character_id}>
-              <div className="pi-grid-character">{charData.character_name}</div>
-              <div className="pi-grid-colonies">
-                {charData.colonies.map(colony => (
-                  <ColonyCard
-                    key={colony.planet_id}
-                    colony={colony}
-                    characterName={charData.character_name}
-                    characterId={charData.character_id}
-                  />
-                ))}
-              </div>
-            </div>
+            <GridCharacterRow key={charData.character_id} charData={charData} />
           ))}
         </div>
       ) : (

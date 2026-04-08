@@ -1092,6 +1092,13 @@
   font-family: 'Consolas', 'Monaco', monospace;
 }
 
+.colony-card-value {
+  font-size: 10px;
+  color: #cbd5e0;
+  font-family: 'Consolas', 'Monaco', monospace;
+  cursor: default;
+}
+
 /* Status label for factory-only colonies */
 .colony-card-status-label {
   font-size: 11px;
