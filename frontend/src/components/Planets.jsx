@@ -112,6 +112,7 @@ function calcStorageFill(pins, jitaPrices) {
   let totalCapacity = 0;
   let totalValue = 0;
   const tierUsed = { P0: 0, P1: 0, P2: 0, P3: 0, P4: 0 };
+  const itemValues = {}; // { typeName: { amount, value } }
 
   for (const pin of pins) {
     const cap = getStorageCapacity(pin);
@@ -125,7 +126,15 @@ function calcStorageFill(pins, jitaPrices) {
         totalUsed += used;
         tierUsed[getItemTier(vol)] += used;
         if (jitaPrices && jitaPrices[item.type_id]) {
-          totalValue += (jitaPrices[item.type_id].sell_min || 0) * item.amount;
+          const itemValue = (jitaPrices[item.type_id].sell_min || 0) * item.amount;
+          totalValue += itemValue;
+          const name = item.type_name || `Type ${item.type_id}`;
+          if (itemValues[name]) {
+            itemValues[name].amount += item.amount;
+            itemValues[name].value += itemValue;
+          } else {
+            itemValues[name] = { amount: item.amount, value: itemValue };
+          }
         }
       }
     }
@@ -146,7 +155,12 @@ function calcStorageFill(pins, jitaPrices) {
     }
   }
 
-  return { used: totalUsed, capacity: totalCapacity, pct: Math.min(100, (totalUsed / totalCapacity) * 100), tiers, value: totalValue };
+  // Sort items by value descending
+  const valueBreakdown = Object.entries(itemValues)
+    .sort((a, b) => b[1].value - a[1].value)
+    .map(([name, data]) => ({ name, ...data }));
+
+  return { used: totalUsed, capacity: totalCapacity, pct: Math.min(100, (totalUsed / totalCapacity) * 100), tiers, value: totalValue, valueBreakdown };
 }
 
 function getAlertState(pins, expiryDate) {
@@ -448,19 +462,24 @@ function StorageBar({ storage }) {
 
   const pct = Math.round(storage.pct);
   const tierTitle = (storage.tiers || []).map(t => `${t.tier}: ${t.pct.toFixed(1)}%`).join(', ');
-  const title = `${storage.used.toFixed(0)} / ${storage.capacity.toFixed(0)} m³${tierTitle ? ' — ' + tierTitle : ''}${storage.value ? ` — ${storage.value.toLocaleString()} ISK` : ''}`;
+  const storageTitle = `${storage.used.toFixed(0)} / ${storage.capacity.toFixed(0)} m³\n${tierTitle}`;
+  const valueTitle = (storage.valueBreakdown || [])
+    .map(item => `${item.name}: ${item.amount.toLocaleString()} × ${formatISK(item.value / item.amount)} = ${formatISK(item.value)}`)
+    .join('\n');
   const labelColor = pct > 80 ? '#AB324A' : pct > 60 ? '#fbd38d' : '#68d391';
 
   return (
-    <div className="storage-bar-container" title={title}>
-      <div className="storage-bar-track">
-        {(storage.tiers || []).map((t, i) => (
-          <div key={t.tier} className="storage-bar-segment" style={{ width: `${t.pct}%`, backgroundColor: t.color }} title={`${t.tier}: ${t.pct.toFixed(1)}%`} />
-        ))}
+    <div className="storage-bar-container" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      <div title={storageTitle} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div className="storage-bar-track">
+          {(storage.tiers || []).map((t, i) => (
+            <div key={t.tier} className="storage-bar-segment" style={{ width: `${t.pct}%`, backgroundColor: t.color }} />
+          ))}
+        </div>
+        <span className="storage-bar-label" style={{ color: labelColor }}>{pct}%</span>
       </div>
-      <span className="storage-bar-label" style={{ color: labelColor }}>{pct}%</span>
       {storage.value > 0 && (
-        <span className="storage-value-label" style={{ color: '#a0aec0', fontSize: 10, marginLeft: 4 }}>{formatISK(storage.value)}</span>
+        <span title={valueTitle} style={{ color: '#cbd5e0', fontSize: 11, fontFamily: 'monospace', cursor: 'default' }}>{formatISK(storage.value)}</span>
       )}
     </div>
   );
