@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.11.0 | **Build Date:** 2026-04-07
+**Current Version:** v5.12.0 | **Build Date:** 2026-04-08
 
 A comprehensive web application for tracking EVE Online industry jobs, assets, planetary industry, and character management across multiple characters and corporations.
 
@@ -60,8 +60,9 @@ A comprehensive web application for tracking EVE Online industry jobs, assets, p
 ### Planetary Industry
 - Colony overview with list and grid views
 - **Product icons + tier badges** (P1–P4) on grid cards and list table
-- **Enhanced colony statuses** — Active, Extracting, Producing, Stopped, Attention, Setup, Idle with reason text
+- **Enhanced colony statuses** — Active, Producing, Waiting, Stopped, Attention, Setup, Idle with reason text
 - **Color-coded storage breakdown** by PI tier (P0 gray, P1 blue, P2 teal, P3 gold, P4 green)
+- **Estimated storage value** — Jita sell price per planet with per-item breakdown tooltip
 - Live countdown timers with 8-level color urgency
 - Extraction rate calculation + balance detection
 - Storage fill tracking with visual bars and alerts
@@ -133,6 +134,12 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 - PI factory planet status fix, BPO badges in Assets, Safari rendering fixes
 - New ESI scopes: blueprints + contracts
 
+### v5.12.0 (2026-04-08)
+- PI factory status fix — mid-cycle factories correctly show "Producing"
+- Estimated Jita sell value of PI storage per planet and per character
+- Unified Active status for extraction planets
+- Consistent font sizes across list and grid views
+
 ### v5.8.0 (2026-04-04)
 - Trading Feature — multi-hub price comparison + trade finder (owner-locked)
 - Configurable hubs: 5 NPC defaults + custom player structures (nullsec)
@@ -192,6 +199,7 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| v5.12.0 | 2026-04-08 | PI factory status fix, storage value estimates (Jita sell), unified Active status |
 | v5.9.0 | 2026-04-04 | Production Planner: recursive build tree, BPO/BPC ownership, shopping list, blueprint ESI scope |
 | v5.8.0 | 2026-04-04 | Trading: multi-hub comparison, trade finder, configurable hubs (incl. nullsec structures), skill-based fees |
 | v5.7.0 | 2026-04-03 | PI product icons + tier badges, enhanced colony statuses, storage tier colors, auto-refresh countdown |

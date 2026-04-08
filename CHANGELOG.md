@@ -2,6 +2,19 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.12.0] - 2026-04-08
+
+### PI Factory Status Fix & Storage Value
+- **Factory planet status fix** — mid-cycle factories no longer incorrectly show "Waiting"; simulation now detects factories currently producing and marks them correctly
+- **Unscheduled factory input pull** — factories that were never scheduled in simulation now pull inputs from storage via routes, so the idle check reflects available materials
+- **Mid-cycle factory contents** — running factories show their input materials instead of empty contents
+- **Unified Active status** — "Extracting" and "Active" merged into single "Active" status for all planets with running extractors
+- **Estimated storage value** — each planet shows Jita sell value of stored PI materials, with per-item breakdown on hover
+- **Value column in list view** — separate column for ISK value next to storage bar
+- **Character total value** — sum of all colony values shown in character section header (both list and grid views)
+- **Grid card value** — colony cards in grid view show per-planet ISK value with tooltip breakdown
+- **Unified font sizes** — consistent 12px in list table, 11px in grid cards across all numeric fields
+
 ## [v5.11.0] - 2026-04-07
 
 ### Production Planner Improvements
