@@ -984,8 +984,7 @@ function getColonyStatus(pins, routes, now) {
   const producing = statuses.includes('producing');
   const hasExtractors = pins.some(p => p.extractor_details);
 
-  if (extracting && producing) return { label: 'Active', class: 'status-active', reason: null };
-  if (extracting) return { label: 'Extracting', class: 'status-extracting', reason: null };
+  if (extracting) return { label: 'Active', class: 'status-active', reason: null };
   if (producing && !hasExtractors) return { label: 'Producing', class: 'status-producing', reason: 'Factory planet' };
   if (producing) return { label: 'Producing', class: 'status-producing', reason: null };
 
