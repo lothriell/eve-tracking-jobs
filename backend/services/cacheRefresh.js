@@ -13,6 +13,7 @@ const axios = require('axios');
 const db = require('../database/db');
 const { importSDE } = require('./sdeImport');
 const corpJobArchive = require('./corpJobArchive');
+const characterJobArchive = require('./characterJobArchive');
 
 const ESI_BASE = 'https://esi.evetech.net/latest';
 const DS = 'tranquility';
@@ -20,6 +21,7 @@ const DS = 'tranquility';
 let refreshTimer = null;
 let hubRefreshTimer = null;
 let corpArchiveTimer = null;
+let characterArchiveTimer = null;
 let isRefreshing = false;
 let isHubRefreshing = false;
 
@@ -236,7 +238,14 @@ async function refreshHubPrices() {
 
           if (prices.length > 0) {
             const count = db.setHubPrices(hub.station_id, prices);
-            console.log(`[CACHE]   ${hub.name}: ${count} types cached`);
+            // One-per-day history snapshot for price-trend charts. INSERT
+            // OR IGNORE keeps day-1 and no-ops subsequent same-day refreshes.
+            const snapshotted = db.snapshotHubPrices(hub.station_id);
+            if (snapshotted > 0) {
+              console.log(`[CACHE]   ${hub.name}: ${count} types cached, ${snapshotted} daily history rows`);
+            } else {
+              console.log(`[CACHE]   ${hub.name}: ${count} types cached`);
+            }
             totalTypes += count;
           }
 
@@ -290,6 +299,14 @@ async function runFullRefresh() {
     // Multi-hub prices (also refreshed on separate 30-min timer)
     await refreshHubPrices();
 
+    // Prune old hub price history (keep 180 days by default)
+    try {
+      const pruned = db.pruneHubPriceHistory(180);
+      if (pruned > 0) console.log(`[CACHE] Pruned ${pruned} hub price history rows older than 180 days`);
+    } catch (err) {
+      console.error('[CACHE] Prune hub price history failed:', err.message);
+    }
+
     const stats = db.getCacheStats();
     const elapsed = ((Date.now() - start) / 1000).toFixed(1);
     console.log(`[CACHE] === Refresh complete in ${elapsed}s ===`);
@@ -329,11 +346,20 @@ async function runCorpArchive() {
   }
 }
 
+async function runCharacterArchive() {
+  try {
+    await characterJobArchive.runArchive();
+  } catch (error) {
+    console.error('[CACHE] Character archive error:', error.message);
+  }
+}
+
 // ===== SCHEDULER =====
 function startCacheRefresh() {
   // Run immediately on startup
   setTimeout(() => runFullRefresh(), 5000); // 5s delay to let DB initialize
   setTimeout(() => runCorpArchive(), 20000); // first corp archive 20s in
+  setTimeout(() => runCharacterArchive(), 40000); // personal archive 40s in
 
   // Full refresh every 6 hours
   const SIX_HOURS = 6 * 60 * 60 * 1000;
@@ -343,11 +369,13 @@ function startCacheRefresh() {
   const THIRTY_MIN = 30 * 60 * 1000;
   hubRefreshTimer = setInterval(() => runHubRefresh(), THIRTY_MIN);
 
-  // Corp job archive every 15 minutes (ESI retains completed jobs ~30 days)
+  // Corp and character job archives every 15 minutes. ESI retains completed
+  // jobs ~30 days, so polling often keeps us well inside the window.
   const FIFTEEN_MIN = 15 * 60 * 1000;
   corpArchiveTimer = setInterval(() => runCorpArchive(), FIFTEEN_MIN);
+  characterArchiveTimer = setInterval(() => runCharacterArchive(), FIFTEEN_MIN);
 
-  console.log('[CACHE] Background refresh scheduled (full: 6h, hub prices: 30m, corp archive: 15m)');
+  console.log('[CACHE] Background refresh scheduled (full: 6h, hub prices: 30m, corp + char archives: 15m)');
 }
 
 function stopCacheRefresh() {
@@ -363,6 +391,10 @@ function stopCacheRefresh() {
     clearInterval(corpArchiveTimer);
     corpArchiveTimer = null;
   }
+  if (characterArchiveTimer) {
+    clearInterval(characterArchiveTimer);
+    characterArchiveTimer = null;
+  }
 }
 
 module.exports = {
@@ -374,4 +406,5 @@ module.exports = {
   refreshHubPrices,
   runHubRefresh,
   runCorpArchive,
+  runCharacterArchive,
 };

@@ -1047,6 +1047,80 @@ class DB {
     return this.db.prepare(`SELECT COUNT(*) as c FROM corp_job_history ${where}`).get(...params).c;
   }
 
+  // ===== CHARACTER JOB HISTORY =====
+
+  insertCharacterJobHistory(jobs) {
+    if (!jobs || jobs.length === 0) return 0;
+    const stmt = this.db.prepare(
+      `INSERT OR IGNORE INTO character_job_history (
+        job_id, character_id, character_name,
+        activity_id, blueprint_type_id, product_type_id, product_name,
+        product_group_id, product_category_id, product_group_name, product_category_name,
+        runs, licensed_runs, facility_id, location_id,
+        start_date, end_date, status, cost
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    );
+    let inserted = 0;
+    const batch = this.db.transaction((items) => {
+      for (const j of items) {
+        const r = stmt.run(
+          j.job_id, j.character_id, j.character_name || null,
+          j.activity_id, j.blueprint_type_id || null, j.product_type_id || null, j.product_name || null,
+          j.product_group_id || null, j.product_category_id || null,
+          j.product_group_name || null, j.product_category_name || null,
+          j.runs, j.licensed_runs || null, j.facility_id || null, j.location_id || null,
+          j.start_date, j.end_date, j.status || null, j.cost || 0
+        );
+        inserted += r.changes;
+      }
+    });
+    batch(jobs);
+    return inserted;
+  }
+
+  getCharacterJobHistoryStats(characterId) {
+    return this.db.prepare(
+      `SELECT COUNT(*) as count, MIN(end_date) as oldest, MAX(end_date) as newest,
+              MAX(archived_at) as last_archived
+       FROM character_job_history WHERE character_id = ?`
+    ).get(characterId);
+  }
+
+  // ===== HUB PRICE HISTORY =====
+
+  /** Append one-per-day snapshots for a station's current hub_prices rows. */
+  snapshotHubPrices(stationId) {
+    // capture_date is the UTC YYYY-MM-DD; PRIMARY KEY + INSERT OR IGNORE
+    // means only the first refresh of each day for a given (type, station)
+    // actually lands a row.
+    const today = new Date().toISOString().slice(0, 10);
+    const inserted = this.db.prepare(
+      `INSERT OR IGNORE INTO hub_price_history (
+        type_id, station_id, capture_date, sell_min, buy_max, sell_volume, buy_volume
+       )
+       SELECT type_id, ?, ?, sell_min, buy_max, sell_volume, buy_volume
+       FROM hub_prices WHERE station_id = ?`
+    ).run(stationId, today, stationId);
+    return inserted.changes;
+  }
+
+  queryHubPriceHistory(typeId, stationId, days = 90) {
+    return this.db.prepare(
+      `SELECT capture_date, sell_min, buy_max, sell_volume, buy_volume
+       FROM hub_price_history
+       WHERE type_id = ? AND station_id = ?
+         AND capture_date >= date('now', '-' || ? || ' days')
+       ORDER BY capture_date ASC`
+    ).all(typeId, stationId, days);
+  }
+
+  /** Retention cleanup — keep six months of daily history by default. */
+  pruneHubPriceHistory(keepDays = 180) {
+    return this.db.prepare(
+      `DELETE FROM hub_price_history WHERE capture_date < date('now', '-' || ? || ' days')`
+    ).run(keepDays).changes;
+  }
+
   close() {
     if (this.db) {
       this.db.close();

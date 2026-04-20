@@ -300,3 +300,52 @@ CREATE INDEX IF NOT EXISTS idx_corp_job_history_product ON corp_job_history(prod
 CREATE INDEX IF NOT EXISTS idx_corp_job_history_installer ON corp_job_history(installer_id, end_date);
 CREATE INDEX IF NOT EXISTS idx_corp_job_history_group ON corp_job_history(product_group_id, end_date);
 CREATE INDEX IF NOT EXISTS idx_corp_job_history_activity ON corp_job_history(activity_id, end_date);
+
+-- Personal industry job history (append-only, mirrors corp_job_history).
+-- Populated by characterJobArchive.js every 15 min. ESI retains ~30 days
+-- of completed jobs, so history is forward-only after ship date.
+CREATE TABLE IF NOT EXISTS character_job_history (
+    job_id INTEGER PRIMARY KEY,
+    character_id INTEGER NOT NULL,
+    character_name TEXT,
+    activity_id INTEGER NOT NULL,
+    blueprint_type_id INTEGER,
+    product_type_id INTEGER,
+    product_name TEXT,
+    product_group_id INTEGER,
+    product_category_id INTEGER,
+    product_group_name TEXT,
+    product_category_name TEXT,
+    runs INTEGER NOT NULL,
+    licensed_runs INTEGER,
+    facility_id INTEGER,
+    location_id INTEGER,
+    start_date DATETIME NOT NULL,
+    end_date DATETIME NOT NULL,
+    status TEXT,
+    cost REAL,
+    archived_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_char_job_history_char_end ON character_job_history(character_id, end_date);
+CREATE INDEX IF NOT EXISTS idx_char_job_history_product ON character_job_history(product_type_id, end_date);
+CREATE INDEX IF NOT EXISTS idx_char_job_history_group ON character_job_history(product_group_id, end_date);
+CREATE INDEX IF NOT EXISTS idx_char_job_history_activity ON character_job_history(activity_id, end_date);
+
+-- Daily hub price history — one snapshot per (type, hub, UTC-day). Populated
+-- after every hub price refresh; (type_id, station_id, capture_date) PK +
+-- INSERT OR IGNORE means only the first refresh of each UTC day actually
+-- stores. Caps volume at ~65K rows/day (vs ~3M if we stored every 30-min
+-- refresh). Unlocks price-trend charts in the Trading view.
+CREATE TABLE IF NOT EXISTS hub_price_history (
+    type_id INTEGER NOT NULL,
+    station_id INTEGER NOT NULL,
+    capture_date TEXT NOT NULL,
+    sell_min REAL DEFAULT 0,
+    buy_max REAL DEFAULT 0,
+    sell_volume INTEGER DEFAULT 0,
+    buy_volume INTEGER DEFAULT 0,
+    captured_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (type_id, station_id, capture_date)
+);
+CREATE INDEX IF NOT EXISTS idx_hub_price_history_date ON hub_price_history(capture_date);
+CREATE INDEX IF NOT EXISTS idx_hub_price_history_type_time ON hub_price_history(type_id, station_id, capture_date);
