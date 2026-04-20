@@ -254,6 +254,62 @@ function CorporationIndustryStats({ onError, refreshKey }) {
             </section>
           )}
 
+          <MonthlyTrendChart
+            by_month={byMonth}
+            by_month_category={byMonthCategory}
+            metric={metric}
+            onMetricChange={setMetric}
+          />
+
+          {groupedByCategory.length > 0 && (
+            <section className="cis-panel cis-categories">
+              <div className="cis-monthly-header">
+                <h3>By Category</h3>
+                <div className="cis-metric-toggle">
+                  <button className={metric === 'jobs' ? 'active' : ''} onClick={() => setMetric('jobs')}>Jobs</button>
+                  <button className={metric === 'cost' ? 'active' : ''} onClick={() => setMetric('cost')}>Cost (ISK)</button>
+                  <button className={metric === 'runs' ? 'active' : ''} onClick={() => setMetric('runs')}>Runs</button>
+                </div>
+              </div>
+              <div className="cis-category-grid">
+                {groupedByCategory.map(cat => {
+                  const topVal = metricValue(cat.groups[0]) || 1;
+                  return (
+                    <div className="cis-category-block" key={cat.category_id || 'unknown'}>
+                      <div className="cis-category-header">
+                        <span className="cis-category-name">
+                          {cat.category_name || (cat.category_id ? `Category ${cat.category_id}` : 'Unknown')}
+                        </span>
+                        <span className="cis-category-total">{formatMetric(cat.total)}{metric !== 'cost' ? ` ${metricLabel}` : ''}</span>
+                      </div>
+                      <div className="cis-group-bars">
+                        {cat.groups.slice(0, 8).map(g => {
+                          const v = metricValue(g);
+                          const width = Math.max(2, (v / topVal) * 100);
+                          return (
+                            <div className="cis-group-bar-row" key={g.product_group_id || 'unknown-group'}>
+                              <span className="cis-group-bar-label" title={g.product_group_name || ''}>
+                                {g.product_group_name || (g.product_group_id ? `Group ${g.product_group_id}` : 'Unknown')}
+                              </span>
+                              <span className="cis-group-bar-track">
+                                <span className="cis-group-bar-fill" style={{ width: `${width}%` }} />
+                              </span>
+                              <span className="cis-group-bar-value">{formatMetric(v)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="cis-note">
+                Category/group names resolve lazily from ESI on first archive — re-visit after the next
+                archive cycle if you see bare IDs here.
+              </p>
+            </section>
+          )}
+
           <div className="cis-columns">
             <section className="cis-panel">
               <h3>Top Products</h3>
@@ -312,62 +368,6 @@ function CorporationIndustryStats({ onError, refreshKey }) {
               </table>
             </section>
           </div>
-
-          <MonthlyTrendChart
-            by_month={byMonth}
-            by_month_category={byMonthCategory}
-            metric={metric}
-            onMetricChange={setMetric}
-          />
-
-          {groupedByCategory.length > 0 && (
-            <section className="cis-panel cis-categories">
-              <div className="cis-monthly-header">
-                <h3>By Category</h3>
-                <div className="cis-metric-toggle">
-                  <button className={metric === 'jobs' ? 'active' : ''} onClick={() => setMetric('jobs')}>Jobs</button>
-                  <button className={metric === 'cost' ? 'active' : ''} onClick={() => setMetric('cost')}>Cost (ISK)</button>
-                  <button className={metric === 'runs' ? 'active' : ''} onClick={() => setMetric('runs')}>Runs</button>
-                </div>
-              </div>
-              <div className="cis-category-grid">
-                {groupedByCategory.map(cat => {
-                  const topVal = metricValue(cat.groups[0]) || 1;
-                  return (
-                    <div className="cis-category-block" key={cat.category_id || 'unknown'}>
-                      <div className="cis-category-header">
-                        <span className="cis-category-name">
-                          {cat.category_name || (cat.category_id ? `Category ${cat.category_id}` : 'Unknown')}
-                        </span>
-                        <span className="cis-category-total">{formatMetric(cat.total)}{metric !== 'cost' ? ` ${metricLabel}` : ''}</span>
-                      </div>
-                      <div className="cis-group-bars">
-                        {cat.groups.slice(0, 8).map(g => {
-                          const v = metricValue(g);
-                          const width = Math.max(2, (v / topVal) * 100);
-                          return (
-                            <div className="cis-group-bar-row" key={g.product_group_id || 'unknown-group'}>
-                              <span className="cis-group-bar-label" title={g.product_group_name || ''}>
-                                {g.product_group_name || (g.product_group_id ? `Group ${g.product_group_id}` : 'Unknown')}
-                              </span>
-                              <span className="cis-group-bar-track">
-                                <span className="cis-group-bar-fill" style={{ width: `${width}%` }} />
-                              </span>
-                              <span className="cis-group-bar-value">{formatMetric(v)}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <p className="cis-note">
-                Category/group names resolve lazily from ESI on first archive — re-visit after the next
-                archive cycle if you see bare IDs here.
-              </p>
-            </section>
-          )}
         </>
       )}
     </div>
