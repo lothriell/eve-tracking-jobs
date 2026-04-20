@@ -1028,10 +1028,16 @@ class DB {
   }
 
   queryCorpJobHistory(filters, limit = 100, offset = 0) {
-    const { where, params } = this._buildCorpJobWhere(filters);
+    const { where, params } = this._buildCorpJobWhere(filters, 'h');
     return this.db.prepare(
-      `SELECT * FROM corp_job_history ${where}
-       ORDER BY end_date DESC
+      `SELECT h.*,
+              fac.name as facility_name,
+              loc.name as location_name
+       FROM corp_job_history h
+       LEFT JOIN name_cache fac ON fac.id = h.facility_id AND fac.category IN ('station','structure')
+       LEFT JOIN name_cache loc ON loc.id = h.location_id AND loc.category IN ('station','structure')
+       ${where}
+       ORDER BY h.end_date DESC
        LIMIT ? OFFSET ?`
     ).all(...params, limit, offset);
   }

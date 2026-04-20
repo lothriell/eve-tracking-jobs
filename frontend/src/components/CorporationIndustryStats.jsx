@@ -224,11 +224,14 @@ function CorporationIndustryStats({ onError, refreshKey }) {
                     { key: 'cost', label: 'Job Cost (ISK)' },
                     { key: 'installer_name', label: 'Installer' },
                     { key: 'installer_id', label: 'Installer ID' },
+                    { key: 'corporation_name', label: 'Corporation' },
                     { key: 'corporation_id', label: 'Corp ID' },
+                    { key: 'facility_name', label: 'Facility' },
                     { key: 'facility_id', label: 'Facility ID' },
+                    { key: 'location_name', label: 'Location' },
                     { key: 'location_id', label: 'Location ID' },
                   ],
-                  `corp-industry-history-${preset}`
+                  `corp-industry-history-${preset}${corpId ? '-' + corpId : ''}`
                 );
               } catch (err) {
                 onError?.('Export failed: ' + err.message);

@@ -115,6 +115,20 @@ exports.getHistory = async (req, res) => {
 
     const rows = db.queryCorpJobHistory(filters, limit, offset);
     const total = db.countCorpJobHistory(filters);
+
+    // Resolve corporation names once per unique corp_id in the page. We
+    // already cache corp info in-memory in corporationService; this just
+    // re-uses it so the export has a human-readable corp column.
+    const uniqueCorpIds = [...new Set(rows.map(r => r.corporation_id).filter(Boolean))];
+    const corpInfos = await Promise.all(uniqueCorpIds.map(id => getCorporationInfo(id).catch(() => null)));
+    const corpNameById = new Map();
+    for (const info of corpInfos) {
+      if (info) corpNameById.set(info.corporation_id, info.name);
+    }
+    for (const row of rows) {
+      row.corporation_name = corpNameById.get(row.corporation_id) || null;
+    }
+
     res.json({ rows, total, limit, offset });
   } catch (err) {
     console.error('[CORP-INDUSTRY] getHistory failed:', err);
