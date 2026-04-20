@@ -98,14 +98,20 @@ function CorporationIndustryStats({ onError, refreshKey }) {
   const byActivity = data?.by_activity || [];
 
   // ESI reports reactions as activity 9 (legacy) or 11 (modern); merge them.
+  // `kind` maps to the dashboard's manufacturing/science/reactions palette.
   const activityRollup = useMemo(() => {
+    const kindFor = (id) => {
+      if (id === 1) return 'manufacturing';
+      if (id === 9 || id === 11) return 'reactions';
+      return 'science';
+    };
     const bucket = {};
     for (const row of byActivity) {
       const key = (row.activity_id === 9 || row.activity_id === 11) ? 'reactions' : String(row.activity_id);
       const label = (row.activity_id === 9 || row.activity_id === 11)
         ? 'Reactions'
         : (ACTIVITY_LABELS[row.activity_id] || `Activity ${row.activity_id}`);
-      if (!bucket[key]) bucket[key] = { label, job_count: 0, total_runs: 0, total_cost: 0 };
+      if (!bucket[key]) bucket[key] = { label, kind: kindFor(row.activity_id), job_count: 0, total_runs: 0, total_cost: 0 };
       bucket[key].job_count += row.job_count || 0;
       bucket[key].total_runs += row.total_runs || 0;
       bucket[key].total_cost += row.total_cost || 0;
@@ -185,7 +191,7 @@ function CorporationIndustryStats({ onError, refreshKey }) {
               <h3>By Activity</h3>
               <div className="cis-activity-grid">
                 {activityRollup.map(a => (
-                  <div className="cis-activity-tile" key={a.label}>
+                  <div className={`cis-activity-tile cis-kind-${a.kind}`} key={a.label}>
                     <div className="cis-activity-label">{a.label}</div>
                     <div className="cis-activity-jobs">{formatNumber(a.job_count)} jobs</div>
                     <div className="cis-activity-runs">{formatNumber(a.total_runs)} runs</div>

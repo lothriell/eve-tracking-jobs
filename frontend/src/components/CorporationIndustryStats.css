@@ -200,11 +200,26 @@
 }
 
 .cis-activity-tile {
-  background: rgba(104, 211, 145, 0.06);
-  border: 1px solid rgba(104, 211, 145, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
   border-radius: 6px;
   padding: 10px 12px;
   text-align: center;
+}
+
+.cis-activity-tile.cis-kind-manufacturing {
+  background: var(--color-manufacturing-bg);
+  border-color: var(--color-manufacturing-border);
+}
+
+.cis-activity-tile.cis-kind-reactions {
+  background: var(--color-reactions-bg);
+  border-color: var(--color-reactions-border);
+}
+
+.cis-activity-tile.cis-kind-science {
+  background: var(--color-science-bg);
+  border-color: var(--color-science-border);
 }
 
 .cis-activity-label {
@@ -215,11 +230,35 @@
   margin-bottom: 4px;
 }
 
+.cis-activity-tile.cis-kind-manufacturing .cis-activity-label {
+  color: var(--color-manufacturing);
+}
+
+.cis-activity-tile.cis-kind-reactions .cis-activity-label {
+  color: var(--color-reactions);
+}
+
+.cis-activity-tile.cis-kind-science .cis-activity-label {
+  color: var(--color-science);
+}
+
 .cis-activity-jobs {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #68d391;
   font-variant-numeric: tabular-nums;
+  color: #e5e7eb;
+}
+
+.cis-activity-tile.cis-kind-manufacturing .cis-activity-jobs {
+  color: var(--color-manufacturing);
+}
+
+.cis-activity-tile.cis-kind-reactions .cis-activity-jobs {
+  color: var(--color-reactions);
+}
+
+.cis-activity-tile.cis-kind-science .cis-activity-jobs {
+  color: var(--color-science);
 }
 
 .cis-activity-runs {
