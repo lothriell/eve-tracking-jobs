@@ -3,14 +3,15 @@ const router = express.Router();
 const characterController = require('../controllers/characterController');
 const tradingController = require('../controllers/tradingController');
 const adminController = require('../controllers/adminController');
+const corpIndustryController = require('../controllers/corporationIndustryController');
 const { requireFeature, requireAdmin, getEnabledFeatures } = require('../middleware/featureAccess');
 
 // Version endpoint (for deployment verification)
 router.get('/version', (req, res) => {
-  res.json({ 
-    version: '5.13.0',
+  res.json({
+    version: '5.14.0',
     name: 'EVE Industry Tracker',
-    buildDate: '2026-04-08'
+    buildDate: '2026-04-20'
   });
 });
 
@@ -41,6 +42,11 @@ router.get('/corporations', requireAuth, characterController.getCorporations);
 router.get('/corporation/jobs', requireAuth, characterController.getAllCorporationJobs);
 router.get('/corporation/jobs/:characterId', requireAuth, characterController.getCorporationJobs);
 router.get('/corporation/roles/:characterId', requireAuth, characterController.getCorporationRoles);
+
+// Corporation industry history (append-only archive + aggregated stats)
+router.get('/corporation/industry/stats', requireAuth, corpIndustryController.getStats);
+router.get('/corporation/industry/history', requireAuth, corpIndustryController.getHistory);
+router.post('/corporation/industry/backfill', requireAuth, requireAdmin, corpIndustryController.runBackfill);
 
 // Dashboard endpoint
 router.get('/dashboard/stats', requireAuth, characterController.getDashboardStats);

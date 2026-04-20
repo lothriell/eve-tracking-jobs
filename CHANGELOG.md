@@ -2,6 +2,25 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.14.0] - 2026-04-20
+
+### Corporation Industry History & Stats Dashboard
+- **New `corp_job_history` table** — append-only archive of completed corp jobs (status `delivered` or `ready`). PK `job_id` makes re-archival idempotent.
+- **Archival every 15 minutes** (`backend/services/corpJobArchive.js`) — fetches from ESI with `include_completed=true`, dedups per corporation (two alts in one corp only trigger one fetch).
+- **Denormalized product metadata** — product name, group id/name, and category id/name stored on each row so aggregates like "Heavy Assault Cruisers: 12 runs" need no joins.
+- **Lazy type metadata resolver** (`backend/services/typeMetadata.js`) — on first archival, fetches `/universe/types`, `/universe/groups`, `/universe/categories` from ESI and caches into new `type_metadata` table; zero ESI cost on steady state.
+- **New sidebar view "Corp Industry Stats"** — headline cards (jobs completed, runs, unique products, active installers, total job cost), top products table, top installers table, category breakdown grid.
+- **Filters** — date-range presets (this/last month, 30d, 90d, 6m, all time), activity type (manufacturing / reactions / invention / research / copying), and per-corp picker when user has alts in multiple corps.
+- **Admin endpoint** `POST /api/corporation/industry/backfill` — triggers archival on demand (useful for first backfill).
+- **Access scope** — user sees stats for any corp their characters currently belong to.
+
+### Warehouse Decision
+- Stayed on SQLite (append-only history tables, same pattern as existing `wealth_snapshots`/`wallet_journal`). DuckDB can `ATTACH` the same file if we ever need a dedicated analytics path.
+
+### Known Limits
+- History only starts on ship date — ESI retains ~30 days of completed jobs, so a one-time backfill captures only what ESI still exposes.
+- Job `cost` is install cost, not ISK-produced. ISK-value-produced estimate (Phase 3) will use product × runs × Jita sell.
+
 ## [v5.13.0] - 2026-04-08
 
 ### Blueprint Data Fix — Hoboleaks Live SDE

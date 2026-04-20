@@ -96,6 +96,19 @@ export const getCorporationRoles = (characterId) => {
   return api.get(`/api/corporation/roles/${characterId}`);
 };
 
+// Corporation industry history (append-only archive)
+export const getCorpIndustryStats = (params = {}) => {
+  return api.get('/api/corporation/industry/stats', { params });
+};
+
+export const getCorpIndustryHistory = (params = {}) => {
+  return api.get('/api/corporation/industry/history', { params });
+};
+
+export const runCorpIndustryBackfill = () => {
+  return api.post('/api/corporation/industry/backfill');
+};
+
 // Asset endpoints
 export const getCharacterAssets = (characterId = null, all = false, priceMode = 'average') => {
   const params = new URLSearchParams();

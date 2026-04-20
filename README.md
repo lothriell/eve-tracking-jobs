@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.13.0 | **Build Date:** 2026-04-08
+**Current Version:** v5.14.0 | **Build Date:** 2026-04-20
 
 A comprehensive web application for tracking EVE Online industry jobs, assets, planetary industry, and character management across multiple characters and corporations.
 
@@ -134,6 +134,14 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 - PI factory planet status fix, BPO badges in Assets, Safari rendering fixes
 - New ESI scopes: blueprints + contracts
 
+### v5.14.0 (2026-04-20)
+- Corporation Industry History — new append-only archive of completed corp jobs (`corp_job_history`)
+- Archiver runs every 15 minutes, denormalizes product name + group + category
+- New sidebar view "Corp Industry Stats" with headline cards, top products, top installers, category breakdown
+- Date range (this month / last month / 30d / 90d / 6m / all) + activity filter (mfg / reactions / invention)
+- Admin backfill endpoint (`POST /api/corporation/industry/backfill`) for on-demand archival
+- History starts from ship date — ESI only retains ~30 days of completed jobs
+
 ### v5.13.0 (2026-04-08)
 - Blueprint data switched to Hoboleaks (live SDE, auto-refreshes with game patches)
 - Fixed stale material quantities for carriers and all ships (was 9 months outdated)
@@ -204,6 +212,7 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| v5.14.0 | 2026-04-20 | Corporation industry history archive + stats dashboard (top products, installers, categories) |
 | v5.13.0 | 2026-04-08 | Blueprint data switched to Hoboleaks live SDE, ME formula fix, stale data resolved |
 | v5.12.0 | 2026-04-08 | PI factory status fix, storage value estimates (Jita sell), unified Active status |
 | v5.9.0 | 2026-04-04 | Production Planner: recursive build tree, BPO/BPC ownership, shopping list, blueprint ESI scope |

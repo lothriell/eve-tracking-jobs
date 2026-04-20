@@ -252,3 +252,51 @@ CREATE TABLE IF NOT EXISTS corp_features (
 );
 CREATE INDEX IF NOT EXISTS idx_corp_features_corp ON corp_features(corporation_id);
 CREATE INDEX IF NOT EXISTS idx_corp_features_feature ON corp_features(feature_name);
+
+-- ===== TYPE METADATA (lazy-cached group/category lookup from ESI) =====
+-- Populated on-demand by services/typeMetadata.js — stores group_id, category_id
+-- and their human-readable names so we can group jobs/items by ship class etc.
+CREATE TABLE IF NOT EXISTS type_metadata (
+    type_id INTEGER PRIMARY KEY,
+    group_id INTEGER,
+    category_id INTEGER,
+    group_name TEXT,
+    category_name TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_type_meta_group ON type_metadata(group_id);
+CREATE INDEX IF NOT EXISTS idx_type_meta_category ON type_metadata(category_id);
+
+-- ===== HISTORICAL INDUSTRY TRACKING =====
+
+-- Corporation industry job history (append-only archive)
+-- Populated by cacheRefresh.archiveCorpJobs() from ESI every 15 min.
+-- ESI retains ~30 days of completed jobs, so history is forward-only after ship date.
+CREATE TABLE IF NOT EXISTS corp_job_history (
+    job_id INTEGER PRIMARY KEY,
+    corporation_id INTEGER NOT NULL,
+    installer_id INTEGER,
+    installer_name TEXT,
+    activity_id INTEGER NOT NULL,
+    blueprint_type_id INTEGER,
+    product_type_id INTEGER,
+    product_name TEXT,
+    product_group_id INTEGER,
+    product_category_id INTEGER,
+    product_group_name TEXT,
+    product_category_name TEXT,
+    runs INTEGER NOT NULL,
+    licensed_runs INTEGER,
+    facility_id INTEGER,
+    location_id INTEGER,
+    start_date DATETIME NOT NULL,
+    end_date DATETIME NOT NULL,
+    status TEXT,
+    cost REAL,
+    archived_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_corp_job_history_corp_end ON corp_job_history(corporation_id, end_date);
+CREATE INDEX IF NOT EXISTS idx_corp_job_history_product ON corp_job_history(product_type_id, end_date);
+CREATE INDEX IF NOT EXISTS idx_corp_job_history_installer ON corp_job_history(installer_id, end_date);
+CREATE INDEX IF NOT EXISTS idx_corp_job_history_group ON corp_job_history(product_group_id, end_date);
+CREATE INDEX IF NOT EXISTS idx_corp_job_history_activity ON corp_job_history(activity_id, end_date);

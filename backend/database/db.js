@@ -823,6 +823,189 @@ class DB {
     return user;
   }
 
+  // ===== TYPE METADATA (group/category cache) =====
+
+  getTypeMetadata(typeId) {
+    return this.db.prepare('SELECT * FROM type_metadata WHERE type_id = ?').get(typeId);
+  }
+
+  getTypeMetadataBatch(typeIds) {
+    if (!typeIds || typeIds.length === 0) return {};
+    const placeholders = typeIds.map(() => '?').join(',');
+    const rows = this.db.prepare(
+      `SELECT type_id, group_id, category_id, group_name, category_name
+       FROM type_metadata WHERE type_id IN (${placeholders})`
+    ).all(...typeIds);
+    const result = {};
+    for (const row of rows) result[row.type_id] = row;
+    return result;
+  }
+
+  setTypeMetadata(entries) {
+    if (!entries || entries.length === 0) return 0;
+    const stmt = this.db.prepare(
+      `INSERT OR REPLACE INTO type_metadata (type_id, group_id, category_id, group_name, category_name, updated_at)
+       VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+    );
+    const batch = this.db.transaction((items) => {
+      for (const item of items) {
+        stmt.run(item.type_id, item.group_id || null, item.category_id || null,
+                 item.group_name || null, item.category_name || null);
+      }
+    });
+    batch(entries);
+    return entries.length;
+  }
+
+  // ===== CORP JOB HISTORY =====
+
+  insertCorpJobHistory(jobs) {
+    if (!jobs || jobs.length === 0) return 0;
+    const stmt = this.db.prepare(
+      `INSERT OR IGNORE INTO corp_job_history (
+        job_id, corporation_id, installer_id, installer_name,
+        activity_id, blueprint_type_id, product_type_id, product_name,
+        product_group_id, product_category_id, product_group_name, product_category_name,
+        runs, licensed_runs, facility_id, location_id, start_date, end_date, status, cost
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    );
+    let inserted = 0;
+    const batch = this.db.transaction((items) => {
+      for (const j of items) {
+        const r = stmt.run(
+          j.job_id, j.corporation_id, j.installer_id || null, j.installer_name || null,
+          j.activity_id, j.blueprint_type_id || null, j.product_type_id || null, j.product_name || null,
+          j.product_group_id || null, j.product_category_id || null,
+          j.product_group_name || null, j.product_category_name || null,
+          j.runs, j.licensed_runs || null,
+          j.facility_id || null, j.location_id || null, j.start_date, j.end_date, j.status || null, j.cost || 0
+        );
+        inserted += r.changes;
+      }
+    });
+    batch(jobs);
+    return inserted;
+  }
+
+  getCorpJobHistoryStats(corporationId) {
+    return this.db.prepare(
+      `SELECT COUNT(*) as count, MIN(end_date) as oldest, MAX(end_date) as newest,
+              MAX(archived_at) as last_archived
+       FROM corp_job_history WHERE corporation_id = ?`
+    ).get(corporationId);
+  }
+
+  _buildCorpJobWhere({ corporationIds, from, to, activityId }) {
+    const clauses = [];
+    const params = [];
+    if (corporationIds && corporationIds.length > 0) {
+      clauses.push(`corporation_id IN (${corporationIds.map(() => '?').join(',')})`);
+      params.push(...corporationIds);
+    }
+    if (from) { clauses.push('end_date >= ?'); params.push(from); }
+    if (to) { clauses.push('end_date <= ?'); params.push(to); }
+    if (activityId) { clauses.push('activity_id = ?'); params.push(activityId); }
+    return { where: clauses.length ? `WHERE ${clauses.join(' AND ')}` : '', params };
+  }
+
+  queryCorpJobSummary(filters) {
+    const { where, params } = this._buildCorpJobWhere(filters);
+    return this.db.prepare(
+      `SELECT COUNT(*) as job_count,
+              SUM(runs) as total_runs,
+              COUNT(DISTINCT product_type_id) as unique_products,
+              COUNT(DISTINCT installer_id) as unique_installers,
+              SUM(cost) as total_cost,
+              MIN(end_date) as first_job,
+              MAX(end_date) as last_job
+       FROM corp_job_history ${where}`
+    ).get(...params);
+  }
+
+  queryCorpJobsByMonth(filters) {
+    const { where, params } = this._buildCorpJobWhere(filters);
+    return this.db.prepare(
+      `SELECT strftime('%Y-%m', end_date) as month,
+              COUNT(*) as job_count,
+              SUM(runs) as total_runs,
+              SUM(cost) as total_cost
+       FROM corp_job_history ${where}
+       GROUP BY month
+       ORDER BY month ASC`
+    ).all(...params);
+  }
+
+  queryCorpTopProducts(filters, limit = 25) {
+    const { where, params } = this._buildCorpJobWhere(filters);
+    return this.db.prepare(
+      `SELECT product_type_id, product_name, product_group_id, product_category_id,
+              product_group_name, product_category_name, activity_id,
+              COUNT(*) as job_count,
+              SUM(runs) as total_runs,
+              SUM(cost) as total_cost
+       FROM corp_job_history ${where}
+       GROUP BY product_type_id, activity_id
+       ORDER BY total_runs DESC
+       LIMIT ?`
+    ).all(...params, limit);
+  }
+
+  queryCorpTopInstallers(filters, limit = 25) {
+    const { where, params } = this._buildCorpJobWhere(filters);
+    return this.db.prepare(
+      `SELECT installer_id, installer_name,
+              COUNT(*) as job_count,
+              SUM(runs) as total_runs,
+              SUM(cost) as total_cost,
+              COUNT(DISTINCT product_type_id) as unique_products
+       FROM corp_job_history ${where}
+       GROUP BY installer_id
+       ORDER BY job_count DESC
+       LIMIT ?`
+    ).all(...params, limit);
+  }
+
+  queryCorpJobsByGroup(filters) {
+    const { where, params } = this._buildCorpJobWhere(filters);
+    return this.db.prepare(
+      `SELECT product_group_id, product_category_id,
+              product_group_name, product_category_name,
+              COUNT(*) as job_count,
+              SUM(runs) as total_runs,
+              SUM(cost) as total_cost
+       FROM corp_job_history ${where}
+       GROUP BY product_group_id
+       ORDER BY total_runs DESC`
+    ).all(...params);
+  }
+
+  queryCorpJobsByActivity(filters) {
+    const { where, params } = this._buildCorpJobWhere(filters);
+    return this.db.prepare(
+      `SELECT activity_id,
+              COUNT(*) as job_count,
+              SUM(runs) as total_runs,
+              SUM(cost) as total_cost
+       FROM corp_job_history ${where}
+       GROUP BY activity_id
+       ORDER BY job_count DESC`
+    ).all(...params);
+  }
+
+  queryCorpJobHistory(filters, limit = 100, offset = 0) {
+    const { where, params } = this._buildCorpJobWhere(filters);
+    return this.db.prepare(
+      `SELECT * FROM corp_job_history ${where}
+       ORDER BY end_date DESC
+       LIMIT ? OFFSET ?`
+    ).all(...params, limit, offset);
+  }
+
+  countCorpJobHistory(filters) {
+    const { where, params } = this._buildCorpJobWhere(filters);
+    return this.db.prepare(`SELECT COUNT(*) as c FROM corp_job_history ${where}`).get(...params).c;
+  }
+
   close() {
     if (this.db) {
       this.db.close();

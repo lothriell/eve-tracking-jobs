@@ -1,0 +1,198 @@
+.corp-industry-stats {
+  padding: 20px;
+  color: #e5e7eb;
+}
+
+.cis-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cis-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #4da6ff;
+  font-weight: 600;
+}
+
+.cis-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cis-filters select {
+  background: #1a2330;
+  color: #e5e7eb;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.cis-loading,
+.cis-empty {
+  padding: 40px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.cis-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.cis-card {
+  background: linear-gradient(180deg, rgba(77, 166, 255, 0.08), rgba(77, 166, 255, 0.02));
+  border: 1px solid rgba(77, 166, 255, 0.2);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.cis-card-label {
+  font-size: 11px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.cis-card-value {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.cis-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 900px) {
+  .cis-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cis-panel {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.cis-panel h3 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: #4da6ff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cis-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.cis-table th,
+.cis-table td {
+  padding: 6px 8px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cis-table th {
+  font-size: 11px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.cis-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.cis-product-name {
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.cis-activity {
+  color: #9ca3af;
+  font-size: 11px;
+}
+
+.cis-empty-row {
+  text-align: center;
+  color: #6b7280;
+  padding: 16px !important;
+}
+
+.cis-categories {
+  margin-bottom: 20px;
+}
+
+.cis-category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.cis-category-block {
+  background: rgba(77, 166, 255, 0.04);
+  border: 1px solid rgba(77, 166, 255, 0.1);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.cis-category-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+  color: #e5e7eb;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 12px;
+}
+
+.cis-category-total {
+  color: #68d391;
+  font-variant-numeric: tabular-nums;
+}
+
+.cis-category-block ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 11px;
+}
+
+.cis-category-block li {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+  color: #9ca3af;
+}
+
+.cis-note {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 10px;
+  margin-bottom: 0;
+  font-style: italic;
+}

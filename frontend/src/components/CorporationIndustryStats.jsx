@@ -1,0 +1,265 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { getCorpIndustryStats } from '../services/api';
+import ExternalLinks from './ExternalLinks';
+import './CorporationIndustryStats.css';
+
+const ACTIVITY_LABELS = {
+  1: 'Manufacturing',
+  3: 'Researching Time Efficiency',
+  4: 'Researching Material Efficiency',
+  5: 'Copying',
+  8: 'Invention',
+  11: 'Reactions',
+};
+
+const PRESETS = [
+  { key: 'this-month', label: 'This Month' },
+  { key: 'last-month', label: 'Last Month' },
+  { key: '30d', label: 'Last 30 Days' },
+  { key: '90d', label: 'Last 90 Days' },
+  { key: '6m', label: 'Last 6 Months' },
+  { key: 'all', label: 'All Time' },
+];
+
+function presetRange(key) {
+  const now = new Date();
+  const iso = (d) => d.toISOString();
+  switch (key) {
+    case 'this-month': {
+      const from = new Date(now.getFullYear(), now.getMonth(), 1);
+      return { from: iso(from), to: null };
+    }
+    case 'last-month': {
+      const from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const to = new Date(now.getFullYear(), now.getMonth(), 1);
+      return { from: iso(from), to: iso(to) };
+    }
+    case '30d': return { from: iso(new Date(Date.now() - 30 * 864e5)), to: null };
+    case '90d': return { from: iso(new Date(Date.now() - 90 * 864e5)), to: null };
+    case '6m': {
+      const from = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+      return { from: iso(from), to: null };
+    }
+    case 'all':
+    default: return { from: null, to: null };
+  }
+}
+
+function formatISK(value) {
+  if (!value) return '0';
+  if (value >= 1e12) return `${(value / 1e12).toFixed(2)}T`;
+  if (value >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
+  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
+  if (value >= 1e3) return `${(value / 1e3).toFixed(0)}K`;
+  return value.toFixed(0);
+}
+
+function formatNumber(n) {
+  if (n == null) return '0';
+  return n.toLocaleString();
+}
+
+function CorporationIndustryStats({ onError, refreshKey }) {
+  const [preset, setPreset] = useState('this-month');
+  const [activityId, setActivityId] = useState('');
+  const [corpId, setCorpId] = useState('');
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadStats = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { from, to } = presetRange(preset);
+      const params = {};
+      if (from) params.from = from;
+      if (to) params.to = to;
+      if (activityId) params.activity = activityId;
+      if (corpId) params.corporation_id = corpId;
+      const res = await getCorpIndustryStats(params);
+      setData(res.data);
+    } catch (err) {
+      console.error('Failed to load corp industry stats:', err);
+      onError?.('Failed to load corporation industry stats');
+    } finally {
+      setLoading(false);
+    }
+  }, [preset, activityId, corpId, onError]);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats, refreshKey]);
+
+  const summary = data?.summary;
+  const corporations = data?.corporations || [];
+  const topProducts = data?.top_products || [];
+  const topInstallers = data?.top_installers || [];
+  const byGroup = data?.by_group || [];
+
+  const groupedByCategory = useMemo(() => {
+    const map = {};
+    for (const row of byGroup) {
+      const key = row.product_category_id || 'unknown';
+      if (!map[key]) {
+        map[key] = {
+          category_id: row.product_category_id,
+          category_name: row.product_category_name,
+          groups: [],
+          total_runs: 0,
+          job_count: 0,
+        };
+      }
+      map[key].groups.push(row);
+      map[key].total_runs += row.total_runs || 0;
+      map[key].job_count += row.job_count || 0;
+    }
+    return Object.values(map).sort((a, b) => b.total_runs - a.total_runs);
+  }, [byGroup]);
+
+  return (
+    <div className="corp-industry-stats">
+      <div className="cis-header">
+        <h2>Corporation Industry History</h2>
+        <div className="cis-filters">
+          <select value={preset} onChange={(e) => setPreset(e.target.value)}>
+            {PRESETS.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
+          </select>
+          <select value={activityId} onChange={(e) => setActivityId(e.target.value)}>
+            <option value="">All activities</option>
+            {Object.entries(ACTIVITY_LABELS).map(([id, label]) => (
+              <option key={id} value={id}>{label}</option>
+            ))}
+          </select>
+          {corporations.length > 1 && (
+            <select value={corpId} onChange={(e) => setCorpId(e.target.value)}>
+              <option value="">All my corps</option>
+              {corporations.map(c => (
+                <option key={c.corporation_id} value={c.corporation_id}>{c.name}</option>
+              ))}
+            </select>
+          )}
+        </div>
+      </div>
+
+      {loading && <div className="cis-loading">Loading…</div>}
+
+      {!loading && !summary && (
+        <div className="cis-empty">
+          No archived jobs yet. The tracker archives completed corp jobs every 15 minutes —
+          data will appear here once a completed job is captured from ESI.
+        </div>
+      )}
+
+      {!loading && summary && (
+        <>
+          <div className="cis-cards">
+            <Card label="Jobs Completed" value={formatNumber(summary.job_count)} />
+            <Card label="Total Runs" value={formatNumber(summary.total_runs)} />
+            <Card label="Unique Products" value={formatNumber(summary.unique_products)} />
+            <Card label="Active Installers" value={formatNumber(summary.unique_installers)} />
+            <Card label="Total Job Cost" value={`${formatISK(summary.total_cost)} ISK`} />
+          </div>
+
+          <div className="cis-columns">
+            <section className="cis-panel">
+              <h3>Top Products</h3>
+              <table className="cis-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Activity</th>
+                    <th className="num">Jobs</th>
+                    <th className="num">Runs</th>
+                    <th className="num">Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topProducts.map(p => (
+                    <tr key={`${p.product_type_id}-${p.activity_id}`}>
+                      <td>
+                        <span className="cis-product-name">{p.product_name || `Type ${p.product_type_id}`}</span>
+                        {p.product_type_id && <ExternalLinks typeId={p.product_type_id} compact />}
+                      </td>
+                      <td className="cis-activity">{ACTIVITY_LABELS[p.activity_id] || `Activity ${p.activity_id}`}</td>
+                      <td className="num">{formatNumber(p.job_count)}</td>
+                      <td className="num">{formatNumber(p.total_runs)}</td>
+                      <td className="num">{formatISK(p.total_cost)}</td>
+                    </tr>
+                  ))}
+                  {topProducts.length === 0 && <tr><td colSpan={5} className="cis-empty-row">No products in range</td></tr>}
+                </tbody>
+              </table>
+            </section>
+
+            <section className="cis-panel">
+              <h3>Top Installers</h3>
+              <table className="cis-table">
+                <thead>
+                  <tr>
+                    <th>Character</th>
+                    <th className="num">Jobs</th>
+                    <th className="num">Runs</th>
+                    <th className="num">Products</th>
+                    <th className="num">Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topInstallers.map(i => (
+                    <tr key={i.installer_id}>
+                      <td>{i.installer_name || `Character ${i.installer_id}`}</td>
+                      <td className="num">{formatNumber(i.job_count)}</td>
+                      <td className="num">{formatNumber(i.total_runs)}</td>
+                      <td className="num">{formatNumber(i.unique_products)}</td>
+                      <td className="num">{formatISK(i.total_cost)}</td>
+                    </tr>
+                  ))}
+                  {topInstallers.length === 0 && <tr><td colSpan={5} className="cis-empty-row">No installers in range</td></tr>}
+                </tbody>
+              </table>
+            </section>
+          </div>
+
+          {groupedByCategory.length > 0 && (
+            <section className="cis-panel cis-categories">
+              <h3>By Category</h3>
+              <div className="cis-category-grid">
+                {groupedByCategory.map(cat => (
+                  <div className="cis-category-block" key={cat.category_id || 'unknown'}>
+                    <div className="cis-category-header">
+                      <span className="cis-category-name">
+                        {cat.category_name || (cat.category_id ? `Category ${cat.category_id}` : 'Unknown')}
+                      </span>
+                      <span className="cis-category-total">{formatNumber(cat.total_runs)} runs</span>
+                    </div>
+                    <ul>
+                      {cat.groups.slice(0, 8).map(g => (
+                        <li key={g.product_group_id || 'unknown-group'}>
+                          <span>{g.product_group_name || (g.product_group_id ? `Group ${g.product_group_id}` : 'Unknown')}</span>
+                          <span className="num">{formatNumber(g.total_runs)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+              <p className="cis-note">
+                Category/group names resolve lazily from ESI on first archive — re-visit after the next
+                archive cycle if you see bare IDs here.
+              </p>
+            </section>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function Card({ label, value }) {
+  return (
+    <div className="cis-card">
+      <div className="cis-card-label">{label}</div>
+      <div className="cis-card-value">{value}</div>
+    </div>
+  );
+}
+
+export default CorporationIndustryStats;

@@ -12,12 +12,14 @@
 const axios = require('axios');
 const db = require('../database/db');
 const { importSDE } = require('./sdeImport');
+const corpJobArchive = require('./corpJobArchive');
 
 const ESI_BASE = 'https://esi.evetech.net/latest';
 const DS = 'tranquility';
 
 let refreshTimer = null;
 let hubRefreshTimer = null;
+let corpArchiveTimer = null;
 let isRefreshing = false;
 let isHubRefreshing = false;
 
@@ -318,10 +320,20 @@ async function runHubRefresh() {
   }
 }
 
+// ===== CORP JOB ARCHIVE (15-min cycle) =====
+async function runCorpArchive() {
+  try {
+    await corpJobArchive.runArchive();
+  } catch (error) {
+    console.error('[CACHE] Corp archive error:', error.message);
+  }
+}
+
 // ===== SCHEDULER =====
 function startCacheRefresh() {
   // Run immediately on startup
   setTimeout(() => runFullRefresh(), 5000); // 5s delay to let DB initialize
+  setTimeout(() => runCorpArchive(), 20000); // first corp archive 20s in
 
   // Full refresh every 6 hours
   const SIX_HOURS = 6 * 60 * 60 * 1000;
@@ -331,7 +343,11 @@ function startCacheRefresh() {
   const THIRTY_MIN = 30 * 60 * 1000;
   hubRefreshTimer = setInterval(() => runHubRefresh(), THIRTY_MIN);
 
-  console.log('[CACHE] Background refresh scheduled (full: 6h, hub prices: 30m)');
+  // Corp job archive every 15 minutes (ESI retains completed jobs ~30 days)
+  const FIFTEEN_MIN = 15 * 60 * 1000;
+  corpArchiveTimer = setInterval(() => runCorpArchive(), FIFTEEN_MIN);
+
+  console.log('[CACHE] Background refresh scheduled (full: 6h, hub prices: 30m, corp archive: 15m)');
 }
 
 function stopCacheRefresh() {
@@ -343,6 +359,10 @@ function stopCacheRefresh() {
     clearInterval(hubRefreshTimer);
     hubRefreshTimer = null;
   }
+  if (corpArchiveTimer) {
+    clearInterval(corpArchiveTimer);
+    corpArchiveTimer = null;
+  }
 }
 
 module.exports = {
@@ -352,5 +372,6 @@ module.exports = {
   refreshMarketPrices,
   refreshCostIndices,
   refreshHubPrices,
-  runHubRefresh
+  runHubRefresh,
+  runCorpArchive,
 };
