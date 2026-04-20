@@ -927,11 +927,26 @@ module.exports = {
 };
 
 // Get wallet market transactions
+// ESI paginates via from_id cursor (NOT page) — returns up to 2500 entries
+// with transaction_id LESS than from_id. Walk backwards until a short page.
 async function getWalletTransactions(characterId, accessToken) {
   try {
     const url = `${ESI_BASE_URL}/characters/${characterId}/wallet/transactions/`;
-    const data = await makeESIRequest(url, accessToken);
-    return { transactions: data || [], hasScope: true };
+    const all = [];
+    let fromId = null;
+    const MAX_ITERATIONS = 50;
+    for (let i = 0; i < MAX_ITERATIONS; i++) {
+      const params = fromId != null ? { from_id: fromId } : {};
+      const page = await makeESIRequest(url, accessToken, params);
+      if (!page || page.length === 0) break;
+      all.push(...page);
+      let minId = Infinity;
+      for (const t of page) if (t.transaction_id < minId) minId = t.transaction_id;
+      if (!Number.isFinite(minId) || minId === fromId) break;
+      fromId = minId;
+      if (page.length < 2500) break;
+    }
+    return { transactions: all, hasScope: true };
   } catch (error) {
     const status = error.response?.status;
     if (status === 401 || status === 403) {

@@ -124,14 +124,21 @@ function hasCorporationAssetRole(roles) {
  */
 async function getCustomsOffices(corporationId, accessToken) {
   try {
-    const response = await axios.get(
-      `${ESI_BASE_URL}/corporations/${corporationId}/customs_offices/`,
-      {
+    const url = `${ESI_BASE_URL}/corporations/${corporationId}/customs_offices/`;
+    const firstResp = await axios.get(url, {
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+      params: { datasource: ESI_DATASOURCE, page: 1 },
+    });
+    const offices = [...(firstResp.data || [])];
+    const totalPages = parseInt(firstResp.headers['x-pages'] || '1', 10);
+    for (let page = 2; page <= totalPages; page++) {
+      const resp = await axios.get(url, {
         headers: { 'Authorization': `Bearer ${accessToken}` },
-        params: { datasource: ESI_DATASOURCE }
-      }
-    );
-    return response.data || [];
+        params: { datasource: ESI_DATASOURCE, page },
+      });
+      if (Array.isArray(resp.data)) offices.push(...resp.data);
+    }
+    return offices;
   } catch (error) {
     if (error.response?.status === 403) {
       console.log(`No customs office access for corp ${corporationId} - missing scope or role`);
