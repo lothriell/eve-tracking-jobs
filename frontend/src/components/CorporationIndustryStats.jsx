@@ -99,6 +99,7 @@ function CorporationIndustryStats({ onError, refreshKey }) {
   const byGroup = data?.by_group || [];
   const byActivity = data?.by_activity || [];
   const byMonth = data?.by_month || [];
+  const byMonthCategory = data?.by_month_category || [];
 
   const topShips = useMemo(() => {
     return topProducts
@@ -297,7 +298,7 @@ function CorporationIndustryStats({ onError, refreshKey }) {
             </section>
           </div>
 
-          <MonthlyTrendChart by_month={byMonth} />
+          <MonthlyTrendChart by_month={byMonth} by_month_category={byMonthCategory} />
 
           {groupedByCategory.length > 0 && (
             <section className="cis-panel cis-categories">

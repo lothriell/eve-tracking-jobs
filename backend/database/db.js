@@ -941,6 +941,21 @@ class DB {
     ).all(...params);
   }
 
+  queryCorpJobsByMonthAndCategory(filters) {
+    const { where, params } = this._buildCorpJobWhere(filters);
+    return this.db.prepare(
+      `SELECT strftime('%Y-%m', end_date) as month,
+              product_category_id,
+              product_category_name,
+              COUNT(*) as job_count,
+              SUM(runs) as total_runs,
+              SUM(cost) as total_cost
+       FROM corp_job_history ${where}
+       GROUP BY month, product_category_id
+       ORDER BY month ASC`
+    ).all(...params);
+  }
+
   queryCorpTopProducts(filters, limit = 25) {
     const { where, params } = this._buildCorpJobWhere(filters);
     return this.db.prepare(

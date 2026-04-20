@@ -70,9 +70,10 @@ exports.getStats = async (req, res) => {
 
     const topLimit = Math.min(parseInt(req.query.top_limit) || 25, 100);
 
-    const [summary, byMonth, topProducts, topInstallers, byGroup, byActivity] = [
+    const [summary, byMonth, byMonthCategory, topProducts, topInstallers, byGroup, byActivity] = [
       db.queryCorpJobSummary(filters),
       db.queryCorpJobsByMonth(filters),
+      db.queryCorpJobsByMonthAndCategory(filters),
       db.queryCorpTopProducts(filters, topLimit),
       db.queryCorpTopInstallers(filters, topLimit),
       db.queryCorpJobsByGroup(filters),
@@ -87,6 +88,7 @@ exports.getStats = async (req, res) => {
       filter: { from: filters.from, to: filters.to, activity: filters.activityId, corporation_id: filters.corporationIds.length === 1 ? filters.corporationIds[0] : null },
       summary,
       by_month: byMonth,
+      by_month_category: byMonthCategory,
       top_products: topProducts,
       top_installers: topInstallers,
       by_group: byGroup,
