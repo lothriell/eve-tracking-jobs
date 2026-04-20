@@ -46,9 +46,10 @@ function labelForMonth(monthKey) {
  * @param {object} props
  * @param {Array<{month,job_count,total_runs,total_cost}>} props.by_month
  * @param {Array<{month,product_category_id,product_category_name,job_count,total_runs,total_cost}>} props.by_month_category
+ * @param {'jobs'|'cost'|'runs'} props.metric
+ * @param {(m: 'jobs'|'cost'|'runs') => void} props.onMetricChange
  */
-function MonthlyTrendChart({ by_month, by_month_category }) {
-  const [metric, setMetric] = useState('runs'); // 'runs' | 'jobs' | 'cost'
+function MonthlyTrendChart({ by_month, by_month_category, metric, onMetricChange }) {
   const [hoverIdx, setHoverIdx] = useState(null);
   const canvasRef = useRef(null);
 
@@ -166,16 +167,21 @@ function MonthlyTrendChart({ by_month, by_month_category }) {
 
   if (months.length === 0) return null;
 
-  const hoveredMonth = hoverIdx !== null ? months[hoverIdx] : null;
+  // Default selection = latest month; hover swaps to hovered bar. Rendering
+  // the tooltip unconditionally prevents the surrounding layout from jumping
+  // when the user first moves the mouse over the chart.
+  const displayIdx = hoverIdx !== null ? hoverIdx : months.length - 1;
+  const displayedMonth = months[displayIdx];
+  const isHover = hoverIdx !== null;
 
   return (
     <section className="cis-panel cis-monthly">
       <div className="cis-monthly-header">
         <h3>Monthly Trend</h3>
         <div className="cis-metric-toggle">
-          <button className={metric === 'runs' ? 'active' : ''} onClick={() => setMetric('runs')}>Runs</button>
-          <button className={metric === 'jobs' ? 'active' : ''} onClick={() => setMetric('jobs')}>Jobs</button>
-          <button className={metric === 'cost' ? 'active' : ''} onClick={() => setMetric('cost')}>Cost (ISK)</button>
+          <button className={metric === 'jobs' ? 'active' : ''} onClick={() => onMetricChange('jobs')}>Jobs</button>
+          <button className={metric === 'cost' ? 'active' : ''} onClick={() => onMetricChange('cost')}>Cost (ISK)</button>
+          <button className={metric === 'runs' ? 'active' : ''} onClick={() => onMetricChange('runs')}>Runs</button>
         </div>
       </div>
 
@@ -195,14 +201,19 @@ function MonthlyTrendChart({ by_month, by_month_category }) {
         ))}
       </div>
 
-      {hoveredMonth && (
+      {displayedMonth && (
         <div className="cis-monthly-tooltip">
           <div className="cis-tooltip-head">
-            <span>{labelForMonth(hoveredMonth.month)}</span>
-            <span className="cis-tooltip-total">{formatNumber(hoveredMonth.total)} {metric === 'cost' ? 'ISK' : metric}</span>
+            <span>
+              {labelForMonth(displayedMonth.month)}
+              {!isHover && <span className="cis-tooltip-hint"> · latest</span>}
+            </span>
+            <span className="cis-tooltip-total">
+              {formatNumber(displayedMonth.total)} {metric === 'cost' ? 'ISK' : metric}
+            </span>
           </div>
           <ul>
-            {hoveredMonth.segments.filter(s => s.value > 0).map(s => (
+            {displayedMonth.segments.filter(s => s.value > 0).map(s => (
               <li key={s.name}>
                 <span className="cis-legend-swatch" style={{ background: colorForCategory(s.name, s.rank) }} />
                 <span className="cis-tooltip-name">{s.name}</span>

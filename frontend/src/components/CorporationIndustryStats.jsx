@@ -65,6 +65,7 @@ function CorporationIndustryStats({ onError, refreshKey }) {
   const [preset, setPreset] = useState('this-month');
   const [activityId, setActivityId] = useState('');
   const [corpId, setCorpId] = useState('');
+  const [metric, setMetric] = useState('jobs'); // 'jobs' | 'cost' | 'runs' — shared by charts and category bars
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -129,6 +130,19 @@ function CorporationIndustryStats({ onError, refreshKey }) {
     return Object.values(bucket).sort((a, b) => b.job_count - a.job_count);
   }, [byActivity]);
 
+  const metricValue = useCallback((row) => {
+    if (metric === 'jobs') return row.job_count || 0;
+    if (metric === 'cost') return row.total_cost || 0;
+    return row.total_runs || 0;
+  }, [metric]);
+
+  const formatMetric = useCallback((n) => {
+    if (metric === 'cost') return `${formatISK(n)} ISK`;
+    return formatNumber(n);
+  }, [metric]);
+
+  const metricLabel = metric === 'jobs' ? 'jobs' : metric === 'cost' ? 'ISK' : 'runs';
+
   const groupedByCategory = useMemo(() => {
     const map = {};
     for (const row of byGroup) {
@@ -138,16 +152,17 @@ function CorporationIndustryStats({ onError, refreshKey }) {
           category_id: row.product_category_id,
           category_name: row.product_category_name,
           groups: [],
-          total_runs: 0,
-          job_count: 0,
+          total: 0,
         };
       }
       map[key].groups.push(row);
-      map[key].total_runs += row.total_runs || 0;
-      map[key].job_count += row.job_count || 0;
+      map[key].total += metricValue(row);
     }
-    return Object.values(map).sort((a, b) => b.total_runs - a.total_runs);
-  }, [byGroup]);
+    for (const cat of Object.values(map)) {
+      cat.groups.sort((a, b) => metricValue(b) - metricValue(a));
+    }
+    return Object.values(map).sort((a, b) => b.total - a.total);
+  }, [byGroup, metricValue]);
 
   return (
     <div className="corp-industry-stats">
@@ -298,25 +313,38 @@ function CorporationIndustryStats({ onError, refreshKey }) {
             </section>
           </div>
 
-          <MonthlyTrendChart by_month={byMonth} by_month_category={byMonthCategory} />
+          <MonthlyTrendChart
+            by_month={byMonth}
+            by_month_category={byMonthCategory}
+            metric={metric}
+            onMetricChange={setMetric}
+          />
 
           {groupedByCategory.length > 0 && (
             <section className="cis-panel cis-categories">
-              <h3>By Category</h3>
+              <div className="cis-monthly-header">
+                <h3>By Category</h3>
+                <div className="cis-metric-toggle">
+                  <button className={metric === 'jobs' ? 'active' : ''} onClick={() => setMetric('jobs')}>Jobs</button>
+                  <button className={metric === 'cost' ? 'active' : ''} onClick={() => setMetric('cost')}>Cost (ISK)</button>
+                  <button className={metric === 'runs' ? 'active' : ''} onClick={() => setMetric('runs')}>Runs</button>
+                </div>
+              </div>
               <div className="cis-category-grid">
                 {groupedByCategory.map(cat => {
-                  const topGroup = cat.groups[0]?.total_runs || 1;
+                  const topVal = metricValue(cat.groups[0]) || 1;
                   return (
                     <div className="cis-category-block" key={cat.category_id || 'unknown'}>
                       <div className="cis-category-header">
                         <span className="cis-category-name">
                           {cat.category_name || (cat.category_id ? `Category ${cat.category_id}` : 'Unknown')}
                         </span>
-                        <span className="cis-category-total">{formatNumber(cat.total_runs)} runs</span>
+                        <span className="cis-category-total">{formatMetric(cat.total)}{metric !== 'cost' ? ` ${metricLabel}` : ''}</span>
                       </div>
                       <div className="cis-group-bars">
                         {cat.groups.slice(0, 8).map(g => {
-                          const width = Math.max(2, ((g.total_runs || 0) / topGroup) * 100);
+                          const v = metricValue(g);
+                          const width = Math.max(2, (v / topVal) * 100);
                           return (
                             <div className="cis-group-bar-row" key={g.product_group_id || 'unknown-group'}>
                               <span className="cis-group-bar-label" title={g.product_group_name || ''}>
@@ -325,7 +353,7 @@ function CorporationIndustryStats({ onError, refreshKey }) {
                               <span className="cis-group-bar-track">
                                 <span className="cis-group-bar-fill" style={{ width: `${width}%` }} />
                               </span>
-                              <span className="cis-group-bar-value">{formatNumber(g.total_runs)}</span>
+                              <span className="cis-group-bar-value">{formatMetric(v)}</span>
                             </div>
                           );
                         })}
