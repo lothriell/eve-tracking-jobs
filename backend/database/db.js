@@ -895,36 +895,45 @@ class DB {
     ).get(corporationId);
   }
 
-  _buildCorpJobWhere({ corporationIds, from, to, activityId, activityIds }) {
+  _buildCorpJobWhere({ corporationIds, from, to, activityId, activityIds }, alias = '') {
+    const p = alias ? `${alias}.` : '';
     const clauses = [];
     const params = [];
     if (corporationIds && corporationIds.length > 0) {
-      clauses.push(`corporation_id IN (${corporationIds.map(() => '?').join(',')})`);
+      clauses.push(`${p}corporation_id IN (${corporationIds.map(() => '?').join(',')})`);
       params.push(...corporationIds);
     }
-    if (from) { clauses.push('end_date >= ?'); params.push(from); }
-    if (to) { clauses.push('end_date <= ?'); params.push(to); }
+    if (from) { clauses.push(`${p}end_date >= ?`); params.push(from); }
+    if (to) { clauses.push(`${p}end_date <= ?`); params.push(to); }
     if (activityIds && activityIds.length > 0) {
-      clauses.push(`activity_id IN (${activityIds.map(() => '?').join(',')})`);
+      clauses.push(`${p}activity_id IN (${activityIds.map(() => '?').join(',')})`);
       params.push(...activityIds);
     } else if (activityId) {
-      clauses.push('activity_id = ?');
+      clauses.push(`${p}activity_id = ?`);
       params.push(activityId);
     }
     return { where: clauses.length ? `WHERE ${clauses.join(' AND ')}` : '', params };
   }
 
   queryCorpJobSummary(filters) {
-    const { where, params } = this._buildCorpJobWhere(filters);
+    // Aliased so we can LEFT JOIN jita_prices for the ISK-produced estimate.
+    // Missing prices contribute 0 instead of dropping the row. Only
+    // manufacturing/reactions actually produce a sellable product.
+    const { where, params } = this._buildCorpJobWhere(filters, 'h');
     return this.db.prepare(
       `SELECT COUNT(*) as job_count,
-              SUM(runs) as total_runs,
-              COUNT(DISTINCT product_type_id) as unique_products,
-              COUNT(DISTINCT installer_id) as unique_installers,
-              SUM(cost) as total_cost,
-              MIN(end_date) as first_job,
-              MAX(end_date) as last_job
-       FROM corp_job_history ${where}`
+              SUM(h.runs) as total_runs,
+              COUNT(DISTINCT h.product_type_id) as unique_products,
+              COUNT(DISTINCT h.installer_id) as unique_installers,
+              SUM(h.cost) as total_cost,
+              SUM(CASE WHEN h.activity_id IN (1, 9, 11)
+                       THEN h.runs * COALESCE(j.sell_min, 0)
+                       ELSE 0 END) as isk_produced_est,
+              MIN(h.end_date) as first_job,
+              MAX(h.end_date) as last_job
+       FROM corp_job_history h
+       LEFT JOIN jita_prices j ON j.type_id = h.product_type_id
+       ${where}`
     ).get(...params);
   }
 
@@ -957,15 +966,20 @@ class DB {
   }
 
   queryCorpTopProducts(filters, limit = 25) {
-    const { where, params } = this._buildCorpJobWhere(filters);
+    const { where, params } = this._buildCorpJobWhere(filters, 'h');
     return this.db.prepare(
-      `SELECT product_type_id, product_name, product_group_id, product_category_id,
-              product_group_name, product_category_name, activity_id,
+      `SELECT h.product_type_id, h.product_name, h.product_group_id, h.product_category_id,
+              h.product_group_name, h.product_category_name, h.activity_id,
               COUNT(*) as job_count,
-              SUM(runs) as total_runs,
-              SUM(cost) as total_cost
-       FROM corp_job_history ${where}
-       GROUP BY product_type_id, activity_id
+              SUM(h.runs) as total_runs,
+              SUM(h.cost) as total_cost,
+              SUM(CASE WHEN h.activity_id IN (1, 9, 11)
+                       THEN h.runs * COALESCE(j.sell_min, 0)
+                       ELSE 0 END) as isk_produced_est
+       FROM corp_job_history h
+       LEFT JOIN jita_prices j ON j.type_id = h.product_type_id
+       ${where}
+       GROUP BY h.product_type_id, h.activity_id
        ORDER BY total_runs DESC
        LIMIT ?`
     ).all(...params, limit);

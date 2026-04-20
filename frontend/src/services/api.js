@@ -105,6 +105,22 @@ export const getCorpIndustryHistory = (params = {}) => {
   return api.get('/api/corporation/industry/history', { params });
 };
 
+export const getAllCorpIndustryHistory = async (baseParams = {}) => {
+  const all = [];
+  let offset = 0;
+  const limit = 500;
+  while (true) {
+    const res = await api.get('/api/corporation/industry/history', {
+      params: { ...baseParams, limit, offset },
+    });
+    const rows = res.data?.rows || [];
+    all.push(...rows);
+    if (rows.length < limit) break;
+    offset += limit;
+  }
+  return all;
+};
+
 export const runCorpIndustryBackfill = () => {
   return api.post('/api/corporation/industry/backfill');
 };

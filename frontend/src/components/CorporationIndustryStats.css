@@ -100,6 +100,31 @@
   letter-spacing: 0.5px;
 }
 
+.cis-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.cis-panel-header h3 {
+  margin: 0;
+}
+
+.cis-export-all {
+  background: rgba(77, 166, 255, 0.1);
+  border: 1px solid rgba(77, 166, 255, 0.3);
+  color: #4da6ff;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cis-export-all:hover {
+  background: rgba(77, 166, 255, 0.2);
+}
+
 .cis-table {
   width: 100%;
   border-collapse: collapse;

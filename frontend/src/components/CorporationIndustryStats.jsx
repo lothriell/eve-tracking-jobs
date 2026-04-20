@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { getCorpIndustryStats } from '../services/api';
+import { getCorpIndustryStats, getAllCorpIndustryHistory } from '../services/api';
+import { exportToCSV } from '../services/export';
 import ExternalLinks from './ExternalLinks';
+import ExportButton from './ExportButton';
 import MonthlyTrendChart from './MonthlyTrendChart';
 import './CorporationIndustryStats.css';
 
@@ -194,6 +196,45 @@ function CorporationIndustryStats({ onError, refreshKey }) {
               ))}
             </select>
           )}
+          <button
+            type="button"
+            className="cis-export-all"
+            onClick={async () => {
+              const { from, to } = presetRange(preset);
+              const params = {};
+              if (from) params.from = from;
+              if (to) params.to = to;
+              if (activityId) params.activity = activityId;
+              if (corpId) params.corporation_id = corpId;
+              try {
+                const rows = await getAllCorpIndustryHistory(params);
+                exportToCSV(
+                  rows,
+                  [
+                    { key: 'end_date', label: 'Completed' },
+                    { key: 'start_date', label: 'Started' },
+                    { key: 'status', label: 'Status' },
+                    { key: 'activity_id', label: 'Activity ID' },
+                    { key: 'product_name', label: 'Product' },
+                    { key: 'product_type_id', label: 'Type ID' },
+                    { key: 'product_group_name', label: 'Group' },
+                    { key: 'product_category_name', label: 'Category' },
+                    { key: 'runs', label: 'Runs' },
+                    { key: 'licensed_runs', label: 'Licensed Runs' },
+                    { key: 'cost', label: 'Job Cost (ISK)' },
+                    { key: 'installer_name', label: 'Installer' },
+                    { key: 'installer_id', label: 'Installer ID' },
+                    { key: 'corporation_id', label: 'Corp ID' },
+                    { key: 'facility_id', label: 'Facility ID' },
+                    { key: 'location_id', label: 'Location ID' },
+                  ],
+                  `corp-industry-history-${preset}`
+                );
+              } catch (err) {
+                onError?.('Export failed: ' + err.message);
+              }
+            }}
+          >↓ Export CSV</button>
         </div>
       </div>
 
@@ -214,6 +255,11 @@ function CorporationIndustryStats({ onError, refreshKey }) {
             <Card label="Unique Products" value={formatNumber(summary.unique_products)} />
             <Card label="Active Installers" value={formatNumber(summary.unique_installers)} />
             <Card label="Total Job Cost" value={`${formatISK(summary.total_cost)} ISK`} />
+            <Card
+              label="ISK Produced (est)"
+              value={`${formatISK(summary.isk_produced_est)} ISK`}
+              hint="Σ runs × current Jita sell; manufacturing + reactions only"
+            />
           </div>
 
           {topShips.length > 0 && (
@@ -317,7 +363,34 @@ function CorporationIndustryStats({ onError, refreshKey }) {
 
           <div className="cis-columns">
             <section className="cis-panel">
-              <h3>Top Products</h3>
+              <div className="cis-panel-header">
+                <h3>Top Products</h3>
+                <ExportButton
+                  getData={() => topProducts.map(p => ({
+                    product: p.product_name || `Type ${p.product_type_id}`,
+                    product_type_id: p.product_type_id,
+                    group: p.product_group_name || '',
+                    category: p.product_category_name || '',
+                    activity: ACTIVITY_LABELS[p.activity_id] || `Activity ${p.activity_id}`,
+                    jobs: p.job_count,
+                    runs: p.total_runs,
+                    cost_isk: p.total_cost,
+                    isk_produced_est: p.isk_produced_est,
+                  }))}
+                  columns={[
+                    { key: 'product', label: 'Product' },
+                    { key: 'product_type_id', label: 'Type ID' },
+                    { key: 'group', label: 'Group' },
+                    { key: 'category', label: 'Category' },
+                    { key: 'activity', label: 'Activity' },
+                    { key: 'jobs', label: 'Jobs' },
+                    { key: 'runs', label: 'Runs' },
+                    { key: 'cost_isk', label: 'Job Cost (ISK)' },
+                    { key: 'isk_produced_est', label: 'ISK Produced (est)' },
+                  ]}
+                  filename="corp-top-products"
+                />
+              </div>
               <table className="cis-table">
                 <thead>
                   <tr>
@@ -326,6 +399,7 @@ function CorporationIndustryStats({ onError, refreshKey }) {
                     <th className="num">Jobs</th>
                     <th className="num">Runs</th>
                     <th className="num">Cost</th>
+                    <th className="num">Produced (est)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -339,15 +413,37 @@ function CorporationIndustryStats({ onError, refreshKey }) {
                       <td className="num">{formatNumber(p.job_count)}</td>
                       <td className="num">{formatNumber(p.total_runs)}</td>
                       <td className="num">{formatISK(p.total_cost)}</td>
+                      <td className="num">{p.isk_produced_est ? formatISK(p.isk_produced_est) : '—'}</td>
                     </tr>
                   ))}
-                  {topProducts.length === 0 && <tr><td colSpan={5} className="cis-empty-row">No products in range</td></tr>}
+                  {topProducts.length === 0 && <tr><td colSpan={6} className="cis-empty-row">No products in range</td></tr>}
                 </tbody>
               </table>
             </section>
 
             <section className="cis-panel">
-              <h3>Top Installers</h3>
+              <div className="cis-panel-header">
+                <h3>Top Installers</h3>
+                <ExportButton
+                  getData={() => topInstallers.map(i => ({
+                    installer: i.installer_name || `Character ${i.installer_id}`,
+                    character_id: i.installer_id,
+                    jobs: i.job_count,
+                    runs: i.total_runs,
+                    unique_products: i.unique_products,
+                    cost_isk: i.total_cost,
+                  }))}
+                  columns={[
+                    { key: 'installer', label: 'Character' },
+                    { key: 'character_id', label: 'Character ID' },
+                    { key: 'jobs', label: 'Jobs' },
+                    { key: 'runs', label: 'Runs' },
+                    { key: 'unique_products', label: 'Unique Products' },
+                    { key: 'cost_isk', label: 'Total Cost (ISK)' },
+                  ]}
+                  filename="corp-top-installers"
+                />
+              </div>
               <table className="cis-table">
                 <thead>
                   <tr>
@@ -379,9 +475,9 @@ function CorporationIndustryStats({ onError, refreshKey }) {
   );
 }
 
-function Card({ label, value }) {
+function Card({ label, value, hint }) {
   return (
-    <div className="cis-card">
+    <div className="cis-card" title={hint || undefined}>
       <div className="cis-card-label">{label}</div>
       <div className="cis-card-value">{value}</div>
     </div>
