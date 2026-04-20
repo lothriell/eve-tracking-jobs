@@ -77,6 +77,7 @@ function CorporationIndustryStats({ onError, refreshKey }) {
       if (to) params.to = to;
       if (activityId) params.activity = activityId;
       if (corpId) params.corporation_id = corpId;
+      params.top_limit = 100;
       const res = await getCorpIndustryStats(params);
       setData(res.data);
     } catch (err) {
@@ -98,6 +99,12 @@ function CorporationIndustryStats({ onError, refreshKey }) {
   const byGroup = data?.by_group || [];
   const byActivity = data?.by_activity || [];
   const byMonth = data?.by_month || [];
+
+  const topShips = useMemo(() => {
+    return topProducts
+      .filter(p => p.product_category_name === 'Ship' && p.activity_id === 1)
+      .slice(0, 12);
+  }, [topProducts]);
 
   // ESI reports reactions as activity 9 (legacy) or 11 (modern); merge them.
   // `kind` maps to the dashboard's manufacturing/science/reactions palette.
@@ -187,6 +194,34 @@ function CorporationIndustryStats({ onError, refreshKey }) {
             <Card label="Active Installers" value={formatNumber(summary.unique_installers)} />
             <Card label="Total Job Cost" value={`${formatISK(summary.total_cost)} ISK`} />
           </div>
+
+          {topShips.length > 0 && (
+            <section className="cis-panel cis-ships">
+              <h3>Ships Built</h3>
+              <div className="cis-ship-grid">
+                {topShips.map(ship => (
+                  <div className="cis-ship-tile" key={ship.product_type_id}>
+                    {ship.product_type_id && (
+                      <img
+                        className="cis-ship-icon"
+                        src={`https://images.evetech.net/types/${ship.product_type_id}/icon?size=64`}
+                        alt=""
+                        loading="lazy"
+                      />
+                    )}
+                    <div className="cis-ship-info">
+                      <div className="cis-ship-name">{ship.product_name || `Type ${ship.product_type_id}`}</div>
+                      <div className="cis-ship-group">{ship.product_group_name || ''}</div>
+                    </div>
+                    <div className="cis-ship-count">
+                      <span className="cis-ship-runs">{formatNumber(ship.total_runs)}</span>
+                      <span className="cis-ship-jobs">{formatNumber(ship.job_count)} jobs</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {activityRollup.length > 0 && (
             <section className="cis-panel cis-activities">

@@ -148,8 +148,14 @@
 
 .cis-category-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .cis-category-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .cis-category-block {
@@ -187,6 +193,79 @@
   justify-content: space-between;
   padding: 2px 0;
   color: #9ca3af;
+}
+
+.cis-ships {
+  margin-bottom: 16px;
+}
+
+.cis-ship-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.cis-ship-tile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(180deg, rgba(255, 107, 53, 0.08), rgba(255, 107, 53, 0.02));
+  border: 1px solid rgba(255, 107, 53, 0.25);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.cis-ship-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.cis-ship-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.cis-ship-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e5e7eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cis-ship-group {
+  font-size: 10px;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cis-ship-count {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.cis-ship-runs {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-manufacturing);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.cis-ship-jobs {
+  font-size: 10px;
+  color: #9ca3af;
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
 }
 
 .cis-activities {
