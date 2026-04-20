@@ -245,7 +245,29 @@ async function getLocationInfo(locationId, accessToken) {
 async function getCharacterIndustryJobs(characterId, accessToken, includeCompleted = false) {
   try {
     const url = `${ESI_BASE_URL}/characters/${characterId}/industry/jobs/`;
-    const jobs = await makeESIRequest(url, accessToken, { include_completed: includeCompleted });
+    // ESI paginates at ~1000 rows/page; without walking X-Pages, busy
+    // industrialists silently lose older completed jobs.
+    await waitForRateLimit();
+    const firstResp = await axios.get(url, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'User-Agent': 'EVE-ESI-App/2.0',
+      },
+      params: { datasource: ESI_DATASOURCE, include_completed: includeCompleted, page: 1 },
+    });
+    const jobs = [...(firstResp.data || [])];
+    const totalPages = parseInt(firstResp.headers['x-pages'] || '1', 10);
+    for (let page = 2; page <= totalPages; page++) {
+      await waitForRateLimit();
+      const resp = await axios.get(url, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'User-Agent': 'EVE-ESI-App/2.0',
+        },
+        params: { datasource: ESI_DATASOURCE, include_completed: includeCompleted, page },
+      });
+      if (Array.isArray(resp.data)) jobs.push(...resp.data);
+    }
 
     if (!jobs || jobs.length === 0) {
       return [];
