@@ -110,12 +110,14 @@ function CorporationIndustryStats({ onError, refreshKey }) {
 
   // ESI reports reactions as activity 9 (legacy) or 11 (modern); merge them.
   // `kind` maps to the dashboard's manufacturing/science/reactions palette.
+  // Kind order mirrors the dashboard: Manufacturing → Science → Reactions.
   const activityRollup = useMemo(() => {
     const kindFor = (id) => {
       if (id === 1) return 'manufacturing';
       if (id === 9 || id === 11) return 'reactions';
       return 'science';
     };
+    const kindOrder = { manufacturing: 0, science: 1, reactions: 2 };
     const bucket = {};
     for (const row of byActivity) {
       const key = (row.activity_id === 9 || row.activity_id === 11) ? 'reactions' : String(row.activity_id);
@@ -127,7 +129,10 @@ function CorporationIndustryStats({ onError, refreshKey }) {
       bucket[key].total_runs += row.total_runs || 0;
       bucket[key].total_cost += row.total_cost || 0;
     }
-    return Object.values(bucket).sort((a, b) => b.job_count - a.job_count);
+    return Object.values(bucket).sort((a, b) => {
+      const ko = kindOrder[a.kind] - kindOrder[b.kind];
+      return ko !== 0 ? ko : b.job_count - a.job_count;
+    });
   }, [byActivity]);
 
   const metricValue = useCallback((row) => {
