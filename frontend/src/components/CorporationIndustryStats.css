@@ -189,6 +189,45 @@
   color: #9ca3af;
 }
 
+.cis-activities {
+  margin-bottom: 16px;
+}
+
+.cis-activity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.cis-activity-tile {
+  background: rgba(104, 211, 145, 0.06);
+  border: 1px solid rgba(104, 211, 145, 0.2);
+  border-radius: 6px;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.cis-activity-label {
+  font-size: 11px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.cis-activity-jobs {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #68d391;
+  font-variant-numeric: tabular-nums;
+}
+
+.cis-activity-runs {
+  font-size: 12px;
+  color: #9ca3af;
+  font-variant-numeric: tabular-nums;
+}
+
 .cis-note {
   font-size: 11px;
   color: #6b7280;

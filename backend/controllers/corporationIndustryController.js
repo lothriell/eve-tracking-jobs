@@ -24,6 +24,13 @@ async function resolveUserCorpIds(userId) {
   return [...corpIds];
 }
 
+// ESI exposes reactions as both legacy activity_id 9 and modern 11 — treat
+// them as a single "Reactions" bucket in the UI so filtering matches reality.
+const ACTIVITY_ALIASES = {
+  11: [9, 11],
+  9: [9, 11],
+};
+
 function parseFilters(req, corpIds) {
   const { from, to, activity, corporation_id } = req.query;
   let filtered = corpIds;
@@ -31,11 +38,21 @@ function parseFilters(req, corpIds) {
     const c = parseInt(corporation_id);
     filtered = corpIds.includes(c) ? [c] : [];
   }
+
+  let activityIds = null;
+  let activityId = null;
+  if (activity) {
+    const a = parseInt(activity);
+    if (ACTIVITY_ALIASES[a]) activityIds = ACTIVITY_ALIASES[a];
+    else activityId = a;
+  }
+
   return {
     corporationIds: filtered,
     from: from || null,
     to: to || null,
-    activityId: activity ? parseInt(activity) : null,
+    activityId,
+    activityIds,
   };
 }
 

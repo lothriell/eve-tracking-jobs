@@ -895,7 +895,7 @@ class DB {
     ).get(corporationId);
   }
 
-  _buildCorpJobWhere({ corporationIds, from, to, activityId }) {
+  _buildCorpJobWhere({ corporationIds, from, to, activityId, activityIds }) {
     const clauses = [];
     const params = [];
     if (corporationIds && corporationIds.length > 0) {
@@ -904,7 +904,13 @@ class DB {
     }
     if (from) { clauses.push('end_date >= ?'); params.push(from); }
     if (to) { clauses.push('end_date <= ?'); params.push(to); }
-    if (activityId) { clauses.push('activity_id = ?'); params.push(activityId); }
+    if (activityIds && activityIds.length > 0) {
+      clauses.push(`activity_id IN (${activityIds.map(() => '?').join(',')})`);
+      params.push(...activityIds);
+    } else if (activityId) {
+      clauses.push('activity_id = ?');
+      params.push(activityId);
+    }
     return { where: clauses.length ? `WHERE ${clauses.join(' AND ')}` : '', params };
   }
 

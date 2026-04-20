@@ -95,6 +95,23 @@ function CorporationIndustryStats({ onError, refreshKey }) {
   const topProducts = data?.top_products || [];
   const topInstallers = data?.top_installers || [];
   const byGroup = data?.by_group || [];
+  const byActivity = data?.by_activity || [];
+
+  // ESI reports reactions as activity 9 (legacy) or 11 (modern); merge them.
+  const activityRollup = useMemo(() => {
+    const bucket = {};
+    for (const row of byActivity) {
+      const key = (row.activity_id === 9 || row.activity_id === 11) ? 'reactions' : String(row.activity_id);
+      const label = (row.activity_id === 9 || row.activity_id === 11)
+        ? 'Reactions'
+        : (ACTIVITY_LABELS[row.activity_id] || `Activity ${row.activity_id}`);
+      if (!bucket[key]) bucket[key] = { label, job_count: 0, total_runs: 0, total_cost: 0 };
+      bucket[key].job_count += row.job_count || 0;
+      bucket[key].total_runs += row.total_runs || 0;
+      bucket[key].total_cost += row.total_cost || 0;
+    }
+    return Object.values(bucket).sort((a, b) => b.job_count - a.job_count);
+  }, [byActivity]);
 
   const groupedByCategory = useMemo(() => {
     const map = {};
@@ -126,9 +143,12 @@ function CorporationIndustryStats({ onError, refreshKey }) {
           </select>
           <select value={activityId} onChange={(e) => setActivityId(e.target.value)}>
             <option value="">All activities</option>
-            {Object.entries(ACTIVITY_LABELS).map(([id, label]) => (
-              <option key={id} value={id}>{label}</option>
-            ))}
+            <option value="1">Manufacturing</option>
+            <option value="11">Reactions</option>
+            <option value="8">Invention</option>
+            <option value="5">Copying</option>
+            <option value="3">Researching Time Efficiency</option>
+            <option value="4">Researching Material Efficiency</option>
           </select>
           {corporations.length > 1 && (
             <select value={corpId} onChange={(e) => setCorpId(e.target.value)}>
@@ -159,6 +179,21 @@ function CorporationIndustryStats({ onError, refreshKey }) {
             <Card label="Active Installers" value={formatNumber(summary.unique_installers)} />
             <Card label="Total Job Cost" value={`${formatISK(summary.total_cost)} ISK`} />
           </div>
+
+          {activityRollup.length > 0 && (
+            <section className="cis-panel cis-activities">
+              <h3>By Activity</h3>
+              <div className="cis-activity-grid">
+                {activityRollup.map(a => (
+                  <div className="cis-activity-tile" key={a.label}>
+                    <div className="cis-activity-label">{a.label}</div>
+                    <div className="cis-activity-jobs">{formatNumber(a.job_count)} jobs</div>
+                    <div className="cis-activity-runs">{formatNumber(a.total_runs)} runs</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           <div className="cis-columns">
             <section className="cis-panel">
