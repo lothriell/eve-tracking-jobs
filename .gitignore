@@ -66,3 +66,6 @@ docker-data/
 
 # Local task tracking (not shared)
 tasks/
+
+# Claude Code local settings (contain internal IPs/hostnames in permission allowlists)
+.claude/
