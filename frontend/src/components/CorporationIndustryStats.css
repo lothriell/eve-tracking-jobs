@@ -479,13 +479,16 @@
 .cis-group-bars {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
 }
 
+/* Three aligned columns: label (fixed max) | bar track (flex) | value (fixed).
+   Fixed label and value widths keep every row's bar track starting and ending
+   at the same X, so bars compare cleanly down the column. */
 .cis-group-bar-row {
   display: grid;
-  grid-template-columns: 1fr 90px auto;
-  gap: 8px;
+  grid-template-columns: minmax(120px, 200px) 1fr 80px;
+  gap: 10px;
   align-items: center;
   font-size: 11px;
 }
@@ -499,8 +502,8 @@
 
 .cis-group-bar-track {
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 2px;
-  height: 6px;
+  border-radius: 3px;
+  height: 8px;
   position: relative;
   overflow: hidden;
 }
@@ -509,13 +512,15 @@
   display: block;
   height: 100%;
   background: var(--color-manufacturing, #ff6b35);
-  border-radius: 2px;
+  border-radius: 3px;
+  min-width: 2px;
 }
 
 .cis-group-bar-value {
-  color: #9ca3af;
+  color: #d1d5db;
   font-variant-numeric: tabular-nums;
   text-align: right;
+  white-space: nowrap;
 }
 
 .cis-note {
