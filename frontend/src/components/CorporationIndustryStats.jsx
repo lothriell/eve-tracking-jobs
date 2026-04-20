@@ -9,6 +9,7 @@ const ACTIVITY_LABELS = {
   4: 'Researching Material Efficiency',
   5: 'Copying',
   8: 'Invention',
+  9: 'Reactions',
   11: 'Reactions',
 };
 
