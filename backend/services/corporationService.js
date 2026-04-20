@@ -187,18 +187,43 @@ async function getCorporationInfo(corporationId) {
  */
 async function getCorporationJobs(corporationId, accessToken, includeCompleted = false) {
   try {
-    const response = await axios.get(
+    // ESI paginates corp jobs at ~1000 rows per page. Without walking pages,
+    // busy corps (especially short-cycle reactions) silently lose older jobs.
+    const firstResponse = await axios.get(
       `${ESI_BASE_URL}/corporations/${corporationId}/industry/jobs/`,
       {
         headers: { 'Authorization': `Bearer ${accessToken}` },
-        params: { 
+        params: {
           datasource: ESI_DATASOURCE,
-          include_completed: includeCompleted
-        }
+          include_completed: includeCompleted,
+          page: 1,
+        },
       }
     );
 
-    return response.data || [];
+    const allJobs = [...(firstResponse.data || [])];
+    const totalPages = parseInt(firstResponse.headers['x-pages'] || '1', 10);
+
+    for (let page = 2; page <= totalPages; page++) {
+      const pageResponse = await axios.get(
+        `${ESI_BASE_URL}/corporations/${corporationId}/industry/jobs/`,
+        {
+          headers: { 'Authorization': `Bearer ${accessToken}` },
+          params: {
+            datasource: ESI_DATASOURCE,
+            include_completed: includeCompleted,
+            page,
+          },
+        }
+      );
+      if (Array.isArray(pageResponse.data)) allJobs.push(...pageResponse.data);
+    }
+
+    if (totalPages > 1) {
+      console.log(`[ESI] Corp ${corporationId} jobs: ${allJobs.length} rows across ${totalPages} pages`);
+    }
+
+    return allJobs;
   } catch (error) {
     // Handle specific error cases
     if (error.response?.status === 403) {
