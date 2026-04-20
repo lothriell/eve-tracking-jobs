@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { getCorpIndustryStats } from '../services/api';
 import ExternalLinks from './ExternalLinks';
+import MonthlyTrendChart from './MonthlyTrendChart';
 import './CorporationIndustryStats.css';
 
 const ACTIVITY_LABELS = {
@@ -96,6 +97,7 @@ function CorporationIndustryStats({ onError, refreshKey }) {
   const topInstallers = data?.top_installers || [];
   const byGroup = data?.by_group || [];
   const byActivity = data?.by_activity || [];
+  const byMonth = data?.by_month || [];
 
   // ESI reports reactions as activity 9 (legacy) or 11 (modern); merge them.
   // `kind` maps to the dashboard's manufacturing/science/reactions palette.
@@ -260,28 +262,41 @@ function CorporationIndustryStats({ onError, refreshKey }) {
             </section>
           </div>
 
+          <MonthlyTrendChart by_month={byMonth} />
+
           {groupedByCategory.length > 0 && (
             <section className="cis-panel cis-categories">
               <h3>By Category</h3>
               <div className="cis-category-grid">
-                {groupedByCategory.map(cat => (
-                  <div className="cis-category-block" key={cat.category_id || 'unknown'}>
-                    <div className="cis-category-header">
-                      <span className="cis-category-name">
-                        {cat.category_name || (cat.category_id ? `Category ${cat.category_id}` : 'Unknown')}
-                      </span>
-                      <span className="cis-category-total">{formatNumber(cat.total_runs)} runs</span>
+                {groupedByCategory.map(cat => {
+                  const topGroup = cat.groups[0]?.total_runs || 1;
+                  return (
+                    <div className="cis-category-block" key={cat.category_id || 'unknown'}>
+                      <div className="cis-category-header">
+                        <span className="cis-category-name">
+                          {cat.category_name || (cat.category_id ? `Category ${cat.category_id}` : 'Unknown')}
+                        </span>
+                        <span className="cis-category-total">{formatNumber(cat.total_runs)} runs</span>
+                      </div>
+                      <div className="cis-group-bars">
+                        {cat.groups.slice(0, 8).map(g => {
+                          const width = Math.max(2, ((g.total_runs || 0) / topGroup) * 100);
+                          return (
+                            <div className="cis-group-bar-row" key={g.product_group_id || 'unknown-group'}>
+                              <span className="cis-group-bar-label" title={g.product_group_name || ''}>
+                                {g.product_group_name || (g.product_group_id ? `Group ${g.product_group_id}` : 'Unknown')}
+                              </span>
+                              <span className="cis-group-bar-track">
+                                <span className="cis-group-bar-fill" style={{ width: `${width}%` }} />
+                              </span>
+                              <span className="cis-group-bar-value">{formatNumber(g.total_runs)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <ul>
-                      {cat.groups.slice(0, 8).map(g => (
-                        <li key={g.product_group_id || 'unknown-group'}>
-                          <span>{g.product_group_name || (g.product_group_id ? `Group ${g.product_group_id}` : 'Unknown')}</span>
-                          <span className="num">{formatNumber(g.total_runs)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <p className="cis-note">
                 Category/group names resolve lazily from ESI on first archive — re-visit after the next

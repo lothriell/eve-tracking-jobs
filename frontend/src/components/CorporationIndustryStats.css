@@ -267,6 +267,108 @@
   font-variant-numeric: tabular-nums;
 }
 
+.cis-monthly {
+  margin-bottom: 16px;
+}
+
+.cis-monthly-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.cis-monthly-header h3 {
+  margin: 0;
+}
+
+.cis-metric-toggle {
+  display: inline-flex;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.cis-metric-toggle button {
+  background: transparent;
+  color: #9ca3af;
+  border: none;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.cis-metric-toggle button:not(:last-child) {
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cis-metric-toggle button:hover {
+  color: #e5e7eb;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.cis-metric-toggle button.active {
+  background: rgba(255, 107, 53, 0.18);
+  color: var(--color-manufacturing);
+}
+
+.cis-monthly-hover {
+  font-size: 12px;
+  color: var(--color-manufacturing);
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+
+.cis-monthly-canvas {
+  width: 100%;
+  height: 220px;
+  display: block;
+  cursor: crosshair;
+}
+
+.cis-group-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cis-group-bar-row {
+  display: grid;
+  grid-template-columns: 1fr 90px auto;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+}
+
+.cis-group-bar-label {
+  color: #e5e7eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cis-group-bar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  height: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+.cis-group-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--color-manufacturing, #ff6b35);
+  border-radius: 2px;
+}
+
+.cis-group-bar-value {
+  color: #9ca3af;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
 .cis-note {
   font-size: 11px;
   color: #6b7280;
