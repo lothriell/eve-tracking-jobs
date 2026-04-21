@@ -5,7 +5,8 @@ All notable changes to the EVE Industry Tracker will be documented in this file.
 ## [v5.15.0] - 2026-04-21
 
 ### Personal Industry Stats Dashboard
-- **New sidebar view "My Industry Stats"** — mirror of the corp industry dashboard, reading from the `character_job_history` archive (populated every 15 minutes since v5.14.0). Headline cards (jobs, runs, unique products, active characters, job cost, ISK produced estimate), top-ships grid, activity rollup tiles, monthly trend chart, by-category group bars, top products table, and a per-character breakdown table.
+- **New sidebar view "My Industry Stats"** — mirror of the corp industry dashboard, reading from the `character_job_history` archive (populated every 15 minutes since v5.14.0). Headline cards (jobs, runs, unique products, active characters, job cost, ISK produced estimate, **ISK sold (real)**), top-ships grid, activity rollup tiles, monthly trend chart, by-category group bars, top products table (with per-type **real sales** from wallet), and a per-character breakdown table.
+- **Real ISK sold figure** — sums `wallet_transactions` sales (`is_buy=0`) across the user's characters inside the same window, shown as a headline card and as a per-type column in the Top Products table. Complements the Jita-sell estimate. Sales aren't tied to specific jobs, so the figure can include inventory produced before the window.
 - **Filters** — date-range presets (this/last month, 30d, 90d, 6m, all), activity type, per-character picker (appears when user has multiple alts with archived jobs).
 - **CSV export** — full raw history dump with character + facility + location denormalized.
 - **Access scope** — user only sees jobs for characters linked to their account.

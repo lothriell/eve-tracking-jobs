@@ -258,6 +258,11 @@ function CharacterIndustryStats({ onError, refreshKey }) {
               value={`${formatISK(summary.isk_produced_est)} ISK`}
               hint="Σ runs × current Jita sell; manufacturing + reactions only"
             />
+            <Card
+              label="ISK Sold (real)"
+              value={`${formatISK(summary.isk_sold_real)} ISK`}
+              hint="Σ wallet sales (is_buy=0) in this window across all characters — may include inventory built before the window"
+            />
           </div>
 
           {topShips.length > 0 && (
@@ -370,6 +375,8 @@ function CharacterIndustryStats({ onError, refreshKey }) {
                     runs: p.total_runs,
                     cost_isk: p.total_cost,
                     isk_produced_est: p.isk_produced_est,
+                    units_sold: p.units_sold,
+                    isk_sold_real: p.isk_sold,
                   }))}
                   columns={[
                     { key: 'product', label: 'Product' },
@@ -381,6 +388,8 @@ function CharacterIndustryStats({ onError, refreshKey }) {
                     { key: 'runs', label: 'Runs' },
                     { key: 'cost_isk', label: 'Job Cost (ISK)' },
                     { key: 'isk_produced_est', label: 'ISK Produced (est)' },
+                    { key: 'units_sold', label: 'Units Sold' },
+                    { key: 'isk_sold_real', label: 'ISK Sold (real)' },
                   ]}
                   filename="my-top-products"
                 />
@@ -393,7 +402,8 @@ function CharacterIndustryStats({ onError, refreshKey }) {
                     <th className="num">Jobs</th>
                     <th className="num">Runs</th>
                     <th className="num">Cost</th>
-                    <th className="num">Produced (est)</th>
+                    <th className="num" title="Σ runs × current Jita sell">Produced (est)</th>
+                    <th className="num" title="Σ wallet sales in window">Sold (real)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -408,9 +418,12 @@ function CharacterIndustryStats({ onError, refreshKey }) {
                       <td className="num">{formatNumber(p.total_runs)}</td>
                       <td className="num">{formatISK(p.total_cost)}</td>
                       <td className="num">{p.isk_produced_est ? formatISK(p.isk_produced_est) : '—'}</td>
+                      <td className="num" title={p.units_sold ? `${formatNumber(p.units_sold)} units sold` : ''}>
+                        {p.isk_sold ? formatISK(p.isk_sold) : '—'}
+                      </td>
                     </tr>
                   ))}
-                  {topProducts.length === 0 && <tr><td colSpan={6} className="cis-empty-row">No products in range</td></tr>}
+                  {topProducts.length === 0 && <tr><td colSpan={7} className="cis-empty-row">No products in range</td></tr>}
                 </tbody>
               </table>
             </section>

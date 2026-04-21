@@ -66,6 +66,28 @@ exports.getStats = async (req, res) => {
     const byGroup = db.queryCharacterJobsByGroup(filters);
     const byActivity = db.queryCharacterJobsByActivity(filters);
 
+    // Merge real wallet-sales data for the same characters/window. Sales
+    // aren't linked to specific build jobs, so this answers "how much did I
+    // sell of these types in this window" rather than "what did this job
+    // earn." Useful alongside the isk_produced_est Jita-price estimate.
+    const salesFilters = { characterIds: filters.characterIds, from: filters.from, to: filters.to };
+    const salesSummary = db.queryCharacterSalesSummary(salesFilters);
+    const salesByType = db.queryCharacterSalesByType(salesFilters);
+    const salesMap = new Map();
+    for (const row of salesByType) {
+      salesMap.set(row.type_id, { isk_sold: row.isk_sold || 0, units_sold: row.units_sold || 0 });
+    }
+    if (summary) {
+      summary.isk_sold_real = salesSummary?.isk_sold || 0;
+      summary.units_sold_total = salesSummary?.units_sold || 0;
+      summary.unique_types_sold = salesSummary?.unique_types_sold || 0;
+    }
+    for (const p of topProducts) {
+      const s = salesMap.get(p.product_type_id);
+      p.isk_sold = s?.isk_sold || 0;
+      p.units_sold = s?.units_sold || 0;
+    }
+
     // Characters list for the selector — only those the user owns and that
     // appear in the archive (so the dropdown doesn't list alts with zero jobs).
     const allOwned = db.getAllCharactersByUserId(req.session.userId);

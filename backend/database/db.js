@@ -1235,6 +1235,50 @@ class DB {
     return this.db.prepare(`SELECT COUNT(*) as c FROM character_job_history ${where}`).get(...params).c;
   }
 
+  // Sum wallet sales (is_buy=0) for the given character set inside a date
+  // window. Used alongside character_job_history to surface *real* ISK
+  // earned, not the current-Jita-price estimate. Sales aren't tied to a
+  // specific job — it's "I sold this much of X in this window," which may
+  // include inventory built earlier.
+  queryCharacterSalesSummary({ characterIds, from, to }) {
+    const clauses = [];
+    const params = [];
+    if (characterIds && characterIds.length > 0) {
+      clauses.push(`character_id IN (${characterIds.map(() => '?').join(',')})`);
+      params.push(...characterIds);
+    }
+    clauses.push(`is_buy = 0`);
+    if (from) { clauses.push(`date >= ?`); params.push(from); }
+    if (to) { clauses.push(`date <= ?`); params.push(to); }
+    const where = `WHERE ${clauses.join(' AND ')}`;
+    return this.db.prepare(
+      `SELECT SUM(quantity * unit_price) as isk_sold,
+              SUM(quantity) as units_sold,
+              COUNT(DISTINCT type_id) as unique_types_sold
+       FROM wallet_transactions ${where}`
+    ).get(...params);
+  }
+
+  queryCharacterSalesByType({ characterIds, from, to }) {
+    const clauses = [];
+    const params = [];
+    if (characterIds && characterIds.length > 0) {
+      clauses.push(`character_id IN (${characterIds.map(() => '?').join(',')})`);
+      params.push(...characterIds);
+    }
+    clauses.push(`is_buy = 0`);
+    if (from) { clauses.push(`date >= ?`); params.push(from); }
+    if (to) { clauses.push(`date <= ?`); params.push(to); }
+    const where = `WHERE ${clauses.join(' AND ')}`;
+    return this.db.prepare(
+      `SELECT type_id,
+              SUM(quantity * unit_price) as isk_sold,
+              SUM(quantity) as units_sold
+       FROM wallet_transactions ${where}
+       GROUP BY type_id`
+    ).all(...params);
+  }
+
   // ===== HUB PRICE HISTORY =====
 
   /** Append one-per-day snapshots for a station's current hub_prices rows. */
