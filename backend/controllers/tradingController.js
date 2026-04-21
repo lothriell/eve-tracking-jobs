@@ -128,6 +128,28 @@ async function compareItem(req, res) {
   }
 }
 
+async function priceHistory(req, res) {
+  try {
+    const typeId = parseInt(req.query.type_id);
+    const stationId = parseInt(req.query.station_id);
+    const days = Math.min(Math.max(parseInt(req.query.days) || 90, 1), 365);
+    if (!typeId || !stationId) return res.status(400).json({ error: 'type_id and station_id are required' });
+
+    // Confirm the station is actually one of the user's enabled hubs — we
+    // don't want to leak arbitrary station history through this endpoint.
+    const userHubs = db.getEnabledTradeHubs(req.session.userId);
+    if (!userHubs.some(h => h.station_id === stationId)) {
+      return res.status(403).json({ error: 'Not a hub you have access to' });
+    }
+
+    const rows = db.queryHubPriceHistory(typeId, stationId, days);
+    res.json({ type_id: typeId, station_id: stationId, days, rows });
+  } catch (error) {
+    console.error('Price history error:', error.message);
+    res.status(500).json({ error: 'Failed to load price history' });
+  }
+}
+
 // ===== TRADE FINDER =====
 
 async function findTrades(req, res) {
@@ -1188,6 +1210,7 @@ module.exports = {
   removeHub,
   toggleHub,
   compareItem,
+  priceHistory,
   findTrades,
   getSettings,
   updateSettings,

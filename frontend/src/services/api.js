@@ -125,6 +125,31 @@ export const runCorpIndustryBackfill = () => {
   return api.post('/api/corporation/industry/backfill');
 };
 
+// Character industry history (per-user across all owned characters)
+export const getCharacterIndustryStats = (params = {}) => {
+  return api.get('/api/character/industry/stats', { params });
+};
+
+export const getCharacterIndustryHistory = (params = {}) => {
+  return api.get('/api/character/industry/history', { params });
+};
+
+export const getAllCharacterIndustryHistory = async (baseParams = {}) => {
+  const all = [];
+  let offset = 0;
+  const limit = 500;
+  while (true) {
+    const res = await api.get('/api/character/industry/history', {
+      params: { ...baseParams, limit, offset },
+    });
+    const rows = res.data?.rows || [];
+    all.push(...rows);
+    if (rows.length < limit) break;
+    offset += limit;
+  }
+  return all;
+};
+
 // Asset endpoints
 export const getCharacterAssets = (characterId = null, all = false, priceMode = 'average') => {
   const params = new URLSearchParams();
@@ -218,6 +243,10 @@ export const toggleTradeHub = (hubId, enabled) => {
 
 export const getHubComparison = (typeId) => {
   return api.get(`/api/trading/compare/${typeId}`);
+};
+
+export const getHubPriceHistory = (params) => {
+  return api.get('/api/trading/price-history', { params });
 };
 
 export const findTrades = (params) => {

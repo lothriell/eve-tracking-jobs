@@ -2,6 +2,25 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.15.0] - 2026-04-21
+
+### Personal Industry Stats Dashboard
+- **New sidebar view "My Industry Stats"** — mirror of the corp industry dashboard, reading from the `character_job_history` archive (populated every 15 minutes since v5.14.0). Headline cards (jobs, runs, unique products, active characters, job cost, ISK produced estimate), top-ships grid, activity rollup tiles, monthly trend chart, by-category group bars, top products table, and a per-character breakdown table.
+- **Filters** — date-range presets (this/last month, 30d, 90d, 6m, all), activity type, per-character picker (appears when user has multiple alts with archived jobs).
+- **CSV export** — full raw history dump with character + facility + location denormalized.
+- **Access scope** — user only sees jobs for characters linked to their account.
+
+### Price Trend Chart in Hub Compare
+- **Click a hub row to expand an inline price trend chart** (sell_min green, buy_max red) reading from the `hub_price_history` daily snapshots (one row per type × hub × UTC day, 180-day retention, populated since v5.14.0).
+- **Range toggle** — 1W / 1M / 3M / 6M, matching the WealthChart trading-platform style.
+- **Hand-rolled Canvas2D** — no new dependencies; reuses `WealthChart.css` so visuals stay consistent.
+- **Chart fills in over time** — only ~1 day of history at release; becomes increasingly useful as days accrue.
+
+### Backend
+- New `backend/controllers/characterIndustryController.js` exposing `GET /character/industry/stats`, `GET /character/industry/history`, and `POST /character/industry/backfill` (admin-only).
+- New `GET /trading/price-history?type_id=&station_id=&days=` endpoint with hub-access guard (403 if station isn't one of the user's enabled hubs).
+- Eight new `db.queryCharacter*` helpers mirroring the corp query family (summary, byMonth, byMonthCategory, topProducts, breakdown, byGroup, byActivity, history).
+
 ## [v5.14.1] - 2026-04-21
 
 ### Backend Stability Fixes

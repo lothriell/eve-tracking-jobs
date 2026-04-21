@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { getTradeHubs, getHubComparison, addTradeHub, removeTradeHub, toggleTradeHub, searchStations, searchTypes } from '../services/api';
 import ExportButton from './ExportButton';
 import ExternalLinks from './ExternalLinks';
+import PriceTrendChart from './PriceTrendChart';
 import './HubComparison.css';
 
 function formatISK(value) {
@@ -45,6 +46,7 @@ function HubComparison({ onError, refreshKey }) {
   const [stationResults, setStationResults] = useState([]);
   const [searchingStations, setSearchingStations] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState(null);
+  const [trendStationId, setTrendStationId] = useState(null); // which hub row is showing the trend chart
 
   const loadHubs = useCallback(async () => {
     try {
@@ -358,24 +360,49 @@ function HubComparison({ onError, refreshKey }) {
                 const spread = hub.sell_min > 0 && hub.buy_max > 0
                   ? ((hub.sell_min - hub.buy_max) / hub.sell_min * 100).toFixed(1)
                   : null;
+                const isOpen = trendStationId === hub.station_id;
                 return (
-                  <tr key={hub.hub_id}>
-                    <td className="hub-name-cell">{hub.hub_name}</td>
-                    <td className={`num ${hub.sell_min === bestSell && hub.sell_min > 0 ? 'best-price' : ''}`}>
-                      {formatISK(hub.sell_min)}
-                    </td>
-                    <td className={`num ${hub.buy_max === bestBuy && hub.buy_max > 0 ? 'best-price' : ''}`}>
-                      {formatISK(hub.buy_max)}
-                    </td>
-                    <td className="num">{spread ? `${spread}%` : '—'}</td>
-                    <td className="num">{formatVolume(hub.sell_volume)}</td>
-                    <td className="num">{formatVolume(hub.buy_volume)}</td>
-                    <td>
-                      <span className={`refresh-badge ${hub.refresh?.status || 'pending'}`}>
-                        {hub.refresh?.last_refresh_at ? timeAgo(hub.refresh.last_refresh_at) : 'pending'}
-                      </span>
-                    </td>
-                  </tr>
+                  <React.Fragment key={hub.hub_id}>
+                    <tr>
+                      <td className="hub-name-cell">
+                        <button
+                          type="button"
+                          className="trend-toggle"
+                          title={isOpen ? 'Hide price history' : 'Show price history'}
+                          onClick={() => setTrendStationId(isOpen ? null : hub.station_id)}
+                        >
+                          {isOpen ? '▾' : '📈'}
+                        </button>
+                        {hub.hub_name}
+                      </td>
+                      <td className={`num ${hub.sell_min === bestSell && hub.sell_min > 0 ? 'best-price' : ''}`}>
+                        {formatISK(hub.sell_min)}
+                      </td>
+                      <td className={`num ${hub.buy_max === bestBuy && hub.buy_max > 0 ? 'best-price' : ''}`}>
+                        {formatISK(hub.buy_max)}
+                      </td>
+                      <td className="num">{spread ? `${spread}%` : '—'}</td>
+                      <td className="num">{formatVolume(hub.sell_volume)}</td>
+                      <td className="num">{formatVolume(hub.buy_volume)}</td>
+                      <td>
+                        <span className={`refresh-badge ${hub.refresh?.status || 'pending'}`}>
+                          {hub.refresh?.last_refresh_at ? timeAgo(hub.refresh.last_refresh_at) : 'pending'}
+                        </span>
+                      </td>
+                    </tr>
+                    {isOpen && (
+                      <tr className="trend-row">
+                        <td colSpan={7}>
+                          <PriceTrendChart
+                            typeId={comparison.type_id}
+                            stationId={hub.station_id}
+                            typeName={comparison.type_name}
+                            stationName={hub.hub_name}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 );
               })}
             </tbody>

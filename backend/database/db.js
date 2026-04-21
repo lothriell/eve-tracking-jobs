@@ -1086,6 +1086,155 @@ class DB {
     ).get(characterId);
   }
 
+  _buildCharacterJobWhere({ characterIds, from, to, activityId, activityIds }, alias = '') {
+    const p = alias ? `${alias}.` : '';
+    const clauses = [];
+    const params = [];
+    if (characterIds && characterIds.length > 0) {
+      clauses.push(`${p}character_id IN (${characterIds.map(() => '?').join(',')})`);
+      params.push(...characterIds);
+    }
+    if (from) { clauses.push(`${p}end_date >= ?`); params.push(from); }
+    if (to) { clauses.push(`${p}end_date <= ?`); params.push(to); }
+    if (activityIds && activityIds.length > 0) {
+      clauses.push(`${p}activity_id IN (${activityIds.map(() => '?').join(',')})`);
+      params.push(...activityIds);
+    } else if (activityId) {
+      clauses.push(`${p}activity_id = ?`);
+      params.push(activityId);
+    }
+    return { where: clauses.length ? `WHERE ${clauses.join(' AND ')}` : '', params };
+  }
+
+  queryCharacterJobSummary(filters) {
+    const { where, params } = this._buildCharacterJobWhere(filters, 'h');
+    return this.db.prepare(
+      `SELECT COUNT(*) as job_count,
+              SUM(h.runs) as total_runs,
+              COUNT(DISTINCT h.product_type_id) as unique_products,
+              COUNT(DISTINCT h.character_id) as unique_characters,
+              SUM(h.cost) as total_cost,
+              SUM(CASE WHEN h.activity_id IN (1, 9, 11)
+                       THEN h.runs * COALESCE(j.sell_min, 0)
+                       ELSE 0 END) as isk_produced_est,
+              MIN(h.end_date) as first_job,
+              MAX(h.end_date) as last_job
+       FROM character_job_history h
+       LEFT JOIN jita_prices j ON j.type_id = h.product_type_id
+       ${where}`
+    ).get(...params);
+  }
+
+  queryCharacterJobsByMonth(filters) {
+    const { where, params } = this._buildCharacterJobWhere(filters);
+    return this.db.prepare(
+      `SELECT strftime('%Y-%m', end_date) as month,
+              COUNT(*) as job_count,
+              SUM(runs) as total_runs,
+              SUM(cost) as total_cost
+       FROM character_job_history ${where}
+       GROUP BY month
+       ORDER BY month ASC`
+    ).all(...params);
+  }
+
+  queryCharacterJobsByMonthAndCategory(filters) {
+    const { where, params } = this._buildCharacterJobWhere(filters);
+    return this.db.prepare(
+      `SELECT strftime('%Y-%m', end_date) as month,
+              product_category_id,
+              product_category_name,
+              COUNT(*) as job_count,
+              SUM(runs) as total_runs,
+              SUM(cost) as total_cost
+       FROM character_job_history ${where}
+       GROUP BY month, product_category_id
+       ORDER BY month ASC`
+    ).all(...params);
+  }
+
+  queryCharacterTopProducts(filters, limit = 25) {
+    const { where, params } = this._buildCharacterJobWhere(filters, 'h');
+    return this.db.prepare(
+      `SELECT h.product_type_id, h.product_name, h.product_group_id, h.product_category_id,
+              h.product_group_name, h.product_category_name, h.activity_id,
+              COUNT(*) as job_count,
+              SUM(h.runs) as total_runs,
+              SUM(h.cost) as total_cost,
+              SUM(CASE WHEN h.activity_id IN (1, 9, 11)
+                       THEN h.runs * COALESCE(j.sell_min, 0)
+                       ELSE 0 END) as isk_produced_est
+       FROM character_job_history h
+       LEFT JOIN jita_prices j ON j.type_id = h.product_type_id
+       ${where}
+       GROUP BY h.product_type_id, h.activity_id
+       ORDER BY total_runs DESC
+       LIMIT ?`
+    ).all(...params, limit);
+  }
+
+  queryCharacterBreakdown(filters, limit = 25) {
+    const { where, params } = this._buildCharacterJobWhere(filters);
+    return this.db.prepare(
+      `SELECT character_id, character_name,
+              COUNT(*) as job_count,
+              SUM(runs) as total_runs,
+              SUM(cost) as total_cost,
+              COUNT(DISTINCT product_type_id) as unique_products
+       FROM character_job_history ${where}
+       GROUP BY character_id
+       ORDER BY job_count DESC
+       LIMIT ?`
+    ).all(...params, limit);
+  }
+
+  queryCharacterJobsByGroup(filters) {
+    const { where, params } = this._buildCharacterJobWhere(filters);
+    return this.db.prepare(
+      `SELECT product_group_id, product_category_id,
+              product_group_name, product_category_name,
+              COUNT(*) as job_count,
+              SUM(runs) as total_runs,
+              SUM(cost) as total_cost
+       FROM character_job_history ${where}
+       GROUP BY product_group_id
+       ORDER BY total_runs DESC`
+    ).all(...params);
+  }
+
+  queryCharacterJobsByActivity(filters) {
+    const { where, params } = this._buildCharacterJobWhere(filters);
+    return this.db.prepare(
+      `SELECT activity_id,
+              COUNT(*) as job_count,
+              SUM(runs) as total_runs,
+              SUM(cost) as total_cost
+       FROM character_job_history ${where}
+       GROUP BY activity_id
+       ORDER BY job_count DESC`
+    ).all(...params);
+  }
+
+  queryCharacterJobHistory(filters, limit = 100, offset = 0) {
+    const { where, params } = this._buildCharacterJobWhere(filters, 'h');
+    return this.db.prepare(
+      `SELECT h.*,
+              fac.name as facility_name,
+              loc.name as location_name
+       FROM character_job_history h
+       LEFT JOIN name_cache fac ON fac.id = h.facility_id AND fac.category IN ('station','structure')
+       LEFT JOIN name_cache loc ON loc.id = h.location_id AND loc.category IN ('station','structure')
+       ${where}
+       ORDER BY h.end_date DESC
+       LIMIT ? OFFSET ?`
+    ).all(...params, limit, offset);
+  }
+
+  countCharacterJobHistory(filters) {
+    const { where, params } = this._buildCharacterJobWhere(filters);
+    return this.db.prepare(`SELECT COUNT(*) as c FROM character_job_history ${where}`).get(...params).c;
+  }
+
   // ===== HUB PRICE HISTORY =====
 
   /** Append one-per-day snapshots for a station's current hub_prices rows. */

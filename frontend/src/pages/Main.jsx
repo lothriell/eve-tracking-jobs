@@ -5,6 +5,7 @@ import Dashboard from '../components/Dashboard';
 import IndustryJobs from '../components/IndustryJobs';
 import CorporationJobs from '../components/CorporationJobs';
 import CorporationIndustryStats from '../components/CorporationIndustryStats';
+import CharacterIndustryStats from '../components/CharacterIndustryStats';
 import Assets from '../components/Assets';
 import Planets from '../components/Planets';
 import CharacterPage from '../components/CharacterPage';
@@ -226,6 +227,8 @@ function Main({ onLogout, characterName, features = [], isAdmin = false }) {
         return <CorporationJobs onError={setError} refreshKey={refreshKey} />;
       case 'corp-industry-stats':
         return <CorporationIndustryStats onError={setError} refreshKey={refreshKey} />;
+      case 'character-industry-stats':
+        return <CharacterIndustryStats onError={setError} refreshKey={refreshKey} />;
       case 'assets':
         return <Assets onError={setError} refreshKey={refreshKey} />;
       case 'planets':

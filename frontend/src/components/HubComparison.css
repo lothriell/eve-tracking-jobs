@@ -495,3 +495,23 @@
 .hub-empty p {
   font-size: 14px;
 }
+
+.trend-toggle {
+  background: none;
+  border: none;
+  color: #a0aec0;
+  cursor: pointer;
+  padding: 0 6px 0 0;
+  font-size: 14px;
+  line-height: 1;
+}
+.trend-toggle:hover {
+  color: #e2e8f0;
+}
+
+.trend-row td {
+  padding: 12px 14px;
+  background: rgba(0, 0, 0, 0.15);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}

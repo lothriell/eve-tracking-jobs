@@ -223,6 +223,13 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
               🏭
             </div>
             <div
+              className={`collapsed-nav-item ${currentView === 'character-industry-stats' ? 'active' : ''}`}
+              onClick={() => onViewChange('character-industry-stats')}
+              title="My Industry Stats"
+            >
+              📈
+            </div>
+            <div
               className={`collapsed-nav-item ${currentView === 'corp-jobs' ? 'active' : ''}`}
               onClick={() => onViewChange('corp-jobs')}
               title="Corporation Jobs"
@@ -375,12 +382,19 @@ function Sidebar({ selectedCharacter, onSelectCharacter, onShowAllCharacters, cu
               <span className="nav-icon">📊</span>
               <span>Dashboard</span>
             </div>
-            <div 
+            <div
               className={`nav-item ${currentView === 'jobs' ? 'active' : ''}`}
               onClick={() => onViewChange('jobs')}
             >
               <span className="nav-icon">🏭</span>
               <span>My Industry Jobs</span>
+            </div>
+            <div
+              className={`nav-item ${currentView === 'character-industry-stats' ? 'active' : ''}`}
+              onClick={() => onViewChange('character-industry-stats')}
+            >
+              <span className="nav-icon">📈</span>
+              <span>My Industry Stats</span>
             </div>
             <div
               className={`nav-item ${currentView === 'corp-jobs' ? 'active' : ''}`}

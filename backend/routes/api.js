@@ -4,14 +4,15 @@ const characterController = require('../controllers/characterController');
 const tradingController = require('../controllers/tradingController');
 const adminController = require('../controllers/adminController');
 const corpIndustryController = require('../controllers/corporationIndustryController');
+const charIndustryController = require('../controllers/characterIndustryController');
 const { requireFeature, requireAdmin, getEnabledFeatures } = require('../middleware/featureAccess');
 
 // Version endpoint (for deployment verification)
 router.get('/version', (req, res) => {
   res.json({
-    version: '5.14.1',
+    version: '5.15.0',
     name: 'EVE Industry Tracker',
-    buildDate: '2026-04-20'
+    buildDate: '2026-04-21'
   });
 });
 
@@ -47,6 +48,11 @@ router.get('/corporation/roles/:characterId', requireAuth, characterController.g
 router.get('/corporation/industry/stats', requireAuth, corpIndustryController.getStats);
 router.get('/corporation/industry/history', requireAuth, corpIndustryController.getHistory);
 router.post('/corporation/industry/backfill', requireAuth, requireAdmin, corpIndustryController.runBackfill);
+
+// Personal industry history (per-user, across all owned characters)
+router.get('/character/industry/stats', requireAuth, charIndustryController.getStats);
+router.get('/character/industry/history', requireAuth, charIndustryController.getHistory);
+router.post('/character/industry/backfill', requireAuth, requireAdmin, charIndustryController.runBackfill);
 
 // Dashboard endpoint
 router.get('/dashboard/stats', requireAuth, characterController.getDashboardStats);
@@ -435,6 +441,7 @@ router.post('/trading/hubs', ...tradeAuth, tradingController.addHub);
 router.delete('/trading/hubs/:hubId', ...tradeAuth, tradingController.removeHub);
 router.put('/trading/hubs/:hubId', ...tradeAuth, tradingController.toggleHub);
 router.get('/trading/compare/:typeId', ...tradeAuth, tradingController.compareItem);
+router.get('/trading/price-history', ...tradeAuth, tradingController.priceHistory);
 router.get('/trading/find', ...tradeAuth, tradingController.findTrades);
 router.get('/trading/settings', ...tradeAuth, tradingController.getSettings);
 router.put('/trading/settings', ...tradeAuth, tradingController.updateSettings);
