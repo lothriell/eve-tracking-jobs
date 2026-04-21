@@ -99,6 +99,8 @@ function findTradeOpportunities(sourcePrices, destPrices, settings = {}, tradeTy
       dest_volume: destVolume,
       source_sell_volume: src.sell_volume,
       dest_sell_volume: dst.sell_volume,
+      source_buy_max: src.buy_max || 0,
+      source_sell_order_count: src.sell_order_count ?? null,
     });
   }
 

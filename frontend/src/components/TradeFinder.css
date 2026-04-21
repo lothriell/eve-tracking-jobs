@@ -538,3 +538,66 @@
 .trade-empty-initial p {
   font-size: 14px;
 }
+
+.risk-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  cursor: help;
+}
+.risk-badge.risk-low { background: rgba(72, 187, 120, 0.12); color: #48bb78; }
+.risk-badge.risk-medium { background: rgba(246, 173, 85, 0.14); color: #f6ad55; }
+.risk-badge.risk-high { background: rgba(237, 137, 54, 0.16); color: #ed8936; }
+.risk-badge.risk-critical { background: rgba(245, 101, 101, 0.18); color: #fc8181; }
+
+.row-dimmed { opacity: 0.55; }
+
+.cargo-panel {
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.cargo-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #e2e8f0;
+}
+.cargo-panel-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: end;
+  margin-bottom: 10px;
+}
+.cargo-panel-controls .control-group { margin: 0; }
+.cargo-totals {
+  display: flex;
+  gap: 20px;
+  font-size: 12px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  color: #a0aec0;
+}
+.cargo-totals strong { color: #e2e8f0; }
+.cargo-fill-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.cargo-fill-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #48bb78, #f6ad55, #fc8181);
+  transition: width 0.2s;
+}

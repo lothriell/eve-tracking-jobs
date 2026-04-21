@@ -7,6 +7,7 @@ const db = require('../database/db');
 const { getTypeNames, getCharacterSkills, getCharacterBlueprints } = require('../services/esiClient');
 const { getValidAccessToken } = require('../services/tokenRefresh');
 const { calculateBrokerFee, calculateSalesTax, findTradeOpportunities } = require('../services/tradeCalculator');
+const { scoreOpportunity, categoryRiskTag } = require('../services/baitScore');
 
 // Ensure default hubs exist for this user (lazy init)
 function ensureHubsSeeded(req, res, next) {
@@ -230,17 +231,66 @@ async function findTrades(req, res) {
       allOpportunities.push(...opps);
     }
 
-    // Re-sort combined results and apply limit
+    // Re-sort combined results and over-fetch (we may filter skins, etc.)
     allOpportunities.sort((a, b) => b.roi - a.roi);
-    allOpportunities = allOpportunities.slice(0, filters.limit);
+    const overFetchLimit = Math.min(filters.limit * 4, 2000);
+    allOpportunities = allOpportunities.slice(0, overFetchLimit);
 
-    // Resolve type names
+    // Resolve type names + volumes (m³ packaged) in batch from name_cache.
+    // Volume lives in extra_data for category 'type'; default 0.01 for unknowns.
     const typeIds = [...new Set(allOpportunities.map(o => o.type_id))];
     const typeNames = typeIds.length > 0 ? await getTypeNames(typeIds) : {};
+    const volumeRows = typeIds.length > 0 ? db.db.prepare(
+      `SELECT id, extra_data FROM name_cache WHERE category = 'type' AND id IN (${typeIds.map(() => '?').join(',')})`
+    ).all(...typeIds) : [];
+    const volumes = {};
+    for (const row of volumeRows) {
+      volumes[row.id] = row.extra_data ? parseFloat(row.extra_data) : 0.01;
+    }
 
-    allOpportunities.forEach(o => {
+    // 30-day average sell_min at source — used for decimal/anomaly detection.
+    // AVG instead of MEDIAN keeps it to a single SQL aggregate; for a 10×
+    // outlier check the difference is immaterial. Empty until enough days
+    // accrue (hub_price_history started 2026-04-20).
+    const histRows = typeIds.length > 0 ? db.db.prepare(
+      `SELECT type_id, AVG(sell_min) as avg30 FROM hub_price_history
+       WHERE station_id = ? AND capture_date >= date('now', '-30 days') AND sell_min > 0
+       AND type_id IN (${typeIds.map(() => '?').join(',')})
+       GROUP BY type_id`
+    ).all(sourceHub.station_id, ...typeIds) : [];
+    const sourceMedianMap = {};
+    for (const row of histRows) sourceMedianMap[row.type_id] = row.avg30;
+
+    // Pre-compute per-dest-hub structure status for the ACL-lockout flag.
+    const destStructureMap = new Map();
+    for (const dHub of destHubs) {
+      destStructureMap.set(dHub.id, dHub.station_id > 1_000_000_000_000);
+    }
+
+    const includeSkins = String(req.query.includeSkins || '').toLowerCase() === 'true';
+    const intendedQty = parseInt(req.query.intendedQty) || 100;
+
+    const enriched = [];
+    for (const o of allOpportunities) {
       o.type_name = typeNames[o.type_id] || `Type ${o.type_id}`;
-    });
+      o.volume_m3 = volumes[o.type_id] || 0.01;
+      o.profit_per_m3 = o.volume_m3 > 0 ? Math.round(o.net_profit / o.volume_m3) : 0;
+      o.category_risk_tag = categoryRiskTag(o.type_name);
+
+      // Skin filter — drop SKINs / SKINR / Paragon by default
+      if (!includeSkins && o.category_risk_tag === 'skin') continue;
+
+      const { risk_level, reasons } = scoreOpportunity(o, {
+        sourceMedian30d: sourceMedianMap[o.type_id] || null,
+        destStationIsStructure: destStructureMap.get(o.dest_hub_id) || false,
+        intendedQty,
+      });
+      o.risk_level = risk_level;
+      o.risk_reasons = reasons;
+
+      enriched.push(o);
+      if (enriched.length >= filters.limit) break;
+    }
 
     res.json({
       source_hub: { id: sourceHub.id, name: sourceHub.name },
@@ -248,9 +298,9 @@ async function findTrades(req, res) {
       buy_broker_fee_pct: buyBrokerFee,
       sell_broker_fee_pct: sellBrokerFee,
       sales_tax_pct: sellSalesTax,
-      filters,
-      total: allOpportunities.length,
-      opportunities: allOpportunities
+      filters: { ...filters, includeSkins, intendedQty },
+      total: enriched.length,
+      opportunities: enriched
     });
   } catch (error) {
     console.error('Find trades error:', error.message);

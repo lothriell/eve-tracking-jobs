@@ -13,6 +13,67 @@ function formatISK(value) {
   return value.toFixed(2);
 }
 
+// Cargo capacity presets (m³). Matches typical fits with skill-V cargo
+// expansion / bulkheads where applicable.
+const SHIP_PRESETS = [
+  { key: 'dst',      label: 'Deep-Space Transport (62.5k)', m3: 62500 },
+  { key: 'jf',       label: 'Jump Freighter (360k)',         m3: 360000 },
+  { key: 'freighter',label: 'Freighter (1.125M)',            m3: 1125000 },
+  { key: 'bowhead',  label: 'Bowhead (1.4M)',                m3: 1400000 },
+  { key: 'custom',   label: 'Custom',                         m3: null },
+];
+
+/**
+ * Greedy bounded knapsack — sort by profit_per_m3 desc, take min of
+ * (source_sell_volume, capRem/volM3, budgetRem/buyPrice) at each step.
+ * Near-optimal at our scale (<500 opps), O(N) after sort, easy to explain.
+ */
+function packCargo(opps, capM3, budget) {
+  const sorted = [...opps].sort((a, b) => (b.profit_per_m3 || 0) - (a.profit_per_m3 || 0));
+  const items = [];
+  let capRem = capM3;
+  let budgetRem = budget > 0 ? budget : Infinity;
+  let totalVol = 0, totalCost = 0, totalProfit = 0;
+
+  for (const o of sorted) {
+    if (!o.volume_m3 || o.volume_m3 <= 0) continue;
+    if (!o.buy_price || o.buy_price <= 0) continue;
+    if (capRem <= 0 || budgetRem <= 0) break;
+
+    const maxByCap = Math.floor(capRem / o.volume_m3);
+    const maxByBudget = Math.floor(budgetRem / o.buy_price);
+    const maxByStock = o.source_sell_volume || 0;
+    const units = Math.min(maxByCap, maxByBudget, maxByStock);
+    if (units <= 0) continue;
+
+    const itemVol = units * o.volume_m3;
+    const itemCost = units * o.buy_price;
+    const itemProfit = units * o.net_profit;
+
+    items.push({
+      type_id: o.type_id,
+      type_name: o.type_name,
+      dest_hub_name: o.dest_hub_name,
+      units,
+      unit_volume_m3: o.volume_m3,
+      total_volume_m3: itemVol,
+      buy_price: o.buy_price,
+      total_cost: itemCost,
+      profit_per_unit: o.net_profit,
+      total_profit: itemProfit,
+      risk_level: o.risk_level,
+    });
+
+    capRem -= itemVol;
+    budgetRem -= itemCost;
+    totalVol += itemVol;
+    totalCost += itemCost;
+    totalProfit += itemProfit;
+  }
+
+  return { items, totalVol, totalCost, totalProfit, capM3, capRem, budget };
+}
+
 function TradeFinder({ onError, refreshKey }) {
   const [hubs, setHubs] = useState([]);
   const [characters, setCharacters] = useState([]);
@@ -35,6 +96,16 @@ function TradeFinder({ onError, refreshKey }) {
   const [minProfit, setMinProfit] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [minVolume, setMinVolume] = useState('');
+  const [includeSkins, setIncludeSkins] = useState(false);
+  const [intendedQty, setIntendedQty] = useState('100');
+
+  // Cargo manifest optimizer state
+  const [showCargo, setShowCargo] = useState(false);
+  const [cargoShip, setCargoShip] = useState('jf');
+  const [cargoCapM3, setCargoCapM3] = useState('360000');
+  const [cargoBudget, setCargoBudget] = useState('');
+  const [cargoSkipCritical, setCargoSkipCritical] = useState(true);
+  const [manifest, setManifest] = useState(null);
 
   // Results
   const [results, setResults] = useState(null);
@@ -90,6 +161,8 @@ function TradeFinder({ onError, refreshKey }) {
       if (minVolume) params.minVolume = parseInt(minVolume);
       if (buyerChar) params.buyerCharId = buyerChar;
       if (sellerChar) params.sellerCharId = sellerChar;
+      if (includeSkins) params.includeSkins = 'true';
+      if (intendedQty) params.intendedQty = parseInt(intendedQty);
 
       const resp = await findTrades(params);
       setResults(resp.data);
@@ -380,6 +453,20 @@ function TradeFinder({ onError, refreshKey }) {
             <label>Min Volume</label>
             <input type="number" value={minVolume} onChange={e => setMinVolume(e.target.value)} placeholder="units" />
           </div>
+          {mode === 'arbitrage' && (
+            <>
+              <div className="control-group small">
+                <label title="Quantity you plan to haul. Used by the bait-risk score to flag opportunities that can't actually fill your intended size.">Intended Qty</label>
+                <input type="number" value={intendedQty} onChange={e => setIntendedQty(e.target.value)} placeholder="100" />
+              </div>
+              <div className="control-group small" style={{ alignSelf: 'end', paddingBottom: '8px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={includeSkins} onChange={e => setIncludeSkins(e.target.checked)} />
+                  Include skins
+                </label>
+              </div>
+            </>
+          )}
           <div className="control-group">
             <label>&nbsp;</label>
             <button className="find-btn" onClick={mode === 'stock' ? handleStockSearch : handleSearch} disabled={searching || !sourceHub || (mode === 'stock' && (!destHub || destHub === 'all'))}>
@@ -471,33 +558,170 @@ function TradeFinder({ onError, refreshKey }) {
               Source: {results.source_hub?.name} | Type {results.trade_type} | Buy Broker: {results.buy_broker_fee_pct?.toFixed(1)}% | Sell Broker: {results.sell_broker_fee_pct?.toFixed(1)}% | Tax: {results.sales_tax_pct?.toFixed(1)}%
             </span>
           </div>
+
+          {/* Cargo manifest optimizer */}
+          <div className="cargo-panel">
+            <div className="cargo-panel-header">
+              <strong>Cargo Manifest Optimizer</strong>
+              <button
+                type="button"
+                className="cis-export-all"
+                onClick={() => setShowCargo(s => !s)}
+              >{showCargo ? 'Hide' : 'Show'}</button>
+            </div>
+            {showCargo && (
+              <>
+                <div className="cargo-panel-controls">
+                  <div className="control-group small">
+                    <label>Ship</label>
+                    <select value={cargoShip} onChange={(e) => {
+                      const k = e.target.value;
+                      setCargoShip(k);
+                      const preset = SHIP_PRESETS.find(p => p.key === k);
+                      if (preset && preset.m3 != null) setCargoCapM3(String(preset.m3));
+                    }}>
+                      {SHIP_PRESETS.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
+                    </select>
+                  </div>
+                  <div className="control-group small">
+                    <label>Capacity (m³)</label>
+                    <input type="number" value={cargoCapM3} onChange={e => { setCargoCapM3(e.target.value); setCargoShip('custom'); }} placeholder="m³" />
+                  </div>
+                  <div className="control-group small">
+                    <label>Budget (ISK, optional)</label>
+                    <input type="number" value={cargoBudget} onChange={e => setCargoBudget(e.target.value)} placeholder="∞" />
+                  </div>
+                  <div className="control-group small" style={{ alignSelf: 'end', paddingBottom: '6px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={cargoSkipCritical} onChange={e => setCargoSkipCritical(e.target.checked)} />
+                      Skip 🔴 critical
+                    </label>
+                  </div>
+                  <div className="control-group" style={{ alignSelf: 'end' }}>
+                    <button
+                      type="button"
+                      className="cis-export-all"
+                      onClick={() => {
+                        const cap = parseFloat(cargoCapM3) || 0;
+                        const budget = parseFloat(cargoBudget) || 0;
+                        const pool = sortedOpps.filter(o => !cargoSkipCritical || o.risk_level !== 'critical');
+                        setManifest(packCargo(pool, cap, budget));
+                      }}
+                    >Build Manifest</button>
+                  </div>
+                </div>
+                {manifest && manifest.items.length > 0 && (
+                  <>
+                    <table className="trade-table">
+                      <thead>
+                        <tr>
+                          <th>Item</th>
+                          {destHub === 'all' && <th>Dest Hub</th>}
+                          <th className="num">Units</th>
+                          <th className="num">m³ each</th>
+                          <th className="num">Total m³</th>
+                          <th className="num">Buy</th>
+                          <th className="num">Total Cost</th>
+                          <th className="num">Profit</th>
+                          <th>Risk</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {manifest.items.map(it => (
+                          <tr key={`${it.type_id}-${it.dest_hub_name || ''}`}>
+                            <td className="item-name">{it.type_name}</td>
+                            {destHub === 'all' && <td className="dest-hub">{it.dest_hub_name || '—'}</td>}
+                            <td className="num">{it.units.toLocaleString()}</td>
+                            <td className="num">{it.unit_volume_m3}</td>
+                            <td className="num">{it.total_volume_m3.toLocaleString()}</td>
+                            <td className="num">{formatISK(it.buy_price)}</td>
+                            <td className="num">{formatISK(it.total_cost)}</td>
+                            <td className="num profit">{formatISK(it.total_profit)}</td>
+                            <td><RiskBadge level={it.risk_level} reasons={[]} /></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div className="cargo-fill-bar">
+                      <div className="cargo-fill-bar-fill" style={{ width: `${Math.min(100, (manifest.totalVol / manifest.capM3) * 100)}%` }} />
+                    </div>
+                    <div className="cargo-totals">
+                      <span>Volume: <strong>{manifest.totalVol.toLocaleString()}</strong> / {manifest.capM3.toLocaleString()} m³ ({((manifest.totalVol / manifest.capM3) * 100).toFixed(1)}%)</span>
+                      <span>Cost: <strong>{formatISK(manifest.totalCost)}</strong></span>
+                      <span>Profit: <strong>{formatISK(manifest.totalProfit)}</strong></span>
+                      <span>Margin: <strong>{manifest.totalCost > 0 ? ((manifest.totalProfit / manifest.totalCost) * 100).toFixed(1) : 0}%</strong></span>
+                      <button
+                        type="button"
+                        className="cis-export-all"
+                        title="Copy as EVE in-game multibuy paste (item + units per line)"
+                        onClick={() => {
+                          const lines = manifest.items.map(it => `${it.type_name} ${it.units}`).join('\n');
+                          navigator.clipboard.writeText(lines).catch(() => onError?.('Failed to copy'));
+                        }}
+                      >📋 Copy Multibuy</button>
+                      <button
+                        type="button"
+                        className="cis-export-all"
+                        onClick={() => {
+                          const csv = ['type_id,type_name,dest_hub,units,unit_volume_m3,total_volume_m3,buy_price,total_cost,profit_per_unit,total_profit,risk']
+                            .concat(manifest.items.map(it => [
+                              it.type_id, JSON.stringify(it.type_name), JSON.stringify(it.dest_hub_name || ''),
+                              it.units, it.unit_volume_m3, it.total_volume_m3,
+                              it.buy_price, it.total_cost, it.profit_per_unit, it.total_profit, it.risk_level
+                            ].join(','))).join('\n');
+                          const blob = new Blob([csv], { type: 'text/csv' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url; a.download = `cargo-manifest-${cargoShip}.csv`;
+                          a.click();
+                          URL.revokeObjectURL(url);
+                        }}
+                      >↓ Export CSV</button>
+                    </div>
+                  </>
+                )}
+                {manifest && manifest.items.length === 0 && (
+                  <div className="trade-empty">Nothing fits — try a larger budget, more capacity, or include 🔴 critical.</div>
+                )}
+              </>
+            )}
+          </div>
+
           <table className="trade-table">
             <thead>
               <tr>
                 <th onClick={() => handleSort('type_name')} className="sortable">Item {sortCol === 'type_name' ? (sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                 {destHub === 'all' && <th>Dest Hub</th>}
+                <th title="Bait / scam risk score">Risk</th>
                 <th className="num sortable" onClick={() => handleSort('buy_price')}>Buy {sortCol === 'buy_price' ? (sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                 <th className="num sortable" onClick={() => handleSort('sell_price')}>Sell {sortCol === 'sell_price' ? (sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                 <th className="num sortable" onClick={() => handleSort('net_profit')}>Net Profit {sortCol === 'net_profit' ? (sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                 <th className="num sortable" onClick={() => handleSort('roi')}>ROI % {sortCol === 'roi' ? (sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                <th className="num sortable" onClick={() => handleSort('volume_m3')}>m³ {sortCol === 'volume_m3' ? (sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                <th className="num sortable" onClick={() => handleSort('profit_per_m3')}>ISK/m³ {sortCol === 'profit_per_m3' ? (sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                 <th className="num sortable" onClick={() => handleSort('dest_sell_volume')}>Dest Vol {sortCol === 'dest_sell_volume' ? (sortDir === 'asc' ? '▲' : '▼') : ''}</th>
               </tr>
             </thead>
             <tbody>
               {sortedOpps.map((opp, i) => (
-                <tr key={`${opp.type_id}-${opp.dest_hub_id || i}`}>
+                <tr key={`${opp.type_id}-${opp.dest_hub_id || i}`} className={opp.risk_level === 'critical' ? 'row-dimmed' : ''}>
                   <td className="item-name">
                     <span>{opp.type_name}</span>
                     <ExternalLinks type="item" typeId={opp.type_id} />
                     <span className="type-id-small">{opp.type_id}</span>
                   </td>
                   {destHub === 'all' && <td className="dest-hub">{opp.dest_hub_name}</td>}
+                  <td>
+                    <RiskBadge level={opp.risk_level} reasons={opp.risk_reasons} />
+                  </td>
                   <td className="num">{formatISK(opp.buy_price)}</td>
                   <td className="num">{formatISK(opp.sell_price)}</td>
                   <td className="num profit">{formatISK(opp.net_profit)}</td>
                   <td className={`num roi ${opp.roi >= 10 ? 'roi-high' : opp.roi >= 5 ? 'roi-med' : ''}`}>
                     {opp.roi.toFixed(1)}%
                   </td>
+                  <td className="num">{opp.volume_m3 ? opp.volume_m3.toLocaleString() : '—'}</td>
+                  <td className="num">{opp.profit_per_m3 ? formatISK(opp.profit_per_m3) : '—'}</td>
                   <td className="num">{opp.dest_sell_volume?.toLocaleString() || '—'}</td>
                 </tr>
               ))}
@@ -588,6 +812,21 @@ function TradeFinder({ onError, refreshKey }) {
         </div>
       )}
     </div>
+  );
+}
+
+const RISK_GLYPH = { low: '🟢', medium: '🟡', high: '🟠', critical: '🔴' };
+const RISK_LABEL = { low: 'Low', medium: 'Med', high: 'High', critical: 'Critical' };
+
+function RiskBadge({ level, reasons }) {
+  const lvl = level || 'low';
+  const tip = reasons && reasons.length > 0
+    ? reasons.join('\n')
+    : 'No bait signals — passes all current checks.';
+  return (
+    <span className={`risk-badge risk-${lvl}`} title={tip}>
+      {RISK_GLYPH[lvl]} {RISK_LABEL[lvl]}
+    </span>
   );
 }
 

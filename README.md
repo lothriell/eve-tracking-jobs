@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.15.0 | **Build Date:** 2026-04-21
+**Current Version:** v5.16.0 | **Build Date:** 2026-04-21
 
 A comprehensive web application for tracking EVE Online industry jobs, assets, planetary industry, and character management across multiple characters and corporations.
 
@@ -212,6 +212,7 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| v5.16.0 | 2026-04-21 | Trade Finder: cargo manifest optimizer (knapsack with ship presets), bait/scam risk scoring, skin/SKINR/Paragon hidden by default |
 | v5.15.0 | 2026-04-21 | Personal industry stats dashboard + inline price trend chart in Hub Compare |
 | v5.14.1 | 2026-04-21 | Backend stability: EventEmitter leak fix (shared axios client, keepAlive:false) + hub-price refresh yields to event loop |
 | v5.14.0 | 2026-04-20 | Corporation industry history archive + stats dashboard (top products, installers, categories) |

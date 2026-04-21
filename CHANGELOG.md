@@ -2,6 +2,37 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.16.0] - 2026-04-21
+
+### Trade Finder — Cargo Optimizer + Bait/Scam Risk + Skin Filter
+
+#### Cargo Manifest Optimizer
+- **New collapsible panel** in TradeFinder: pick a ship preset (Deep-Space Transport 62.5k m³, Jump Freighter 360k, Freighter 1.125M, Bowhead 1.4M, or custom), optional ISK budget, "Build Manifest" button.
+- **Greedy bounded knapsack** — sorts opportunities by profit/m³ descending, takes `min(source_sell_volume, capacity_remaining/volume, budget_remaining/buy_price)` per item. Near-optimal at our scale (≤500 opps), O(N) after sort.
+- **Result table** — units, m³ per unit, total volume, buy price, total cost, total profit, risk badge per item; cap-fill bar; totals row with margin.
+- **One-click in-game multibuy paste** + **CSV export** of the manifest.
+- **"Skip 🔴 critical" toggle** (on by default) — manifest avoids known-bait opportunities.
+
+#### Bait / Scam Risk Scoring
+- **Per-opportunity risk badge** (🟢 Low / 🟡 Medium / 🟠 High / 🔴 Critical) with hover tooltip listing the triggered signals. Critical rows are dimmed.
+- **Heuristics implemented** (researched against EVE Uni wiki, Brave Collective station-trading guide, EVE forums):
+  - **CRITICAL** — same-hub inverted spread (`buy_max ≥ sell_min` at source = margin-trading scam signature); price 10× off the 30-day average (decimal/zero-count outlier).
+  - **HIGH** — single sell order at source (single-seller pump); source `sell_volume` < intended haul size; destination is a player Upwell structure (ACL-lockout / structure-destruction risk).
+  - **MEDIUM** — thin order depth (2-3 sell orders); barely-enough source stock; price < 50% of 30d median; zero destination volume.
+- **New "Intended Qty" filter input** — feeds the "can this fill my haul" check; defaults to 100.
+- **30-day average from `hub_price_history`** (started capturing 2026-04-20) — anomaly checks fill in over time. Empty history degrades gracefully (no false positives).
+
+#### Skin / SKINR / Paragon filter
+- **Hidden by default** — TradeFinder no longer surfaces ship SKINs, SKINR rewards, or Paragon items as arbitrage opportunities. The market for these is structurally thin (stale 2024 orders, ~zero demand) so they were generating bait-by-accident signals.
+- **"Include skins" checkbox** — opt back in if you actually trade them.
+- **Filter is name-based** (`name LIKE '% SKIN%' / '%SKINR%' / '%Paragon%'`) — verified to catch all 11,625 SKIN types in the SDE without false positives.
+
+#### Backend changes
+- New `backend/services/baitScore.js` — pure module exposing `scoreOpportunity()` + `categoryRiskTag()`.
+- `findTradeOpportunities` now returns `source_buy_max` + `source_sell_order_count` per opportunity (needed for scoring).
+- `findTrades` enriches each opportunity with `volume_m3`, `profit_per_m3`, `category_risk_tag`, `risk_level`, `risk_reasons[]`. Over-fetches 4× to allow filtering without losing the requested limit.
+- New query params on `GET /trading/find`: `includeSkins=true|false` (default false), `intendedQty=N` (default 100).
+
 ## [v5.15.0] - 2026-04-21
 
 ### Personal Industry Stats Dashboard
