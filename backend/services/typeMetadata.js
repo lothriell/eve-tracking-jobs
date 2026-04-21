@@ -7,7 +7,7 @@
  * so we can aggregate "30 heavy cruisers, 12 carriers" without repeat lookups.
  */
 
-const axios = require('axios');
+const axios = require('./httpClient');
 const db = require('../database/db');
 
 const ESI_BASE = 'https://esi.evetech.net/latest';

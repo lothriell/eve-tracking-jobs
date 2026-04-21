@@ -6,7 +6,7 @@
  * into character_job_history (PK job_id, idempotent).
  */
 
-const axios = require('axios');
+const axios = require('./httpClient');
 const db = require('../database/db');
 const { getValidAccessToken } = require('./tokenRefresh');
 const { getTypeNames } = require('./esiClient');

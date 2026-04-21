@@ -14,7 +14,7 @@
  * Blueprint data from Hoboleaks is re-imported when a new game revision is detected.
  */
 
-const axios = require('axios');
+const axios = require('./httpClient');
 const db = require('../database/db');
 
 const SDE_BASE = 'https://www.fuzzwork.co.uk/dump/latest';

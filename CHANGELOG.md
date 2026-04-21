@@ -2,6 +2,12 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.14.1] - 2026-04-21
+
+### Backend Stability Fixes
+- **EventEmitter leak resolved** — outbound ESI / SSO calls now go through a shared axios client (`backend/services/httpClient.js`) with `keepAlive:false` on both http + https agents. Under Node 19+'s default keep-alive, axios was reusing TLSSockets and its internal listener attachment accumulated `error` listeners until Node emitted `MaxListenersExceededWarning (11 error listeners on [TLSSocket])` during the token refresh cycle. Fresh socket per request removes the reuse path. All 10 backend `require('axios')` sites now import the shared client.
+- **Hub-price refresh no longer blocks event loop** — `refreshJitaPrices` and `refreshHubPrices` aggregation loops (up to ~329k orders per region) now yield with `await new Promise(resolve => setImmediate(resolve))` every 1000 iterations. This unblocks `/health` during the 70+ second refresh window and stops K3s readiness probes from timing out. Wall-time impact negligible (<50 ms per refresh).
+
 ## [v5.14.0] - 2026-04-20
 
 ### Corporation Industry History & Stats Dashboard

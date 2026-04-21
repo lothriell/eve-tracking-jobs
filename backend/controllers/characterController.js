@@ -1490,7 +1490,7 @@ exports.getCharacterSummary = async (req, res) => {
       corpInfo = await getCorporationInfo(corpResult.corporation_id, accessToken);
       if (corpResult.alliance_id) {
         try {
-          const allianceResp = await require('axios').get(
+          const allianceResp = await require('../services/httpClient').get(
             `https://esi.evetech.net/latest/alliances/${corpResult.alliance_id}/`,
             { params: { datasource: 'tranquility' } }
           );

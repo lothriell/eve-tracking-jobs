@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const axios = require('axios');
+const axios = require('../services/httpClient');
 const db = require('../database/db');
 
 // EVE SSO Configuration

@@ -9,7 +9,7 @@
  * - SDE data: once on startup (never change)
  */
 
-const axios = require('axios');
+const axios = require('./httpClient');
 const db = require('../database/db');
 const { importSDE } = require('./sdeImport');
 const corpJobArchive = require('./corpJobArchive');
@@ -105,9 +105,12 @@ async function refreshJitaPrices() {
 
     console.log(`[CACHE] Fetched ${page} pages, ${allOrders.length} Jita orders`);
 
-    // Compute min sell and max buy per type
+    // Compute min sell and max buy per type. Yield to the event loop every
+    // 1000 orders so /health (and other requests) aren't blocked on 329k-row
+    // aggregation passes.
     const priceMap = {};
-    for (const order of allOrders) {
+    for (let i = 0; i < allOrders.length; i++) {
+      const order = allOrders[i];
       if (!priceMap[order.type_id]) {
         priceMap[order.type_id] = { sell_min: Infinity, buy_max: 0, sell_volume: 0, buy_volume: 0 };
       }
@@ -118,6 +121,9 @@ async function refreshJitaPrices() {
       } else {
         if (order.price < entry.sell_min) entry.sell_min = order.price;
         entry.sell_volume += order.volume_remain;
+      }
+      if ((i + 1) % 1000 === 0) {
+        await new Promise(resolve => setImmediate(resolve));
       }
     }
 
@@ -199,7 +205,8 @@ async function refreshHubPrices() {
           stationPrices[sid] = {};
         }
 
-        for (const order of allOrders) {
+        for (let i = 0; i < allOrders.length; i++) {
+          const order = allOrders[i];
           const sid = order.location_id;
           if (!stationPrices[sid]) continue;
 
@@ -220,6 +227,9 @@ async function refreshHubPrices() {
             if (order.price < entry.sell_min) entry.sell_min = order.price;
             entry.sell_volume += order.volume_remain;
             entry.sell_order_count++;
+          }
+          if ((i + 1) % 1000 === 0) {
+            await new Promise(resolve => setImmediate(resolve));
           }
         }
 

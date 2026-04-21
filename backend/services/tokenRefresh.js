@@ -1,4 +1,4 @@
-const axios = require('axios');
+const axios = require('./httpClient');
 const db = require('../database/db');
 
 const EVE_SSO_TOKEN_URL = 'https://login.eveonline.com/v2/oauth/token';

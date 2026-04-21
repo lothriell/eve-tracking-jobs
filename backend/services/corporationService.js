@@ -3,7 +3,7 @@
  * Phase 3A-1: Corporation Industry Jobs
  */
 
-const axios = require('axios');
+const axios = require('./httpClient');
 
 const ESI_BASE_URL = 'https://esi.evetech.net/latest';
 const ESI_DATASOURCE = 'tranquility';

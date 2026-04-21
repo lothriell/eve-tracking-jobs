@@ -9,7 +9,7 @@ const { requireFeature, requireAdmin, getEnabledFeatures } = require('../middlew
 // Version endpoint (for deployment verification)
 router.get('/version', (req, res) => {
   res.json({
-    version: '5.14.0',
+    version: '5.14.1',
     name: 'EVE Industry Tracker',
     buildDate: '2026-04-20'
   });
@@ -343,7 +343,7 @@ router.post('/structures/name', requireAuth, (req, res) => {
 
 // EVE server + ESI status endpoint
 router.get('/eve/status', async (req, res) => {
-  const axios = require('axios');
+  const axios = require('../services/httpClient');
   const result = { tranquility: { online: false }, esi: { online: false } };
 
   // Check Tranquility server status

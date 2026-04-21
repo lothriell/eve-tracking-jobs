@@ -1,4 +1,4 @@
-const axios = require('axios');
+const axios = require('./httpClient');
 const db = require('../database/db');
 
 const ESI_BASE_URL = 'https://esi.evetech.net/latest';
