@@ -2,6 +2,12 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.16.3] - 2026-04-22
+
+### Trade Finder — Max ROI % filter
+- **New "Max ROI %" input** next to Min ROI. Caps opportunities above a ceiling — ROIs above ~200% are almost always decimal errors, stale data, or single-unit thin markets, not real margin.
+- Backend `findTradeOpportunities` honors `maxROI` alongside the existing `minROI`.
+
 ## [v5.16.2] - 2026-04-22
 
 ### Trade Finder — Hide "Expired …" legacy event items

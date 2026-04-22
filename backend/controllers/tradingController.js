@@ -168,6 +168,7 @@ async function findTrades(req, res) {
 
     const filters = {
       minROI: parseFloat(req.query.minROI) || 0,
+      maxROI: parseFloat(req.query.maxROI) || 0,
       minProfit: parseFloat(req.query.minProfit) || 0,
       maxPrice: parseFloat(req.query.maxPrice) || 0,
       minVolume: parseInt(req.query.minVolume) || 0,

@@ -82,6 +82,7 @@ function findTradeOpportunities(sourcePrices, destPrices, settings = {}, tradeTy
 
     // Apply filters
     if (filters.minROI && roi < filters.minROI) continue;
+    if (filters.maxROI && roi > filters.maxROI) continue;
     if (filters.minProfit && netProfit < filters.minProfit) continue;
     if (filters.maxPrice && buyPrice > filters.maxPrice) continue;
     if (filters.minVolume && destVolume < filters.minVolume) continue;

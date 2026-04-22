@@ -93,6 +93,7 @@ function TradeFinder({ onError, refreshKey }) {
   const [destHub, setDestHub] = useState('all');
   const [tradeType, setTradeType] = useState('B');
   const [minROI, setMinROI] = useState('5');
+  const [maxROI, setMaxROI] = useState('');
   const [minProfit, setMinProfit] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [minVolume, setMinVolume] = useState('');
@@ -156,6 +157,7 @@ function TradeFinder({ onError, refreshKey }) {
         limit: 100,
       };
       if (minROI) params.minROI = parseFloat(minROI);
+      if (maxROI) params.maxROI = parseFloat(maxROI);
       if (minProfit) params.minProfit = parseFloat(minProfit);
       if (maxPrice) params.maxPrice = parseFloat(maxPrice);
       if (minVolume) params.minVolume = parseInt(minVolume);
@@ -438,6 +440,10 @@ function TradeFinder({ onError, refreshKey }) {
               <div className="control-group small">
                 <label>Min ROI %</label>
                 <input type="number" value={minROI} onChange={e => setMinROI(e.target.value)} placeholder="5" />
+              </div>
+              <div className="control-group small">
+                <label title="Cap ROI — above ~200% is almost always decimal error, stale data, or thin market">Max ROI %</label>
+                <input type="number" value={maxROI} onChange={e => setMaxROI(e.target.value)} placeholder="e.g. 200" />
               </div>
               <div className="control-group small">
                 <label>Min Profit</label>
