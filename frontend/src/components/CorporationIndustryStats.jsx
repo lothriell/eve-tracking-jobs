@@ -63,6 +63,36 @@ function formatNumber(n) {
   return n.toLocaleString();
 }
 
+// Sort helper — numeric cols compared as numbers (nullish → -Infinity so
+// they land at the bottom on desc); anything else compared as lower-cased
+// strings. `dir` is 'asc' | 'desc'.
+function sortRows(rows, col, dir, numericCols) {
+  if (!col) return rows;
+  const isNum = numericCols && numericCols.has(col);
+  const mul = dir === 'asc' ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    const av = a[col], bv = b[col];
+    if (isNum) {
+      const an = av == null ? -Infinity : Number(av);
+      const bn = bv == null ? -Infinity : Number(bv);
+      return (an - bn) * mul;
+    }
+    const as = (av ?? '').toString().toLowerCase();
+    const bs = (bv ?? '').toString().toLowerCase();
+    return as.localeCompare(bs) * mul;
+  });
+}
+
+function SortableTh({ col, label, activeCol, dir, onClick, className }) {
+  const isActive = activeCol === col;
+  const arrow = isActive ? (dir === 'asc' ? ' ▲' : ' ▼') : '';
+  return (
+    <th className={`sortable ${className || ''}`} onClick={() => onClick(col)} style={{ cursor: 'pointer', userSelect: 'none' }}>
+      {label}{arrow}
+    </th>
+  );
+}
+
 function CorporationIndustryStats({ onError, refreshKey }) {
   const [preset, setPreset] = useState('this-month');
   const [activityId, setActivityId] = useState('');
@@ -73,6 +103,18 @@ function CorporationIndustryStats({ onError, refreshKey }) {
   const [showAllShips, setShowAllShips] = useState(false);
   const [showAllProducts, setShowAllProducts] = useState(false);
   const PRODUCT_TABLE_DEFAULT = 100;
+  const [productSort, setProductSort] = useState({ col: 'total_runs', dir: 'desc' });
+  const [installerSort, setInstallerSort] = useState({ col: 'job_count', dir: 'desc' });
+
+  const toggleProductSort = (col) => {
+    setProductSort(s => s.col === col ? { col, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col, dir: 'desc' });
+  };
+  const toggleInstallerSort = (col) => {
+    setInstallerSort(s => s.col === col ? { col, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col, dir: 'desc' });
+  };
+
+  const PRODUCT_NUMERIC = new Set(['job_count', 'total_runs', 'total_cost', 'isk_produced_est']);
+  const INSTALLER_NUMERIC = new Set(['job_count', 'total_runs', 'unique_products', 'total_cost']);
 
   const loadStats = useCallback(async () => {
     try {
@@ -418,16 +460,20 @@ function CorporationIndustryStats({ onError, refreshKey }) {
               <table className="cis-table">
                 <thead>
                   <tr>
-                    <th>Product</th>
-                    <th>Activity</th>
-                    <th className="num">Jobs</th>
-                    <th className="num">Runs</th>
-                    <th className="num">Cost</th>
-                    <th className="num">Produced (est)</th>
+                    <SortableTh col="product_name" label="Product" activeCol={productSort.col} dir={productSort.dir} onClick={toggleProductSort} />
+                    <SortableTh col="activity_id" label="Activity" activeCol={productSort.col} dir={productSort.dir} onClick={toggleProductSort} />
+                    <SortableTh col="job_count" label="Jobs" activeCol={productSort.col} dir={productSort.dir} onClick={toggleProductSort} className="num" />
+                    <SortableTh col="total_runs" label="Runs" activeCol={productSort.col} dir={productSort.dir} onClick={toggleProductSort} className="num" />
+                    <SortableTh col="total_cost" label="Cost" activeCol={productSort.col} dir={productSort.dir} onClick={toggleProductSort} className="num" />
+                    <SortableTh col="isk_produced_est" label="Produced (est)" activeCol={productSort.col} dir={productSort.dir} onClick={toggleProductSort} className="num" />
                   </tr>
                 </thead>
                 <tbody>
-                  {(showAllProducts ? topProducts : topProducts.slice(0, PRODUCT_TABLE_DEFAULT)).map(p => (
+                  {(() => {
+                    const sorted = sortRows(topProducts, productSort.col, productSort.dir, PRODUCT_NUMERIC);
+                    const sliced = showAllProducts ? sorted : sorted.slice(0, PRODUCT_TABLE_DEFAULT);
+                    return sliced;
+                  })().map(p => (
                     <tr key={`${p.product_type_id}-${p.activity_id}`}>
                       <td>
                         <span className="cis-product-name">{p.product_name || `Type ${p.product_type_id}`}</span>
@@ -447,7 +493,7 @@ function CorporationIndustryStats({ onError, refreshKey }) {
 
             <section className="cis-panel">
               <div className="cis-panel-header">
-                <h3>Top Installers</h3>
+                <h3>Top Installers ({topInstallers.length})</h3>
                 <ExportButton
                   getData={() => topInstallers.map(i => ({
                     installer: i.installer_name || `Character ${i.installer_id}`,
@@ -471,15 +517,15 @@ function CorporationIndustryStats({ onError, refreshKey }) {
               <table className="cis-table">
                 <thead>
                   <tr>
-                    <th>Character</th>
-                    <th className="num">Jobs</th>
-                    <th className="num">Runs</th>
-                    <th className="num">Products</th>
-                    <th className="num">Cost</th>
+                    <SortableTh col="installer_name" label="Character" activeCol={installerSort.col} dir={installerSort.dir} onClick={toggleInstallerSort} />
+                    <SortableTh col="job_count" label="Jobs" activeCol={installerSort.col} dir={installerSort.dir} onClick={toggleInstallerSort} className="num" />
+                    <SortableTh col="total_runs" label="Runs" activeCol={installerSort.col} dir={installerSort.dir} onClick={toggleInstallerSort} className="num" />
+                    <SortableTh col="unique_products" label="Products" activeCol={installerSort.col} dir={installerSort.dir} onClick={toggleInstallerSort} className="num" />
+                    <SortableTh col="total_cost" label="Cost" activeCol={installerSort.col} dir={installerSort.dir} onClick={toggleInstallerSort} className="num" />
                   </tr>
                 </thead>
                 <tbody>
-                  {topInstallers.map(i => (
+                  {sortRows(topInstallers, installerSort.col, installerSort.dir, INSTALLER_NUMERIC).map(i => (
                     <tr key={i.installer_id}>
                       <td>{i.installer_name || `Character ${i.installer_id}`}</td>
                       <td className="num">{formatNumber(i.job_count)}</td>

@@ -2,6 +2,14 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.17.4] - 2026-04-22
+
+### Sortable tables + header alignment
+- **Top Products, Top Installers, By Character** tables in both Corp and My Industry Stats now have clickable sortable column headers. Click toggles direction (▼ desc ↔ ▲ asc). Numeric columns sort numerically; name/activity columns sort alphabetically.
+- **Default sort**: Top Products by total runs desc; Top Installers / By Character by job count desc.
+- **Count in every panel header**: "Top Products (N)", "Top Installers (N)", "By Character (N)" — symmetric UX.
+- **Panel header `min-height: 36px`** so the two-column layout stays perfectly aligned regardless of whether the optional Show-All button renders.
+
 ## [v5.17.3] - 2026-04-22
 
 ### Industry dashboards — truly full picture

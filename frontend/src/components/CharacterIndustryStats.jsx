@@ -63,6 +63,34 @@ function formatNumber(n) {
   return n.toLocaleString();
 }
 
+// Shared sort helpers (same pattern as CorporationIndustryStats).
+function sortRows(rows, col, dir, numericCols) {
+  if (!col) return rows;
+  const isNum = numericCols && numericCols.has(col);
+  const mul = dir === 'asc' ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    const av = a[col], bv = b[col];
+    if (isNum) {
+      const an = av == null ? -Infinity : Number(av);
+      const bn = bv == null ? -Infinity : Number(bv);
+      return (an - bn) * mul;
+    }
+    const as = (av ?? '').toString().toLowerCase();
+    const bs = (bv ?? '').toString().toLowerCase();
+    return as.localeCompare(bs) * mul;
+  });
+}
+
+function SortableTh({ col, label, activeCol, dir, onClick, className }) {
+  const isActive = activeCol === col;
+  const arrow = isActive ? (dir === 'asc' ? ' ▲' : ' ▼') : '';
+  return (
+    <th className={`sortable ${className || ''}`} onClick={() => onClick(col)} style={{ cursor: 'pointer', userSelect: 'none' }}>
+      {label}{arrow}
+    </th>
+  );
+}
+
 function CharacterIndustryStats({ onError, refreshKey }) {
   const [preset, setPreset] = useState('this-month');
   const [activityId, setActivityId] = useState('');
@@ -73,6 +101,18 @@ function CharacterIndustryStats({ onError, refreshKey }) {
   const [showAllShips, setShowAllShips] = useState(false);
   const [showAllProducts, setShowAllProducts] = useState(false);
   const PRODUCT_TABLE_DEFAULT = 100;
+  const [productSort, setProductSort] = useState({ col: 'total_runs', dir: 'desc' });
+  const [characterSort, setCharacterSort] = useState({ col: 'job_count', dir: 'desc' });
+
+  const toggleProductSort = (col) => {
+    setProductSort(s => s.col === col ? { col, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col, dir: 'desc' });
+  };
+  const toggleCharacterSort = (col) => {
+    setCharacterSort(s => s.col === col ? { col, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col, dir: 'desc' });
+  };
+
+  const PRODUCT_NUMERIC = new Set(['job_count', 'total_runs', 'total_cost', 'isk_produced_est', 'isk_sold', 'units_sold']);
+  const CHARACTER_NUMERIC = new Set(['job_count', 'total_runs', 'unique_products', 'total_cost']);
 
   const loadStats = useCallback(async () => {
     try {
@@ -418,17 +458,20 @@ function CharacterIndustryStats({ onError, refreshKey }) {
               <table className="cis-table">
                 <thead>
                   <tr>
-                    <th>Product</th>
-                    <th>Activity</th>
-                    <th className="num">Jobs</th>
-                    <th className="num">Runs</th>
-                    <th className="num">Cost</th>
-                    <th className="num" title="Σ runs × current Jita sell">Produced (est)</th>
-                    <th className="num" title="Σ wallet sales in window">Sold (real)</th>
+                    <SortableTh col="product_name" label="Product" activeCol={productSort.col} dir={productSort.dir} onClick={toggleProductSort} />
+                    <SortableTh col="activity_id" label="Activity" activeCol={productSort.col} dir={productSort.dir} onClick={toggleProductSort} />
+                    <SortableTh col="job_count" label="Jobs" activeCol={productSort.col} dir={productSort.dir} onClick={toggleProductSort} className="num" />
+                    <SortableTh col="total_runs" label="Runs" activeCol={productSort.col} dir={productSort.dir} onClick={toggleProductSort} className="num" />
+                    <SortableTh col="total_cost" label="Cost" activeCol={productSort.col} dir={productSort.dir} onClick={toggleProductSort} className="num" />
+                    <SortableTh col="isk_produced_est" label="Produced (est)" activeCol={productSort.col} dir={productSort.dir} onClick={toggleProductSort} className="num" />
+                    <SortableTh col="isk_sold" label="Sold (real)" activeCol={productSort.col} dir={productSort.dir} onClick={toggleProductSort} className="num" />
                   </tr>
                 </thead>
                 <tbody>
-                  {(showAllProducts ? topProducts : topProducts.slice(0, PRODUCT_TABLE_DEFAULT)).map(p => (
+                  {(() => {
+                    const sorted = sortRows(topProducts, productSort.col, productSort.dir, PRODUCT_NUMERIC);
+                    return showAllProducts ? sorted : sorted.slice(0, PRODUCT_TABLE_DEFAULT);
+                  })().map(p => (
                     <tr key={`${p.product_type_id}-${p.activity_id}`}>
                       <td>
                         <span className="cis-product-name">{p.product_name || `Type ${p.product_type_id}`}</span>
@@ -451,7 +494,7 @@ function CharacterIndustryStats({ onError, refreshKey }) {
 
             <section className="cis-panel">
               <div className="cis-panel-header">
-                <h3>By Character</h3>
+                <h3>By Character ({byCharacter.length})</h3>
                 <ExportButton
                   getData={() => byCharacter.map(c => ({
                     character: c.character_name || `Character ${c.character_id}`,
@@ -475,15 +518,15 @@ function CharacterIndustryStats({ onError, refreshKey }) {
               <table className="cis-table">
                 <thead>
                   <tr>
-                    <th>Character</th>
-                    <th className="num">Jobs</th>
-                    <th className="num">Runs</th>
-                    <th className="num">Products</th>
-                    <th className="num">Cost</th>
+                    <SortableTh col="character_name" label="Character" activeCol={characterSort.col} dir={characterSort.dir} onClick={toggleCharacterSort} />
+                    <SortableTh col="job_count" label="Jobs" activeCol={characterSort.col} dir={characterSort.dir} onClick={toggleCharacterSort} className="num" />
+                    <SortableTh col="total_runs" label="Runs" activeCol={characterSort.col} dir={characterSort.dir} onClick={toggleCharacterSort} className="num" />
+                    <SortableTh col="unique_products" label="Products" activeCol={characterSort.col} dir={characterSort.dir} onClick={toggleCharacterSort} className="num" />
+                    <SortableTh col="total_cost" label="Cost" activeCol={characterSort.col} dir={characterSort.dir} onClick={toggleCharacterSort} className="num" />
                   </tr>
                 </thead>
                 <tbody>
-                  {byCharacter.map(c => (
+                  {sortRows(byCharacter, characterSort.col, characterSort.dir, CHARACTER_NUMERIC).map(c => (
                     <tr key={c.character_id}>
                       <td>{c.character_name || `Character ${c.character_id}`}</td>
                       <td className="num">{formatNumber(c.job_count)}</td>

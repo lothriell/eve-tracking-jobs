@@ -105,6 +105,9 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 10px;
+  /* Fixed min-height keeps panel headers aligned across columns even when
+     only one of them renders the optional Show-All toggle. */
+  min-height: 36px;
 }
 
 .cis-panel-header h3 {
