@@ -129,6 +129,27 @@ async function compareItem(req, res) {
   }
 }
 
+async function bpContracts(req, res) {
+  try {
+    const typeId = parseInt(req.params.typeId || req.query.type_id);
+    if (!typeId) return res.status(400).json({ error: 'type_id is required' });
+
+    const summary = db.queryContractBpcSummary(typeId);
+    const offers = db.queryContractBpcOffers(typeId, 50);
+    const state = db.getContractScraperState(10000002);
+
+    res.json({
+      type_id: typeId,
+      summary: summary || null,
+      offers,
+      scraper: state || null,
+    });
+  } catch (error) {
+    console.error('BP contracts error:', error.message);
+    res.status(500).json({ error: 'Failed to load BP contracts' });
+  }
+}
+
 async function priceHistory(req, res) {
   try {
     const typeId = parseInt(req.query.type_id);
@@ -1267,6 +1288,7 @@ module.exports = {
   removeHub,
   toggleHub,
   compareItem,
+  bpContracts,
   priceHistory,
   findTrades,
   getSettings,

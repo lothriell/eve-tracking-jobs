@@ -10,7 +10,7 @@ const { requireFeature, requireAdmin, getEnabledFeatures } = require('../middlew
 // Version endpoint (for deployment verification)
 router.get('/version', (req, res) => {
   res.json({
-    version: '5.16.4',
+    version: '5.17.0',
     name: 'EVE Industry Tracker',
     buildDate: '2026-04-22'
   });
@@ -418,6 +418,18 @@ router.delete('/admin/users/:userId/features/:featureName', ...adminAuth, adminC
 router.get('/admin/corps', ...adminAuth, adminController.getCorpGrants);
 router.post('/admin/corps', ...adminAuth, adminController.grantCorpFeature);
 router.delete('/admin/corps/:corpId/features/:featureName', ...adminAuth, adminController.revokeCorpFeature);
+router.post('/admin/contracts/scrape', ...adminAuth, async (req, res) => {
+  try {
+    const { runContractScrape } = require('../services/cacheRefresh');
+    // Kick it off in the background — a full scrape takes ~45 min, we
+    // don't want the HTTP request to block.
+    runContractScrape().catch(err => console.error('[CONTRACTS] Admin-triggered scrape failed:', err.message));
+    res.json({ success: true, message: 'Contract scrape started in background' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post('/admin/sde/refresh', ...adminAuth, async (req, res) => {
   try {
     const { importBlueprintsFromHoboleaks } = require('../services/sdeImport');
@@ -442,6 +454,7 @@ router.delete('/trading/hubs/:hubId', ...tradeAuth, tradingController.removeHub)
 router.put('/trading/hubs/:hubId', ...tradeAuth, tradingController.toggleHub);
 router.get('/trading/compare/:typeId', ...tradeAuth, tradingController.compareItem);
 router.get('/trading/price-history', ...tradeAuth, tradingController.priceHistory);
+router.get('/trading/bp-contracts/:typeId', ...tradeAuth, tradingController.bpContracts);
 router.get('/trading/find', ...tradeAuth, tradingController.findTrades);
 router.get('/trading/settings', ...tradeAuth, tradingController.getSettings);
 router.put('/trading/settings', ...tradeAuth, tradingController.updateSettings);

@@ -349,3 +349,41 @@ CREATE TABLE IF NOT EXISTS hub_price_history (
 );
 CREATE INDEX IF NOT EXISTS idx_hub_price_history_date ON hub_price_history(capture_date);
 CREATE INDEX IF NOT EXISTS idx_hub_price_history_type_time ON hub_price_history(type_id, station_id, capture_date);
+
+-- Public BPC contract offers scraped from The Forge. One row per
+-- (contract_id, type_id) pair — a single-item BPC contract yields one row.
+-- Multi-item bundles are skipped at scrape time for price-per-BP clarity.
+-- runs × price_per_run derivable at query time (runs stored as-is). Stale
+-- rows are pruned when a contract is no longer visible on ESI's public
+-- contracts feed (closed, expired, or bought out).
+CREATE TABLE IF NOT EXISTS contract_bpc_offers (
+    contract_id INTEGER NOT NULL,
+    type_id INTEGER NOT NULL,
+    price REAL NOT NULL,
+    runs INTEGER DEFAULT 1,
+    material_efficiency INTEGER DEFAULT 0,
+    time_efficiency INTEGER DEFAULT 0,
+    issuer_id INTEGER,
+    issuer_corp_id INTEGER,
+    location_id INTEGER,
+    start_location_id INTEGER,
+    date_issued DATETIME,
+    date_expired DATETIME,
+    last_seen DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (contract_id, type_id)
+);
+CREATE INDEX IF NOT EXISTS idx_contract_bpc_type ON contract_bpc_offers(type_id);
+CREATE INDEX IF NOT EXISTS idx_contract_bpc_last_seen ON contract_bpc_offers(last_seen);
+
+-- Scraper progress tracker. Remembers the last scrape time + stats so we
+-- can surface staleness in the UI and drive incremental fetches.
+CREATE TABLE IF NOT EXISTS contract_scraper_state (
+    region_id INTEGER PRIMARY KEY,
+    last_full_scrape DATETIME,
+    last_incremental DATETIME,
+    contracts_seen INTEGER DEFAULT 0,
+    bpc_offers_stored INTEGER DEFAULT 0,
+    status TEXT,
+    error TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

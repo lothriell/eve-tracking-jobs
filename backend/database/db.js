@@ -739,6 +739,142 @@ class DB {
     return res.changes;
   }
 
+  // ===== CONTRACT BPC OFFERS =====
+
+  upsertContractBpcOffer(row) {
+    this.db.prepare(
+      `INSERT OR REPLACE INTO contract_bpc_offers
+       (contract_id, type_id, price, runs, material_efficiency, time_efficiency,
+        issuer_id, issuer_corp_id, location_id, start_location_id,
+        date_issued, date_expired, last_seen)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+    ).run(
+      row.contract_id, row.type_id, row.price,
+      row.runs || 1, row.material_efficiency || 0, row.time_efficiency || 0,
+      row.issuer_id || null, row.issuer_corp_id || null,
+      row.location_id || null, row.start_location_id || null,
+      row.date_issued || null, row.date_expired || null
+    );
+  }
+
+  batchUpsertContractBpcOffers(rows) {
+    if (!rows || rows.length === 0) return 0;
+    const stmt = this.db.prepare(
+      `INSERT OR REPLACE INTO contract_bpc_offers
+       (contract_id, type_id, price, runs, material_efficiency, time_efficiency,
+        issuer_id, issuer_corp_id, location_id, start_location_id,
+        date_issued, date_expired, last_seen)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+    );
+    const txn = this.db.transaction((items) => {
+      for (const r of items) {
+        stmt.run(
+          r.contract_id, r.type_id, r.price,
+          r.runs || 1, r.material_efficiency || 0, r.time_efficiency || 0,
+          r.issuer_id || null, r.issuer_corp_id || null,
+          r.location_id || null, r.start_location_id || null,
+          r.date_issued || null, r.date_expired || null
+        );
+      }
+    });
+    txn(rows);
+    return rows.length;
+  }
+
+  // Known contract_ids currently in the DB — lets the scraper skip items
+  // endpoint calls for contracts it already knows about (ESI contract items
+  // are immutable per contract_id).
+  getKnownContractIds() {
+    const rows = this.db.prepare('SELECT DISTINCT contract_id FROM contract_bpc_offers').all();
+    return new Set(rows.map(r => r.contract_id));
+  }
+
+  // Delete contract offers whose contract_id is NOT in the live set
+  // returned by the latest ESI scrape. Covers closed / bought-out /
+  // expired contracts that have fallen out of ESI's public feed.
+  pruneGoneContractOffers(liveContractIds) {
+    if (!liveContractIds || liveContractIds.size === 0) {
+      // Safety: if we got zero live ids, assume the scrape failed; don't wipe.
+      return 0;
+    }
+    // SQLite has a ~999 parameter limit — chunk the NOT IN list.
+    const all = this.db.prepare('SELECT DISTINCT contract_id FROM contract_bpc_offers').all();
+    const gone = all.filter(r => !liveContractIds.has(r.contract_id)).map(r => r.contract_id);
+    if (gone.length === 0) return 0;
+    const stmt = this.db.prepare('DELETE FROM contract_bpc_offers WHERE contract_id = ?');
+    const txn = this.db.transaction((ids) => {
+      for (const id of ids) stmt.run(id);
+    });
+    txn(gone);
+    return gone.length;
+  }
+
+  // Also prune any offer whose date_expired has passed — belt-and-braces
+  // in case ESI keeps returning a not-yet-cleaned contract.
+  pruneExpiredContractOffers() {
+    const res = this.db.prepare(
+      `DELETE FROM contract_bpc_offers WHERE date_expired IS NOT NULL AND date_expired < datetime('now')`
+    ).run();
+    return res.changes;
+  }
+
+  // Summary for a single BP type_id: min/median/count of price_per_run
+  // over currently-visible offers.
+  queryContractBpcSummary(typeId) {
+    return this.db.prepare(
+      `SELECT COUNT(*) as offer_count,
+              MIN(price / MAX(runs, 1)) as min_price_per_run,
+              AVG(price / MAX(runs, 1)) as avg_price_per_run,
+              MAX(last_seen) as last_seen
+       FROM contract_bpc_offers WHERE type_id = ?`
+    ).get(typeId);
+  }
+
+  queryContractBpcOffers(typeId, limit = 50) {
+    return this.db.prepare(
+      `SELECT contract_id, price, runs, material_efficiency, time_efficiency,
+              issuer_id, location_id, date_issued, date_expired, last_seen,
+              (price / MAX(runs, 1)) as price_per_run
+       FROM contract_bpc_offers
+       WHERE type_id = ?
+       ORDER BY price_per_run ASC
+       LIMIT ?`
+    ).all(typeId, limit);
+  }
+
+  getContractScraperState(regionId) {
+    return this.db.prepare('SELECT * FROM contract_scraper_state WHERE region_id = ?').get(regionId);
+  }
+
+  setContractScraperState(regionId, fields) {
+    const existing = this.getContractScraperState(regionId);
+    if (existing) {
+      const sets = [];
+      const params = [];
+      for (const [k, v] of Object.entries(fields)) {
+        sets.push(`${k} = ?`);
+        params.push(v);
+      }
+      sets.push('updated_at = CURRENT_TIMESTAMP');
+      params.push(regionId);
+      this.db.prepare(`UPDATE contract_scraper_state SET ${sets.join(', ')} WHERE region_id = ?`).run(...params);
+    } else {
+      this.db.prepare(
+        `INSERT INTO contract_scraper_state (region_id, last_full_scrape, last_incremental,
+         contracts_seen, bpc_offers_stored, status, error)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+      ).run(
+        regionId,
+        fields.last_full_scrape || null,
+        fields.last_incremental || null,
+        fields.contracts_seen || 0,
+        fields.bpc_offers_stored || 0,
+        fields.status || null,
+        fields.error || null
+      );
+    }
+  }
+
   // ===== HUB REFRESH STATUS =====
 
   setHubRefreshStatus(stationId, regionId, data) {

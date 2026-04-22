@@ -2,6 +2,21 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.17.0] - 2026-04-22
+
+### Contract BPC price scraper (backend, frontend tomorrow)
+- **New background job** indexes public BPC contracts in The Forge every 4 hours.
+- **Two-pass scrape:**
+  1. Fetch all public contracts in region 10000002 (paginated).
+  2. For each *new* contract_id (ESI items are immutable per contract), fetch items and keep rows where `is_blueprint_copy === true` AND the contract is a single-item `item_exchange` with `price > 0` and not expired.
+- **New tables** `contract_bpc_offers` + `contract_scraper_state` — stores contract_id, type_id, price, runs, ME/TE, issuer, location, date_expired, last_seen. Scraper state row tracks last scrape time + status.
+- **Incremental after first scrape** — subsequent runs skip contract_ids we already know (immutable), cutting items-endpoint calls from ~tens of thousands to just newly-posted contracts.
+- **Pruning** — offers whose contract_id has rolled off ESI's public feed (closed / bought out / manually expired) are deleted; so are locally-expired rows.
+- **New endpoint** `GET /trading/bp-contracts/:typeId` returns offer list + min/avg price-per-run + scraper-state (for freshness indicators).
+- **Admin endpoint** `POST /admin/contracts/scrape` triggers a scrape on demand (background, returns immediately).
+- **Scope (v5.17.0):** Jita region only, single-item contracts only (bundles deferred — ambiguous per-BP pricing), direct-sale only (auctions skipped). Ship-only filter will be applied client-side in tomorrow's frontend integration so we can expand to non-ship BPCs without re-indexing.
+- **Frontend integration** (Production Planner "BP cost per run" auto-populate + manual override with revert button + staleness badge) ships tomorrow.
+
 ## [v5.16.4] - 2026-04-22
 
 ### HOTFIX — Per-station prune was wiping every fresh row

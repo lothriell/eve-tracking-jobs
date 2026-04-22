@@ -14,6 +14,7 @@ const db = require('../database/db');
 const { importSDE } = require('./sdeImport');
 const corpJobArchive = require('./corpJobArchive');
 const characterJobArchive = require('./characterJobArchive');
+const contractScraper = require('./contractScraper');
 
 const ESI_BASE = 'https://esi.evetech.net/latest';
 const DS = 'tranquility';
@@ -22,8 +23,10 @@ let refreshTimer = null;
 let hubRefreshTimer = null;
 let corpArchiveTimer = null;
 let characterArchiveTimer = null;
+let contractScrapeTimer = null;
 let isRefreshing = false;
 let isHubRefreshing = false;
+let isContractScraping = false;
 
 // ===== MARKET PRICES =====
 async function refreshMarketPrices() {
@@ -397,12 +400,31 @@ async function runCharacterArchive() {
   }
 }
 
+// ===== BPC CONTRACT SCRAPE (4-hour cycle) =====
+async function runContractScrape() {
+  if (isContractScraping) {
+    console.log('[CONTRACTS] Scrape already in progress, skipping');
+    return;
+  }
+  isContractScraping = true;
+  try {
+    await contractScraper.runScrape();
+  } catch (error) {
+    console.error('[CONTRACTS] Scrape error:', error.message);
+  } finally {
+    isContractScraping = false;
+  }
+}
+
 // ===== SCHEDULER =====
 function startCacheRefresh() {
   // Run immediately on startup
   setTimeout(() => runFullRefresh(), 5000); // 5s delay to let DB initialize
   setTimeout(() => runCorpArchive(), 20000); // first corp archive 20s in
   setTimeout(() => runCharacterArchive(), 40000); // personal archive 40s in
+  // First contract scrape 2 min after boot, once hub refresh is past the
+  // heavy Jita aggregation so the ESI rate budget isn't contested.
+  setTimeout(() => runContractScrape(), 120000);
 
   // Full refresh every 6 hours
   const SIX_HOURS = 6 * 60 * 60 * 1000;
@@ -418,7 +440,12 @@ function startCacheRefresh() {
   corpArchiveTimer = setInterval(() => runCorpArchive(), FIFTEEN_MIN);
   characterArchiveTimer = setInterval(() => runCharacterArchive(), FIFTEEN_MIN);
 
-  console.log('[CACHE] Background refresh scheduled (full: 6h, hub prices: 30m, corp + char archives: 15m)');
+  // BPC contract scrape every 4 hours — incremental after the first full
+  // scrape (only new contract_ids hit the items endpoint).
+  const FOUR_HOURS = 4 * 60 * 60 * 1000;
+  contractScrapeTimer = setInterval(() => runContractScrape(), FOUR_HOURS);
+
+  console.log('[CACHE] Background refresh scheduled (full: 6h, hub prices: 30m, corp + char archives: 15m, BPC contracts: 4h)');
 }
 
 function stopCacheRefresh() {
@@ -438,6 +465,10 @@ function stopCacheRefresh() {
     clearInterval(characterArchiveTimer);
     characterArchiveTimer = null;
   }
+  if (contractScrapeTimer) {
+    clearInterval(contractScrapeTimer);
+    contractScrapeTimer = null;
+  }
 }
 
 module.exports = {
@@ -450,4 +481,5 @@ module.exports = {
   runHubRefresh,
   runCorpArchive,
   runCharacterArchive,
+  runContractScrape,
 };
