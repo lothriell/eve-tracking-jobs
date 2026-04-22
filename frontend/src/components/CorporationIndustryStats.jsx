@@ -70,6 +70,7 @@ function CorporationIndustryStats({ onError, refreshKey }) {
   const [metric, setMetric] = useState('jobs'); // 'jobs' | 'cost' | 'runs' — shared by charts and category bars
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showAllShips, setShowAllShips] = useState(false);
 
   const loadStats = useCallback(async () => {
     try {
@@ -80,7 +81,7 @@ function CorporationIndustryStats({ onError, refreshKey }) {
       if (to) params.to = to;
       if (activityId) params.activity = activityId;
       if (corpId) params.corporation_id = corpId;
-      params.top_limit = 100;
+      params.top_limit = 500;
       const res = await getCorpIndustryStats(params);
       setData(res.data);
     } catch (err) {
@@ -104,11 +105,12 @@ function CorporationIndustryStats({ onError, refreshKey }) {
   const byMonth = data?.by_month || [];
   const byMonthCategory = data?.by_month_category || [];
 
+  // `ships_built` is a dedicated unbounded list from the backend so ships
+  // aren't competing with modules/charges for a top-N slot budget.
+  const allShips = data?.ships_built || [];
   const topShips = useMemo(() => {
-    return topProducts
-      .filter(p => p.product_category_name === 'Ship' && p.activity_id === 1)
-      .slice(0, 12);
-  }, [topProducts]);
+    return showAllShips ? allShips : allShips.slice(0, 12);
+  }, [allShips, showAllShips]);
 
   // ESI reports reactions as activity 9 (legacy) or 11 (modern); merge them.
   // `kind` maps to the dashboard's manufacturing/science/reactions palette.
@@ -265,9 +267,18 @@ function CorporationIndustryStats({ onError, refreshKey }) {
             />
           </div>
 
-          {topShips.length > 0 && (
+          {allShips.length > 0 && (
             <section className="cis-panel cis-ships">
-              <h3>Ships Built</h3>
+              <div className="cis-panel-header">
+                <h3>Ships Built ({allShips.length})</h3>
+                {allShips.length > 12 && (
+                  <button
+                    type="button"
+                    className="cis-export-all"
+                    onClick={() => setShowAllShips(s => !s)}
+                  >{showAllShips ? `Show Top 12` : `Show All ${allShips.length}`}</button>
+                )}
+              </div>
               <div className="cis-ship-grid">
                 {topShips.map(ship => (
                   <div className="cis-ship-tile" key={ship.product_type_id}>

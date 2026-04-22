@@ -1144,6 +1144,31 @@ class DB {
     ).all(...params, limit);
   }
 
+  // All ships manufactured in the filter window — unbounded (no LIMIT).
+  // Dedicated query so ships aren't competing with modules/charges for
+  // top-N slots. category_id=6 is the SDE ID for Ship; names fall back in
+  // case archives ran before metadata resolution filled the IDs.
+  queryCorpShipsBuilt(filters) {
+    const { where, params } = this._buildCorpJobWhere(filters, 'h');
+    const extra = where ? `${where} AND h.activity_id = 1 AND (h.product_category_id = 6 OR h.product_category_name = 'Ship')`
+                        : `WHERE h.activity_id = 1 AND (h.product_category_id = 6 OR h.product_category_name = 'Ship')`;
+    return this.db.prepare(
+      `SELECT h.product_type_id, h.product_name, h.product_group_id, h.product_group_name,
+              h.product_category_id, h.product_category_name, h.activity_id,
+              COUNT(*) as job_count,
+              SUM(h.runs) as total_runs,
+              SUM(h.cost) as total_cost,
+              SUM(CASE WHEN h.activity_id IN (1, 9, 11)
+                       THEN h.runs * COALESCE(j.sell_min, 0)
+                       ELSE 0 END) as isk_produced_est
+       FROM corp_job_history h
+       LEFT JOIN jita_prices j ON j.type_id = h.product_type_id
+       ${extra}
+       GROUP BY h.product_type_id
+       ORDER BY total_runs DESC`
+    ).all(...params);
+  }
+
   queryCorpTopInstallers(filters, limit = 25) {
     const { where, params } = this._buildCorpJobWhere(filters);
     return this.db.prepare(
@@ -1330,6 +1355,29 @@ class DB {
        ORDER BY total_runs DESC
        LIMIT ?`
     ).all(...params, limit);
+  }
+
+  // Mirror of queryCorpShipsBuilt for personal stats — all ships a user's
+  // characters manufactured in the filter window, no LIMIT.
+  queryCharacterShipsBuilt(filters) {
+    const { where, params } = this._buildCharacterJobWhere(filters, 'h');
+    const extra = where ? `${where} AND h.activity_id = 1 AND (h.product_category_id = 6 OR h.product_category_name = 'Ship')`
+                        : `WHERE h.activity_id = 1 AND (h.product_category_id = 6 OR h.product_category_name = 'Ship')`;
+    return this.db.prepare(
+      `SELECT h.product_type_id, h.product_name, h.product_group_id, h.product_group_name,
+              h.product_category_id, h.product_category_name, h.activity_id,
+              COUNT(*) as job_count,
+              SUM(h.runs) as total_runs,
+              SUM(h.cost) as total_cost,
+              SUM(CASE WHEN h.activity_id IN (1, 9, 11)
+                       THEN h.runs * COALESCE(j.sell_min, 0)
+                       ELSE 0 END) as isk_produced_est
+       FROM character_job_history h
+       LEFT JOIN jita_prices j ON j.type_id = h.product_type_id
+       ${extra}
+       GROUP BY h.product_type_id
+       ORDER BY total_runs DESC`
+    ).all(...params);
   }
 
   queryCharacterBreakdown(filters, limit = 25) {

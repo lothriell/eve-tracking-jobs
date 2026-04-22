@@ -70,7 +70,7 @@ exports.getStats = async (req, res) => {
 
     const topLimit = Math.min(parseInt(req.query.top_limit) || 25, 100);
 
-    const [summary, byMonth, byMonthCategory, topProducts, topInstallers, byGroup, byActivity] = [
+    const [summary, byMonth, byMonthCategory, topProducts, topInstallers, byGroup, byActivity, shipsBuilt] = [
       db.queryCorpJobSummary(filters),
       db.queryCorpJobsByMonth(filters),
       db.queryCorpJobsByMonthAndCategory(filters),
@@ -78,6 +78,7 @@ exports.getStats = async (req, res) => {
       db.queryCorpTopInstallers(filters, topLimit),
       db.queryCorpJobsByGroup(filters),
       db.queryCorpJobsByActivity(filters),
+      db.queryCorpShipsBuilt(filters),
     ];
 
     const corpInfos = await Promise.all(corpIds.map(id => getCorporationInfo(id).catch(() => null)));
@@ -93,6 +94,7 @@ exports.getStats = async (req, res) => {
       top_installers: topInstallers,
       by_group: byGroup,
       by_activity: byActivity,
+      ships_built: shipsBuilt,
     });
   } catch (err) {
     console.error('[CORP-INDUSTRY] getStats failed:', err);

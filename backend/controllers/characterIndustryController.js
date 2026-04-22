@@ -65,6 +65,7 @@ exports.getStats = async (req, res) => {
     const byCharacter = db.queryCharacterBreakdown(filters, topLimit);
     const byGroup = db.queryCharacterJobsByGroup(filters);
     const byActivity = db.queryCharacterJobsByActivity(filters);
+    const shipsBuilt = db.queryCharacterShipsBuilt(filters);
 
     // Merge real wallet-sales data for the same characters/window. Sales
     // aren't linked to specific build jobs, so this answers "how much did I
@@ -105,6 +106,7 @@ exports.getStats = async (req, res) => {
       by_character: byCharacter,
       by_group: byGroup,
       by_activity: byActivity,
+      ships_built: shipsBuilt,
     });
   } catch (err) {
     console.error('[CHAR-INDUSTRY] getStats failed:', err);

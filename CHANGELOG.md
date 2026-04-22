@@ -2,6 +2,14 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.17.2] - 2026-04-22
+
+### Ships Built — show every ship, not just top-100 residue
+- **Problem:** the "Ships Built" grid was filtered client-side out of the top-100 products list. If a corp built 120+ product types (ships, modules, charges combined), ships that happened to rank 101+ never reached the frontend. Also capped visually at 12 tiles with no expand.
+- **Fix:** new unbounded backend query per dashboard (`queryCorpShipsBuilt` / `queryCharacterShipsBuilt`) returning *all* rows with `activity_id=1 AND category=Ship`, sorted by total runs. Independent of the top-products slot budget.
+- **Grid now shows count in the header**: "Ships Built (N)" with a "Show All N / Show Top 12" toggle when N > 12.
+- **Top-products / Top-installers / Per-character bumped from 100 → 500** rows so the other tables also stop truncating for busy industrial ops.
+
 ## [v5.17.1] - 2026-04-22
 
 ### Fix: clipboard-copy buttons broken on HTTP

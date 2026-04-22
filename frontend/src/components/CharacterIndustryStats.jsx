@@ -70,6 +70,7 @@ function CharacterIndustryStats({ onError, refreshKey }) {
   const [metric, setMetric] = useState('jobs');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showAllShips, setShowAllShips] = useState(false);
 
   const loadStats = useCallback(async () => {
     try {
@@ -80,7 +81,7 @@ function CharacterIndustryStats({ onError, refreshKey }) {
       if (to) params.to = to;
       if (activityId) params.activity = activityId;
       if (charId) params.character_id = charId;
-      params.top_limit = 100;
+      params.top_limit = 500;
       const res = await getCharacterIndustryStats(params);
       setData(res.data);
     } catch (err) {
@@ -104,11 +105,12 @@ function CharacterIndustryStats({ onError, refreshKey }) {
   const byMonth = data?.by_month || [];
   const byMonthCategory = data?.by_month_category || [];
 
+  // Dedicated unbounded ships list from backend, independent of the
+  // top-products top-500 bucket.
+  const allShips = data?.ships_built || [];
   const topShips = useMemo(() => {
-    return topProducts
-      .filter(p => p.product_category_name === 'Ship' && p.activity_id === 1)
-      .slice(0, 12);
-  }, [topProducts]);
+    return showAllShips ? allShips : allShips.slice(0, 12);
+  }, [allShips, showAllShips]);
 
   const activityRollup = useMemo(() => {
     const kindFor = (id) => {
@@ -265,9 +267,18 @@ function CharacterIndustryStats({ onError, refreshKey }) {
             />
           </div>
 
-          {topShips.length > 0 && (
+          {allShips.length > 0 && (
             <section className="cis-panel cis-ships">
-              <h3>Ships Built</h3>
+              <div className="cis-panel-header">
+                <h3>Ships Built ({allShips.length})</h3>
+                {allShips.length > 12 && (
+                  <button
+                    type="button"
+                    className="cis-export-all"
+                    onClick={() => setShowAllShips(s => !s)}
+                  >{showAllShips ? `Show Top 12` : `Show All ${allShips.length}`}</button>
+                )}
+              </div>
               <div className="cis-ship-grid">
                 {topShips.map(ship => (
                   <div className="cis-ship-tile" key={ship.product_type_id}>
