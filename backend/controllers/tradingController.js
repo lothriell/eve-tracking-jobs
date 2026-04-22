@@ -273,7 +273,7 @@ async function findTrades(req, res) {
       destStructureMap.set(dHub.id, dHub.station_id > 1_000_000_000_000);
     }
 
-    const includeSkins = String(req.query.includeSkins || '').toLowerCase() === 'true';
+    const includeJunk = String(req.query.includeSkins || req.query.includeJunk || '').toLowerCase() === 'true';
     const intendedQty = parseInt(req.query.intendedQty) || 100;
 
     const enriched = [];
@@ -283,8 +283,8 @@ async function findTrades(req, res) {
       o.profit_per_m3 = o.volume_m3 > 0 ? Math.round(o.net_profit / o.volume_m3) : 0;
       o.category_risk_tag = categoryRiskTag(o.type_name);
 
-      // Skin filter — drop SKINs / SKINR / Paragon by default
-      if (!includeSkins && o.category_risk_tag === 'skin') continue;
+      // Junk filter — drop SKINs and "Expired …" event leftovers by default
+      if (!includeJunk && (o.category_risk_tag === 'skin' || o.category_risk_tag === 'expired')) continue;
 
       const { risk_level, reasons } = scoreOpportunity(o, {
         sourceMedian30d: sourceMedianMap[o.type_id] || null,
@@ -304,7 +304,7 @@ async function findTrades(req, res) {
       buy_broker_fee_pct: buyBrokerFee,
       sell_broker_fee_pct: sellBrokerFee,
       sales_tax_pct: sellSalesTax,
-      filters: { ...filters, includeSkins, intendedQty },
+      filters: { ...filters, includeJunk, intendedQty },
       total: enriched.length,
       opportunities: enriched
     });

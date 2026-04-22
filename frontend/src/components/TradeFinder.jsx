@@ -96,7 +96,7 @@ function TradeFinder({ onError, refreshKey }) {
   const [minProfit, setMinProfit] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [minVolume, setMinVolume] = useState('');
-  const [includeSkins, setIncludeSkins] = useState(false);
+  const [includeJunk, setIncludeJunk] = useState(false);
   const [intendedQty, setIntendedQty] = useState('100');
 
   // Cargo manifest optimizer state
@@ -161,7 +161,7 @@ function TradeFinder({ onError, refreshKey }) {
       if (minVolume) params.minVolume = parseInt(minVolume);
       if (buyerChar) params.buyerCharId = buyerChar;
       if (sellerChar) params.sellerCharId = sellerChar;
-      if (includeSkins) params.includeSkins = 'true';
+      if (includeJunk) params.includeJunk = 'true';
       if (intendedQty) params.intendedQty = parseInt(intendedQty);
 
       const resp = await findTrades(params);
@@ -460,9 +460,9 @@ function TradeFinder({ onError, refreshKey }) {
                 <input type="number" value={intendedQty} onChange={e => setIntendedQty(e.target.value)} placeholder="100" />
               </div>
               <div className="control-group small" style={{ alignSelf: 'end', paddingBottom: '8px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={includeSkins} onChange={e => setIncludeSkins(e.target.checked)} />
-                  Include skins
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }} title="Hide ship SKINs, SKINR/Paragon items, and legacy event leftovers like 'Expired …' boosters and filaments">
+                  <input type="checkbox" checked={includeJunk} onChange={e => setIncludeJunk(e.target.checked)} />
+                  Include junk (skins / expired)
                 </label>
               </div>
             </>

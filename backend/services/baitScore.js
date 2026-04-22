@@ -96,14 +96,18 @@ function scoreOpportunity(opp, ctx = {}) {
 
 /**
  * Identify whether a type name belongs to a category that's structurally
- * a bait risk regardless of order book signals. Returns null if not flagged.
+ * market junk regardless of order book signals. Returns null if not flagged.
  *
- * Used as a category tag (separate from the per-opp scoring). Names like
- * "% SKIN%", "%SKINR%", "%Paragon%" are 99% reliable for cosmetic items.
+ * Used as a category tag (separate from the per-opp scoring).
+ * - 'skin' — cosmetics (SKIN / SKINR / Paragon); thin market, stale orders
+ * - 'expired' — legacy event items whose names literally start with
+ *   "Expired" (AIR boosters, Cerebral Accelerators, filaments, etc).
+ *   906 such types in SDE; no functional value; no legitimate trading.
  */
 function categoryRiskTag(typeName) {
   if (!typeName) return null;
   const lc = typeName.toLowerCase();
+  if (lc.startsWith('expired ')) return 'expired';
   if (lc.includes(' skin') || lc.endsWith(' skin')) return 'skin';
   if (lc.includes('skinr')) return 'skin';
   if (lc.includes('paragon')) return 'skin';

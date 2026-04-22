@@ -2,6 +2,14 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.16.2] - 2026-04-22
+
+### Trade Finder — Hide "Expired …" legacy event items
+- **906 types with names starting with "Expired "** (AIR boosters, Cerebral Accelerators, filaments, etc — giveaways from past events with no functional value) are now hidden from Trade Finder by default.
+- **`categoryRiskTag`** extended to return `'expired'` for those types, alongside the existing `'skin'` tag.
+- **Checkbox relabeled** from "Include skins" to "Include junk (skins / expired)" — one toggle now covers both classes of market clutter.
+- Backend query param accepts both `includeJunk=true` (new) and `includeSkins=true` (legacy, still works) for back-compat.
+
 ## [v5.16.1] - 2026-04-22
 
 ### Trade Finder — Ghost Opportunity Fix
