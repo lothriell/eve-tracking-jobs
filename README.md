@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.17.0 | **Build Date:** 2026-04-22
+**Current Version:** v5.17.1 | **Build Date:** 2026-04-22
 
 A comprehensive web application for tracking EVE Online industry jobs, assets, planetary industry, and character management across multiple characters and corporations.
 
@@ -212,7 +212,8 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
-| v5.17.0 | 2026-04-22 | Backend-only: BPC contract scraper in The Forge (4h cycle, single-item item_exchange contracts); frontend integration next |
+| v5.17.1 | 2026-04-22 | Fix: clipboard-copy buttons work on HTTP (fallback to execCommand for non-secure contexts) |
+| v5.17.0 | 2026-04-22 | BPC contract scraper in The Forge + Production Planner BP Cost/Run auto-populate with manual override |
 | v5.16.4 | 2026-04-22 | Hotfix: per-station prune timestamp format mismatch was wiping every fresh hub_prices row |
 | v5.16.3 | 2026-04-22 | Trade Finder: Max ROI % filter to cap unrealistic opportunities |
 | v5.16.2 | 2026-04-22 | Trade Finder: hide 906 "Expired …" legacy event items by default (AIR boosters, filaments, etc.) |

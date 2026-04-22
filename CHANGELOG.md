@@ -2,6 +2,13 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.17.1] - 2026-04-22
+
+### Fix: clipboard-copy buttons broken on HTTP
+- `navigator.clipboard` is restricted to secure contexts (HTTPS / localhost). On the internal test URL (plain HTTP) the "Copy Multibuy" buttons silently failed.
+- Added `copyToClipboard()` helper in `services/export.js` that prefers `navigator.clipboard.writeText` and falls back to the legacy hidden-textarea + `document.execCommand('copy')` path — works on HTTP too.
+- Three callsites switched: Trade Finder recap copy, Trade Finder cargo manifest copy, Production Planner shopping-list copy.
+
 ## [v5.17.0] - 2026-04-22
 
 ### Contract BPC price scraper + Production Planner integration

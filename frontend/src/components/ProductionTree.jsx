@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import { getBuildTree, searchTypes, searchSystems, getJobSlots, getBpContracts } from '../services/api';
 import ExternalLinks from './ExternalLinks';
 import ExportButton from './ExportButton';
+import { copyToClipboard } from '../services/export';
 import './ProductionTree.css';
 
 function formatISK(value) {
@@ -556,10 +557,11 @@ function ProductionTree({ onError, refreshKey }) {
     setResult(r => ({ ...r })); // force re-render
   }, []);
 
-  const handleCopyBuyAll = () => {
+  const handleCopyBuyAll = async () => {
     if (!effectiveShoppingList) return;
     const lines = effectiveShoppingList.map(item => `${item.name} ${item.quantity}`).join('\n');
-    navigator.clipboard.writeText(lines).catch(() => onError?.('Failed to copy'));
+    const ok = await copyToClipboard(lines);
+    if (!ok) onError?.('Failed to copy');
   };
 
   const s = effectiveSummary;

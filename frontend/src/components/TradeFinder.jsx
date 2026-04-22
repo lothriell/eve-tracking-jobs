@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { getTradeHubs, findTrades, getStockAnalysis, getAllCharacters, autoDetectTradeSkills, getTradeSettings, updateTradeSettings } from '../services/api';
 import ExportButton from './ExportButton';
 import ExternalLinks from './ExternalLinks';
+import { copyToClipboard } from '../services/export';
 import './TradeFinder.css';
 
 function formatISK(value) {
@@ -200,14 +201,11 @@ function TradeFinder({ onError, refreshKey }) {
     }
   };
 
-  const handleCopyMultiBuy = () => {
+  const handleCopyMultiBuy = async () => {
     if (!results?.opportunities?.length) return;
     const lines = results.opportunities.map(o => `${o.type_name} 1`).join('\n');
-    navigator.clipboard.writeText(lines).then(() => {
-      // Brief feedback
-    }).catch(() => {
-      onError?.('Failed to copy to clipboard');
-    });
+    const ok = await copyToClipboard(lines);
+    if (!ok) onError?.('Failed to copy to clipboard');
   };
 
   const handleAutoDetect = async (role) => {
@@ -660,9 +658,10 @@ function TradeFinder({ onError, refreshKey }) {
                         type="button"
                         className="cis-export-all"
                         title="Copy as EVE in-game multibuy paste (item + units per line)"
-                        onClick={() => {
+                        onClick={async () => {
                           const lines = manifest.items.map(it => `${it.type_name} ${it.units}`).join('\n');
-                          navigator.clipboard.writeText(lines).catch(() => onError?.('Failed to copy'));
+                          const ok = await copyToClipboard(lines);
+                          if (!ok) onError?.('Failed to copy');
                         }}
                       >📋 Copy Multibuy</button>
                       <button
