@@ -194,7 +194,10 @@ async function findTrades(req, res) {
     // getHubPrices with null typeIds won't work — need a method to get all prices for a station
     // Use a direct query instead
     const allSourcePrices = db.db.prepare(
-      'SELECT type_id, sell_min, buy_max, sell_volume, buy_volume, sell_order_count, buy_order_count FROM hub_prices WHERE station_id = ?'
+      // 6-hour freshness filter — hub_prices refreshes every 30 min; anything
+      // older than 12 refresh cycles is broken and shouldn't produce a trade
+      // recommendation (defense in depth on top of the prune in cacheRefresh).
+      "SELECT type_id, sell_min, buy_max, sell_volume, buy_volume, sell_order_count, buy_order_count FROM hub_prices WHERE station_id = ? AND updated_at >= datetime('now', '-6 hours')"
     ).all(sourceHub.station_id);
     const sourcePrices = {};
     for (const row of allSourcePrices) {
@@ -215,7 +218,10 @@ async function findTrades(req, res) {
     let allOpportunities = [];
     for (const dHub of destHubs) {
       const allDestPrices = db.db.prepare(
-        'SELECT type_id, sell_min, buy_max, sell_volume, buy_volume, sell_order_count, buy_order_count FROM hub_prices WHERE station_id = ?'
+        // 6-hour freshness filter — hub_prices refreshes every 30 min; anything
+      // older than 12 refresh cycles is broken and shouldn't produce a trade
+      // recommendation (defense in depth on top of the prune in cacheRefresh).
+      "SELECT type_id, sell_min, buy_max, sell_volume, buy_volume, sell_order_count, buy_order_count FROM hub_prices WHERE station_id = ? AND updated_at >= datetime('now', '-6 hours')"
       ).all(dHub.station_id);
       const destPrices = {};
       for (const row of allDestPrices) {
@@ -1114,12 +1120,12 @@ async function stockAnalysis(req, res) {
 
     // Get all source prices
     const allSourcePrices = db.db.prepare(
-      'SELECT type_id, sell_min, buy_max, sell_volume, buy_volume FROM hub_prices WHERE station_id = ? AND sell_min > 0'
+      "SELECT type_id, sell_min, buy_max, sell_volume, buy_volume FROM hub_prices WHERE station_id = ? AND sell_min > 0 AND updated_at >= datetime('now', '-6 hours')"
     ).all(sourceHub.station_id);
 
     // Get all dest prices (what already exists at nullsec)
     const allDestPrices = db.db.prepare(
-      'SELECT type_id, sell_min, buy_max, sell_volume, buy_volume FROM hub_prices WHERE station_id = ?'
+      "SELECT type_id, sell_min, buy_max, sell_volume, buy_volume FROM hub_prices WHERE station_id = ? AND updated_at >= datetime('now', '-6 hours')"
     ).all(destHub.station_id);
     const destPriceMap = {};
     for (const row of allDestPrices) {

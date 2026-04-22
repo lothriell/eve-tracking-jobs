@@ -716,6 +716,29 @@ class DB {
     ).get(stationId);
   }
 
+  // Remove hub_prices rows for a station that weren't refreshed this cycle.
+  // Called after a station's setHubPrices() run with the refresh-start
+  // timestamp — rows still holding an older updated_at are types that no
+  // longer have orders at the station, and would otherwise "ghost" into
+  // TradeFinder as expired opportunities. SQLite compares ISO timestamps
+  // lexicographically which matches chronological order.
+  pruneStaleHubPrices(stationId, beforeIsoTimestamp) {
+    const res = this.db.prepare(
+      'DELETE FROM hub_prices WHERE station_id = ? AND updated_at < ?'
+    ).run(stationId, beforeIsoTimestamp);
+    return res.changes;
+  }
+
+  // Global sweep — delete every hub_prices row older than N hours, across
+  // all stations. Useful on startup or to clear accumulated ghost entries
+  // from stations we no longer refresh.
+  pruneAllStaleHubPrices(hoursOld = 6) {
+    const res = this.db.prepare(
+      `DELETE FROM hub_prices WHERE updated_at < datetime('now', ?)`
+    ).run(`-${hoursOld} hours`);
+    return res.changes;
+  }
+
   // ===== HUB REFRESH STATUS =====
 
   setHubRefreshStatus(stationId, regionId, data) {

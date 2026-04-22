@@ -175,6 +175,11 @@ async function refreshHubPrices() {
       const stationIds = new Set(hubsInRegion.map(h => h.station_id));
       const hubNames = hubsInRegion.map(h => h.name).join(', ');
 
+      // Capture refresh start timestamp — used to prune types that used to
+      // have orders here but no longer do, so they don't ghost into
+      // TradeFinder as "expired" opportunities (see pruneStaleHubPrices).
+      const refreshStartedAt = new Date().toISOString();
+
       try {
         console.log(`[CACHE]   Region ${regionId} (${hubNames}): fetching orders...`);
 
@@ -251,12 +256,25 @@ async function refreshHubPrices() {
             // One-per-day history snapshot for price-trend charts. INSERT
             // OR IGNORE keeps day-1 and no-ops subsequent same-day refreshes.
             const snapshotted = db.snapshotHubPrices(hub.station_id);
+            // Sweep away rows for types that were present at the last
+            // refresh but have no orders now — those would otherwise leak
+            // into TradeFinder as ghost opportunities.
+            const pruned = db.pruneStaleHubPrices(hub.station_id, refreshStartedAt);
+            const pruneNote = pruned > 0 ? `, pruned ${pruned} expired` : '';
             if (snapshotted > 0) {
-              console.log(`[CACHE]   ${hub.name}: ${count} types cached, ${snapshotted} daily history rows`);
+              console.log(`[CACHE]   ${hub.name}: ${count} types cached, ${snapshotted} daily history rows${pruneNote}`);
             } else {
-              console.log(`[CACHE]   ${hub.name}: ${count} types cached`);
+              console.log(`[CACHE]   ${hub.name}: ${count} types cached${pruneNote}`);
             }
             totalTypes += count;
+          } else {
+            // Zero current orders at this station — every existing row is
+            // stale by definition. Wipe them all so Hub Compare / TradeFinder
+            // don't show ghost prices.
+            const pruned = db.pruneStaleHubPrices(hub.station_id, refreshStartedAt);
+            if (pruned > 0) {
+              console.log(`[CACHE]   ${hub.name}: no current orders, pruned ${pruned} expired rows`);
+            }
           }
 
           db.setHubRefreshStatus(hub.station_id, hub.region_id, {
@@ -300,6 +318,18 @@ async function runFullRefresh() {
   try {
     // SDE import — downloads full EVE universe data on first run
     await importSDE();
+
+    // Wipe hub_prices rows older than 6 hours across all stations before
+    // any query can read them. Catches ghost entries from stations we no
+    // longer refresh and the accumulated pre-fix stale rows on first boot
+    // after deploy. Per-station prune in refreshHubPrices keeps it clean
+    // after that.
+    try {
+      const pruned = db.pruneAllStaleHubPrices(6);
+      if (pruned > 0) console.log(`[CACHE] Pruned ${pruned} stale hub_prices rows (>6h old) on refresh start`);
+    } catch (err) {
+      console.error('[CACHE] Prune stale hub_prices failed:', err.message);
+    }
 
     // Semi-static data (refreshed every cycle)
     await refreshMarketPrices();

@@ -2,6 +2,16 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.16.1] - 2026-04-22
+
+### Trade Finder — Ghost Opportunity Fix
+- **Stale hub_prices rows now pruned.** `setHubPrices` used `INSERT OR REPLACE`, so types that had orders at an earlier refresh but have no orders now kept their old row indefinitely. Those rows leaked into Trade Finder as "expired" opportunities — the listed price hadn't existed on the in-game market for hours or days.
+- **Fix, three layers:**
+  1. Per-station prune inside `refreshHubPrices` — capture refresh-start timestamp, `DELETE FROM hub_prices WHERE station_id = ? AND updated_at < ?` after the new batch lands, so any type missing from the latest scrape is removed.
+  2. Global sweep at the top of each `runFullRefresh` — wipe any hub_prices row older than 6 hours across all stations. Catches accumulated pre-fix rows on first boot after deploy and any data from stations we no longer refresh.
+  3. Query-time 6-hour freshness filter in every `hub_prices` read in `tradingController` (both arbitrage and stock-analysis paths). Defense in depth — if a refresh silently fails, stale data still doesn't reach the UI.
+- **No schema change.** `updated_at` already existed, just wasn't being used as a freshness gate.
+
 ## [v5.16.0] - 2026-04-21
 
 ### Trade Finder — Cargo Optimizer + Bait/Scam Risk + Skin Filter
