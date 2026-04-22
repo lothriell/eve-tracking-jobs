@@ -68,7 +68,10 @@ exports.getStats = async (req, res) => {
       return res.status(403).json({ error: 'No access to that corporation' });
     }
 
-    const topLimit = Math.min(parseInt(req.query.top_limit) || 25, 100);
+    // Product list is inherently "one row per distinct product type" — can
+    // legitimately reach thousands for an all-time / many-corp query.
+    // Capped high enough to be effectively unlimited for realistic use.
+    const topLimit = Math.min(parseInt(req.query.top_limit) || 500, 10000);
 
     const [summary, byMonth, byMonthCategory, topProducts, topInstallers, byGroup, byActivity, shipsBuilt] = [
       db.queryCorpJobSummary(filters),

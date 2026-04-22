@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.17.2 | **Build Date:** 2026-04-22
+**Current Version:** v5.17.3 | **Build Date:** 2026-04-22
 
 A comprehensive web application for tracking EVE Online industry jobs, assets, planetary industry, and character management across multiple characters and corporations.
 
@@ -212,6 +212,7 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| v5.17.3 | 2026-04-22 | Industry dashboards truly unbounded — fix 100-row backend clamp, Top Products gets Show-All toggle |
 | v5.17.2 | 2026-04-22 | Ships Built dashboard: unbounded ships list + Show All toggle; top products/installers/characters bumped to 500 |
 | v5.17.1 | 2026-04-22 | Fix: clipboard-copy buttons work on HTTP (fallback to execCommand for non-secure contexts) |
 | v5.17.0 | 2026-04-22 | BPC contract scraper in The Forge + Production Planner BP Cost/Run auto-populate with manual override |

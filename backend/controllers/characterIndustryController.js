@@ -56,7 +56,8 @@ exports.getStats = async (req, res) => {
       return res.status(403).json({ error: 'No access to that character' });
     }
 
-    const topLimit = Math.min(parseInt(req.query.top_limit) || 25, 100);
+    // Effectively unlimited for realistic use — see corp controller note.
+    const topLimit = Math.min(parseInt(req.query.top_limit) || 500, 10000);
 
     const summary = db.queryCharacterJobSummary(filters);
     const byMonth = db.queryCharacterJobsByMonth(filters);

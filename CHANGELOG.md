@@ -2,6 +2,17 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.17.3] - 2026-04-22
+
+### Industry dashboards — truly full picture
+- **Fix:** v5.17.2's frontend bump to `top_limit=500` was silently clamped by the backend at 100 (`Math.min(... || 25, 100)`). Nothing actually changed server-side.
+- **Now:** backend clamp raised to 10,000 (effectively unlimited for realistic use). Frontend sends `top_limit=2000`.
+- **Top Products table** gets the same "Show All N / Show Top 100" expand pattern as Ships Built — default view stays compact, one click shows everything. Applies to both Corp and My Industry Stats.
+- **Row count shown in the header**: "Top Products (N)" so you know at a glance how many distinct product types you built.
+- **CSV export always dumps the full set** — regardless of the visual toggle.
+- **By Activity, By Group, By Month, Monthly Trend** — already unbounded, no change needed.
+- **Category bar charts** still visually cap at 8 groups per category (e.g. Ship's top 8 groups) — kept as-is for readability; CSV and Top Products surface the complete list.
+
 ## [v5.17.2] - 2026-04-22
 
 ### Ships Built — show every ship, not just top-100 residue

@@ -71,6 +71,8 @@ function CharacterIndustryStats({ onError, refreshKey }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAllShips, setShowAllShips] = useState(false);
+  const [showAllProducts, setShowAllProducts] = useState(false);
+  const PRODUCT_TABLE_DEFAULT = 100;
 
   const loadStats = useCallback(async () => {
     try {
@@ -81,7 +83,7 @@ function CharacterIndustryStats({ onError, refreshKey }) {
       if (to) params.to = to;
       if (activityId) params.activity = activityId;
       if (charId) params.character_id = charId;
-      params.top_limit = 500;
+      params.top_limit = 2000;
       const res = await getCharacterIndustryStats(params);
       setData(res.data);
     } catch (err) {
@@ -374,7 +376,15 @@ function CharacterIndustryStats({ onError, refreshKey }) {
           <div className="cis-columns">
             <section className="cis-panel">
               <div className="cis-panel-header">
-                <h3>Top Products</h3>
+                <h3>Top Products ({topProducts.length})</h3>
+                {topProducts.length > PRODUCT_TABLE_DEFAULT && (
+                  <button
+                    type="button"
+                    className="cis-export-all"
+                    onClick={() => setShowAllProducts(s => !s)}
+                    style={{ marginRight: 8 }}
+                  >{showAllProducts ? `Show Top ${PRODUCT_TABLE_DEFAULT}` : `Show All ${topProducts.length}`}</button>
+                )}
                 <ExportButton
                   getData={() => topProducts.map(p => ({
                     product: p.product_name || `Type ${p.product_type_id}`,
@@ -418,7 +428,7 @@ function CharacterIndustryStats({ onError, refreshKey }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {topProducts.map(p => (
+                  {(showAllProducts ? topProducts : topProducts.slice(0, PRODUCT_TABLE_DEFAULT)).map(p => (
                     <tr key={`${p.product_type_id}-${p.activity_id}`}>
                       <td>
                         <span className="cis-product-name">{p.product_name || `Type ${p.product_type_id}`}</span>
