@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { getBuildTree, searchTypes, searchSystems, getJobSlots } from '../services/api';
+import { getBuildTree, searchTypes, searchSystems, getJobSlots, getBpContracts } from '../services/api';
 import ExternalLinks from './ExternalLinks';
 import ExportButton from './ExportButton';
 import './ProductionTree.css';
@@ -373,6 +373,13 @@ function ProductionTree({ onError, refreshKey }) {
   // Sell price (auto-populated from Jita, editable)
   const [sellPrice, setSellPrice] = useState('');
 
+  // BP cost per run — auto-populated from cheapest Jita contract for the
+  // top-level blueprint; deducted from profit. Manual override persists
+  // across re-fetches until ↻ reset clears it back to contract minimum.
+  const [bpCostPerRun, setBpCostPerRun] = useState('');
+  const [bpContractData, setBpContractData] = useState(null);
+  const [bpCostManual, setBpCostManual] = useState(false);
+
   // Results
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -419,11 +426,19 @@ function ProductionTree({ onError, refreshKey }) {
     const sp = parseFloat(sellPrice) || 0;
     const qty = parseInt(quantity) || 1;
     const sellTotal = sp * qty;
+    // BP cost is per run; user pays `bpCostPerRun × qty` for the blueprints
+    // (1-run BPCs = 1 BPC per run; 10-run BPC at 33M costs 3.3M/run either
+    // way). Deducted from build profit; import path is unaffected.
+    const bpPerRun = parseFloat(bpCostPerRun) || 0;
+    const bpTotal = bpPerRun * qty;
     effectiveSummary = {
       ...effectiveSummary,
       sell_price: sp,
       sell_total: sellTotal,
-      build_profit: sellTotal > 0 ? sellTotal - effectiveSummary.total_build_cost : null,
+      bp_cost_per_run: bpPerRun,
+      bp_cost_total: bpTotal,
+      total_build_cost_with_bp: effectiveSummary.total_build_cost + bpTotal,
+      build_profit: sellTotal > 0 ? sellTotal - effectiveSummary.total_build_cost - bpTotal : null,
       import_profit: sellTotal > 0 && !effectiveSummary.is_capital ? sellTotal - effectiveSummary.import_total_cost : null,
     };
   }
@@ -503,6 +518,25 @@ function ProductionTree({ onError, refreshKey }) {
       setResult(resp.data);
       setSellPrice(resp.data.summary?.sell_price > 0 ? String(resp.data.summary.sell_price) : '');
       setExpanded({});
+
+      // Fetch current Jita BPC contracts for this blueprint so we can
+      // auto-populate "BP cost per run". User can still override manually.
+      const bpTypeId = resp.data.tree?.blueprint_id;
+      if (bpTypeId) {
+        try {
+          const bpResp = await getBpContracts(bpTypeId);
+          setBpContractData(bpResp.data);
+          if (!bpCostManual) {
+            const minPerRun = bpResp.data.summary?.min_price_per_run;
+            setBpCostPerRun(minPerRun ? String(Math.round(minPerRun)) : '');
+          }
+        } catch {
+          setBpContractData(null);
+          if (!bpCostManual) setBpCostPerRun('');
+        }
+      } else {
+        setBpContractData(null);
+      }
     } catch (err) {
       onError?.(err.response?.data?.error || 'Failed to build production tree');
       setResult(null);
@@ -632,6 +666,36 @@ function ProductionTree({ onError, refreshKey }) {
             <input type="number" value={sellPrice} onChange={e => setSellPrice(e.target.value)} placeholder="Jita sell" />
           </div>
           <div className="ptree-field">
+            <label title="Price per 1 BPC/run; deducted from build profit. Auto-populated from cheapest Jita contract when available.">
+              BP Cost/Run
+              {bpContractData?.summary?.offer_count > 0 && (
+                <span style={{ fontSize: 10, color: '#718096', marginLeft: 4 }}>
+                  ({bpContractData.summary.offer_count} offers{bpCostManual ? ' · manual' : ''})
+                </span>
+              )}
+            </label>
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              <input
+                type="number"
+                value={bpCostPerRun}
+                onChange={e => { setBpCostPerRun(e.target.value); setBpCostManual(true); }}
+                placeholder={bpContractData?.summary?.min_price_per_run ? 'ISK' : 'no contracts yet'}
+                style={{ flex: 1 }}
+              />
+              {bpCostManual && bpContractData?.summary?.min_price_per_run > 0 && (
+                <button
+                  type="button"
+                  title="Reset to cheapest contract price"
+                  onClick={() => {
+                    setBpCostPerRun(String(Math.round(bpContractData.summary.min_price_per_run)));
+                    setBpCostManual(false);
+                  }}
+                  style={{ padding: '4px 8px', background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#a0aec0', cursor: 'pointer', borderRadius: 4 }}
+                >↻</button>
+              )}
+            </div>
+          </div>
+          <div className="ptree-field">
             <label>Min Fee</label>
             <input type="number" value={shippingMinFee} onChange={e => saveConfig('shippingMinFee', e.target.value, setShippingMinFee)} placeholder="25M" />
           </div>
@@ -722,6 +786,12 @@ function ProductionTree({ onError, refreshKey }) {
                 <span className="stat-label">Shipping (mats)</span>
                 <span className="stat-value">{formatISK(s.shipping_cost)}</span>
               </div>
+              {s.bp_cost_total > 0 && (
+                <div className="stat-box" title={`${formatISK(s.bp_cost_per_run)}/run × ${parseInt(quantity) || 1} runs${bpContractData?.summary?.offer_count ? ` · sourced from ${bpContractData.summary.offer_count} Jita contracts` : ''}`}>
+                  <span className="stat-label">BP Cost{bpCostManual ? ' (manual)' : ''}</span>
+                  <span className="stat-value">{formatISK(s.bp_cost_total)}</span>
+                </div>
+              )}
               {s.sell_total > 0 && (
                 <div className="stat-box">
                   <span className="stat-label">Sell Revenue</span>

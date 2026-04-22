@@ -4,7 +4,7 @@ All notable changes to the EVE Industry Tracker will be documented in this file.
 
 ## [v5.17.0] - 2026-04-22
 
-### Contract BPC price scraper (backend, frontend tomorrow)
+### Contract BPC price scraper + Production Planner integration
 - **New background job** indexes public BPC contracts in The Forge every 4 hours.
 - **Two-pass scrape:**
   1. Fetch all public contracts in region 10000002 (paginated).
@@ -15,7 +15,16 @@ All notable changes to the EVE Industry Tracker will be documented in this file.
 - **New endpoint** `GET /trading/bp-contracts/:typeId` returns offer list + min/avg price-per-run + scraper-state (for freshness indicators).
 - **Admin endpoint** `POST /admin/contracts/scrape` triggers a scrape on demand (background, returns immediately).
 - **Scope (v5.17.0):** Jita region only, single-item contracts only (bundles deferred — ambiguous per-BP pricing), direct-sale only (auctions skipped). Ship-only filter will be applied client-side in tomorrow's frontend integration so we can expand to non-ship BPCs without re-indexing.
-- **Frontend integration** (Production Planner "BP cost per run" auto-populate + manual override with revert button + staleness badge) ships tomorrow.
+- **Production Planner integration:**
+  - New "BP Cost/Run" input next to Sell Price on the top-level product.
+  - **Auto-populates** from `min_price_per_run` across the cheapest Jita contracts after each Calculate.
+  - Shows "(N offers)" count next to the label so you know how much competition exists.
+  - **Manual override** — type a value and it stays put (`(N offers · manual)` badge appears).
+  - **↻ revert** button appears when overridden; click to snap back to the current cheapest contract.
+  - **BP Cost × quantity** deducted from **Build Profit** only (import path unaffected).
+  - New stat card in the cost breakdown: "BP Cost" with tooltip showing `{per-run} × {runs}` math.
+- **README version table + README version header updated.**
+- **Scope (v5.17.0):** Jita region only, single-item contracts only (bundles deferred — ambiguous per-BP pricing), direct-sale only (auctions skipped). Scraper stores all BPC types; Production Planner looks up whichever blueprint_id the tree reports, so ships, modules, rigs all benefit.
 
 ## [v5.16.4] - 2026-04-22
 

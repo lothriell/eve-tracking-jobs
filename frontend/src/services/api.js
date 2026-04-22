@@ -249,6 +249,10 @@ export const getHubPriceHistory = (params) => {
   return api.get('/api/trading/price-history', { params });
 };
 
+export const getBpContracts = (typeId) => {
+  return api.get(`/api/trading/bp-contracts/${typeId}`);
+};
+
 export const findTrades = (params) => {
   return api.get('/api/trading/find', { params });
 };
