@@ -2,6 +2,13 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.16.4] - 2026-04-22
+
+### HOTFIX — Per-station prune was wiping every fresh row
+- The v5.16.1 per-station prune in `refreshHubPrices` captured its "refresh started" timestamp via `new Date().toISOString()` — format `2026-04-22T21:46:05.123Z`. SQLite's `CURRENT_TIMESTAMP` (written by `setHubPrices`) uses format `2026-04-22 21:47:30`. Lexicographic string compare: space (0x20) < T (0x54), so every row inserted during the refresh compared as *older* than the refresh-start marker and was immediately deleted.
+- **Net effect:** each hub refresh cycle wiped the hub it just populated. Trade Finder returned zero opportunities after the first refresh on v5.16.3.
+- **Fix:** capture the threshold via `SELECT datetime('now')` so it's in the same SQLite format as `updated_at`. One-line change.
+
 ## [v5.16.3] - 2026-04-22
 
 ### Trade Finder — Max ROI % filter

@@ -175,10 +175,13 @@ async function refreshHubPrices() {
       const stationIds = new Set(hubsInRegion.map(h => h.station_id));
       const hubNames = hubsInRegion.map(h => h.name).join(', ');
 
-      // Capture refresh start timestamp — used to prune types that used to
-      // have orders here but no longer do, so they don't ghost into
-      // TradeFinder as "expired" opportunities (see pruneStaleHubPrices).
-      const refreshStartedAt = new Date().toISOString();
+      // Capture refresh start timestamp in SQLite's native format
+      // ("YYYY-MM-DD HH:MM:SS") — used to prune types that had orders at
+      // the previous refresh but no longer do. Must match the format that
+      // `CURRENT_TIMESTAMP` writes into hub_prices.updated_at; JS's
+      // `toISOString()` uses a "T" separator that compares < the SQLite
+      // space separator and would wipe rows we just inserted.
+      const refreshStartedAt = db.db.prepare("SELECT datetime('now') as t").get().t;
 
       try {
         console.log(`[CACHE]   Region ${regionId} (${hubNames}): fetching orders...`);

@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.16.3 | **Build Date:** 2026-04-22
+**Current Version:** v5.16.4 | **Build Date:** 2026-04-22
 
 A comprehensive web application for tracking EVE Online industry jobs, assets, planetary industry, and character management across multiple characters and corporations.
 
@@ -212,6 +212,7 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| v5.16.4 | 2026-04-22 | Hotfix: per-station prune timestamp format mismatch was wiping every fresh hub_prices row |
 | v5.16.3 | 2026-04-22 | Trade Finder: Max ROI % filter to cap unrealistic opportunities |
 | v5.16.2 | 2026-04-22 | Trade Finder: hide 906 "Expired …" legacy event items by default (AIR boosters, filaments, etc.) |
 | v5.16.1 | 2026-04-22 | Trade Finder: prune stale hub_prices rows (ghost opportunities) + 6h query-time freshness filter |
