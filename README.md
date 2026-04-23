@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.18.4 | **Build Date:** 2026-04-23
+**Current Version:** v5.18.5 | **Build Date:** 2026-04-23
 
 A comprehensive web application for tracking EVE Online industry jobs, assets, planetary industry, and character management across multiple characters and corporations.
 
@@ -212,6 +212,7 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| v5.18.5 | 2026-04-23 | Fix: BUILD ALL dropped have/missing from shopping list (Missing-only always empty) |
 | v5.18.4 | 2026-04-23 | Fix: type search relevance-scored + junk filter (Rhea no longer buried under Hammerhead variants) |
 | v5.18.3 | 2026-04-23 | Missing Blueprints tab: Copy Multi-Buy (BPOs only) + CSV export |
 | v5.18.2 | 2026-04-23 | Fix: reaction formulas (activity 9/11) now match their products for BP ownership/location checks |

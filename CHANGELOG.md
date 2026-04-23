@@ -2,6 +2,12 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.18.5] - 2026-04-23
+
+### Fix: BUILD ALL wiped stock-check `have`/`missing` from shopping list
+- With **Build All** on, the client rebuilds the shopping list from the tree via `recalcSummary` / `flattenShopping`. Those helpers didn't carry `have` or `missing` through, so every row lost its stock data — the "Missing only" filter found 0 rows and Total showed 0 even when real materials were needed.
+- **Fix:** `flattenShopping` now propagates `node.have` into the aggregated row; `recalcSummary` recomputes `missing = max(0, quantity − have)`. No behavior change when stock-check is off (`have === undefined` preserved).
+
 ## [v5.18.4] - 2026-04-23
 
 ### Fix: type search buried ships like Rhea under Hammerhead/Warhead junk

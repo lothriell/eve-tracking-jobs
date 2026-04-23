@@ -39,11 +39,21 @@ function applyBuildAll(node) {
   return n;
 }
 
-// Flatten tree to shopping list (BUY leaf nodes aggregated)
+// Flatten tree to shopping list (BUY leaf nodes aggregated). Stock-check
+// fields (have / missing) are carried from the first tree node we see for
+// each type — the backend annotates them based on the stock_by_type_id
+// map which is keyed by type, so the value is the same across duplicates.
 function flattenShopping(node, list = {}) {
   if (node.decision === 'buy' || !node.children?.length) {
     if (!list[node.type_id]) {
-      list[node.type_id] = { type_id: node.type_id, name: node.name, quantity: 0, unit_price: node.unit_price, volume: node.volume };
+      list[node.type_id] = {
+        type_id: node.type_id,
+        name: node.name,
+        quantity: 0,
+        unit_price: node.unit_price,
+        volume: node.volume,
+        have: node.have,
+      };
     }
     list[node.type_id].quantity += node.quantity;
   } else {
@@ -56,7 +66,13 @@ function flattenShopping(node, list = {}) {
 function recalcSummary(tree, originalSummary, shippingConfig) {
   const shopMap = flattenShopping(tree);
   const shopList = Object.values(shopMap).map(item => ({
-    ...item, total_cost: item.unit_price * item.quantity, total_volume: item.volume * item.quantity,
+    ...item,
+    // Stock-check missing is quantity − have, floor zero. `have` is
+    // undefined when stock-check mode is off — keep it undefined so the
+    // UI knows there's no data to render the filter against.
+    missing: item.have !== undefined ? Math.max(0, item.quantity - (item.have || 0)) : undefined,
+    total_cost: item.unit_price * item.quantity,
+    total_volume: item.volume * item.quantity,
   })).sort((a, b) => b.total_cost - a.total_cost);
 
   const materialCost = shopList.reduce((s, i) => s + i.total_cost, 0);
