@@ -1107,15 +1107,24 @@ async function getBuildTree(req, res) {
       }
     }
 
-    // Shopping list — raw items (unmodified by inventory)
+    // Shopping list — raw items (unmodified by inventory).
+    // Stock subtraction intentionally skips the ROOT product (productTypeId)
+    // for the same reason as annotateStock: the user clicked Build Tree
+    // to obtain a new copy, not to use the one they already have.
     const shoppingMap = flattenShoppingList(tree);
-    const shoppingList = Object.values(shoppingMap).map(item => ({
-      ...item,
-      have: stockByType[item.type_id] || 0,
-      missing: Math.max(0, item.quantity - (stockByType[item.type_id] || 0)),
-      total_cost: item.unit_price * item.quantity,
-      total_volume: item.volume * item.quantity,
-    })).sort((a, b) => b.total_cost - a.total_cost);
+    const shoppingList = Object.values(shoppingMap).map(item => {
+      const isRoot = item.type_id === productTypeId;
+      const stock = isRoot ? 0 : (stockByType[item.type_id] || 0);
+      const have = isRoot ? undefined : stock;
+      const missing = isRoot ? item.quantity : Math.max(0, item.quantity - stock);
+      return {
+        ...item,
+        have,
+        missing,
+        total_cost: item.unit_price * item.quantity,
+        total_volume: item.volume * item.quantity,
+      };
+    }).sort((a, b) => b.total_cost - a.total_cost);
 
     // When stock-check mode is active, summary-level cost / volume / shipping
     // / collateral reflect only the materials the user actually needs to

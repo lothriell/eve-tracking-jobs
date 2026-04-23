@@ -2,6 +2,12 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.18.9] - 2026-04-23
+
+### Fix: shopping list also stock-subtracted the root product
+- v5.18.8 skipped the root on the tree annotation walk, but the shopping list had its **own** `stockByType[item.type_id]` lookup. When the root decision landed on `BUY` (because Jita/contract price beat build cost), Charon itself entered the shopping list and matched the existing 1× Charon in stock — zeroing material cost.
+- **Fix:** both sides now skip the root. The shopping list row for the root product always reports `missing = full quantity` and `have = undefined`, so summary cards (Materials / Shipping / Build Cost / Profit) reflect the real full cost of obtaining a new one.
+
 ## [v5.18.8] - 2026-04-23
 
 ### Fix: stock-check applied to the root product zeroed out the plan
