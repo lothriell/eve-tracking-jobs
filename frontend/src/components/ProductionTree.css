@@ -209,7 +209,15 @@
 
 /* Missing Blueprints */
 .ptree-blueprints { }
-.bp-header { margin-bottom: 10px; font-size: 13px; color: #a0aec0; }
+.bp-header {
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #a0aec0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
 
 .bp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .bp-table th {

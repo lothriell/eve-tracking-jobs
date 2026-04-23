@@ -2,6 +2,13 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.18.3] - 2026-04-23
+
+### Missing Blueprints tab — Copy Multi-Buy + CSV export
+- **New "Copy Multi-Buy (BPOs)" button** on the Blueprints tab. Copies only the BPs that have a Jita market price (BPOs); BPCs are skipped because they aren't market-tradeable — they come from contracts / LP / invention.
+- **CSV export** of the full missing-BP list: `{ blueprint, blueprint_type_id, product_type_id, activity, runs_needed, bpo_market_price, source }`.
+- `.bp-header` flex layout so buttons align right next to the count, matching the shopping-list header.
+
 ## [v5.18.2] - 2026-04-23
 
 ### Fix: reaction formulas now match their products in BP ownership

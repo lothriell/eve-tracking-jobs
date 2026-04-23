@@ -1123,6 +1123,40 @@ function ProductionTree({ onError, refreshKey }) {
             <div className="ptree-blueprints">
               <div className="bp-header">
                 <span>Blueprints needed to build ({result.missing_blueprints.length})</span>
+                <div className="shopping-actions">
+                  <button
+                    className="buy-all-btn"
+                    title="Copy only the BPs that have a Jita BPO market price (BPCs aren't market-tradeable — pull those from contracts)"
+                    onClick={async () => {
+                      const buyable = result.missing_blueprints.filter(bp => bp.bpo_market_price > 0);
+                      if (buyable.length === 0) { onError?.('No market-tradeable BPs in this list (all BPCs)'); return; }
+                      const lines = buyable.map(bp => `${bp.name} Blueprint 1`).join('\n');
+                      const ok = await copyToClipboard(lines);
+                      if (!ok) onError?.('Failed to copy');
+                    }}
+                  >Copy Multi-Buy (BPOs)</button>
+                  <ExportButton
+                    getData={() => result.missing_blueprints.map(bp => ({
+                      blueprint: `${bp.name} Blueprint`,
+                      blueprint_type_id: bp.blueprint_id || bp.type_id,
+                      product_type_id: bp.type_id,
+                      category: bp.category,
+                      quantity_needed: bp.quantity_needed,
+                      bpo_market_price: bp.bpo_market_price,
+                      source: bp.bpo_market_price > 0 ? 'Buy BPO on market' : 'BPC (contracts/LP/invention)',
+                    }))}
+                    columns={[
+                      { key: 'blueprint', label: 'Blueprint' },
+                      { key: 'blueprint_type_id', label: 'BP Type ID' },
+                      { key: 'product_type_id', label: 'Product Type ID' },
+                      { key: 'category', label: 'Activity' },
+                      { key: 'quantity_needed', label: 'Runs Needed' },
+                      { key: 'bpo_market_price', label: 'BPO Market Price (ISK)' },
+                      { key: 'source', label: 'Source' },
+                    ]}
+                    filename="missing-blueprints"
+                  />
+                </div>
               </div>
               <table className="bp-table">
                 <thead>
