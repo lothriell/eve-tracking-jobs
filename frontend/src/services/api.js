@@ -253,6 +253,14 @@ export const getBpContracts = (typeId) => {
   return api.get(`/api/trading/bp-contracts/${typeId}`);
 };
 
+export const getInventoryContexts = () => {
+  return api.get('/api/trading/inventory-contexts');
+};
+
+export const getInventoryLocations = (mode, sourceId) => {
+  return api.get('/api/trading/inventory-locations', { params: { mode, sourceId } });
+};
+
 export const findTrades = (params) => {
   return api.get('/api/trading/find', { params });
 };

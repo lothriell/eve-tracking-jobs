@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.18.0 | **Build Date:** 2026-04-23
+**Current Version:** v5.18.1 | **Build Date:** 2026-04-23
 
 A comprehensive web application for tracking EVE Online industry jobs, assets, planetary industry, and character management across multiple characters and corporations.
 
@@ -212,6 +212,7 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| v5.18.1 | 2026-04-23 | Production Planner inventory awareness (frontend): scope radio, pickers, tree stock chips, missing-only shopping list + multibuy |
 | v5.18.0 | 2026-04-23 | Production Planner inventory awareness (backend): contexts + locations + stock-annotated build tree; frontend next |
 | v5.17.5 | 2026-04-23 | UI: matched thead heights across Top Products / Installers (nowrap + short labels + title tooltips) |
 | v5.17.4 | 2026-04-22 | Industry tables: sortable headers, symmetric panel headers with row counts + min-height for UX consistency |

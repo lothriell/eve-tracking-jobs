@@ -2,6 +2,27 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.18.1] - 2026-04-23
+
+### Production Planner — inventory-aware builds (frontend)
+Completes v5.18.0 with the UI to drive stock checks on any build.
+
+- **New Stock-check row** in the config block (right under the main settings):
+  - `Stock check` select: `— Off —` / `Personal character` / `Corporation hangars`
+  - `Character` or `Corporation` dropdown (auto-populated from the logged-in user's linked alts / their corps)
+  - Corp entries greyed-out with tooltip when no linked character has Director / Accountant / Station Manager role in that corp
+  - `Location` dropdown, populated from wherever the selected source actually has assets, sorted by asset count
+  - All selections persist in localStorage
+- **Tree nodes show stock chips** when mode is active:
+  - 🟢 `✓ N` when covered, 🟡 `⚠ N / need M` partial, 🔴 `✗ N` missing
+  - Hover tooltip with exact have/need/missing breakdown
+- **"off-site" BP badge** when you own the blueprint but it's not at the chosen build location (account-wide ownership vs location-available)
+- **Shopping List** gets a `Missing only` toggle (on by default when inventory mode is active):
+  - New columns `Have` and `Missing` alongside the existing `Need`
+  - Subtotal + total recomputed against the missing quantity (so "Copy Multi-Buy" and CSV export give you a real purchase list, not your full BOM)
+- **Multibuy paste** uses the filtered rows with the correct missing quantities, ready to drop into EVE's in-game Multibuy.
+- Backend unchanged from v5.18.0 — just the UI consuming the new `have`/`missing`/`inventory_context` fields.
+
 ## [v5.18.0] - 2026-04-23
 
 ### Production Planner — inventory-aware builds (backend)

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { getBuildTree, searchTypes, searchSystems, getJobSlots, getBpContracts } from '../services/api';
+import { getBuildTree, searchTypes, searchSystems, getJobSlots, getBpContracts, getInventoryContexts, getInventoryLocations } from '../services/api';
 import ExternalLinks from './ExternalLinks';
 import ExportButton from './ExportButton';
 import { copyToClipboard } from '../services/export';
@@ -270,6 +270,18 @@ function TreeNode({ node, depth, expanded, onToggleExpand, onToggleDecision }) {
         {/* Quantity */}
         <span className="tree-qty">x{node.quantity.toLocaleString()}</span>
 
+        {/* Stock status — only when inventory mode is annotated on the node */}
+        {node.have !== undefined && (() => {
+          const have = node.have || 0;
+          const need = node.quantity || 0;
+          let cls = 'tree-stock ok';
+          let text;
+          if (have >= need) { cls = 'tree-stock ok'; text = `✓ ${have.toLocaleString()}`; }
+          else if (have > 0) { cls = 'tree-stock partial'; text = `⚠ ${have.toLocaleString()} / need ${need.toLocaleString()}`; }
+          else { cls = 'tree-stock missing'; text = `✗ ${need.toLocaleString()}`; }
+          return <span className={cls} title={`Have ${have.toLocaleString()} of ${need.toLocaleString()} at build location${have < need ? ` · missing ${(need - have).toLocaleString()}` : ''}`}>{text}</span>;
+        })()}
+
         {/* Action: category badge + decision toggle */}
         <span className="tree-action">
           {node.category === 'reaction' && (
@@ -288,6 +300,11 @@ function TreeNode({ node, depth, expanded, onToggleExpand, onToggleDecision }) {
           {node.owned_blueprint && (
             <span className={`tree-owned ${node.owned_blueprint.is_bpo ? 'bpo' : 'bpc'}`} title={`${node.owned_blueprint.owner}: ${node.owned_blueprint.is_bpo ? 'BPO' : 'BPC'} ME${node.owned_blueprint.me}/TE${node.owned_blueprint.te}${node.owned_blueprint.runs > 0 ? ' (' + node.owned_blueprint.runs + ' runs)' : ''}`}>
               {node.owned_blueprint.is_bpo ? 'BPO' : 'BPC'} ME{node.owned_blueprint.me}
+            </span>
+          )}
+          {node.location_blueprint !== undefined && node.location_blueprint === null && node.owned_blueprint && (
+            <span className="tree-owned offsite" title="You own a BP but it's NOT at the chosen build location — move it there or get another copy">
+              off-site
             </span>
           )}
         </span>
@@ -381,6 +398,17 @@ function ProductionTree({ onError, refreshKey }) {
   const [bpContractData, setBpContractData] = useState(null);
   const [bpCostManual, setBpCostManual] = useState(false);
 
+  // Inventory awareness — "what do I already have at this location?"
+  // Personal mode: source is a character_id. Corp: source is a corp_id,
+  // server transparently uses whichever linked char has asset-read role.
+  const [invMode, setInvMode] = useState(loadSaved('invMode', '')); // '', 'personal', or 'corp'
+  const [invSourceId, setInvSourceId] = useState(loadSaved('invSourceId', ''));
+  const [invLocationId, setInvLocationId] = useState(loadSaved('invLocationId', ''));
+  const [invContexts, setInvContexts] = useState(null); // { personal: [...], corps: [...] }
+  const [invLocations, setInvLocations] = useState([]);
+  const [invLoading, setInvLoading] = useState(false);
+  const [shoppingMissingOnly, setShoppingMissingOnly] = useState(true);
+
   // Results
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -399,6 +427,50 @@ function ProductionTree({ onError, refreshKey }) {
       } catch {}
     })();
   }, [refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load inventory contexts (character + corp dropdowns) on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const resp = await getInventoryContexts();
+        setInvContexts(resp.data);
+      } catch {
+        setInvContexts({ personal: [], corps: [] });
+      }
+    })();
+  }, [refreshKey]);
+
+  // Whenever mode + sourceId both set, fetch available locations
+  useEffect(() => {
+    if (!invMode || !invSourceId) { setInvLocations([]); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        setInvLoading(true);
+        const resp = await getInventoryLocations(invMode, invSourceId);
+        if (!cancelled) {
+          setInvLocations(resp.data.locations || []);
+          // If the saved locationId isn't in the new list, clear it
+          if (invLocationId && !(resp.data.locations || []).some(l => String(l.location_id) === String(invLocationId))) {
+            setInvLocationId('');
+          }
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setInvLocations([]);
+          onError?.(err.response?.data?.error || 'Failed to load inventory locations');
+        }
+      } finally {
+        if (!cancelled) setInvLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [invMode, invSourceId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Persist inventory selections
+  useEffect(() => { try { localStorage.setItem('prodPlanner_invMode', invMode); } catch {} }, [invMode]);
+  useEffect(() => { try { localStorage.setItem('prodPlanner_invSourceId', invSourceId); } catch {} }, [invSourceId]);
+  useEffect(() => { try { localStorage.setItem('prodPlanner_invLocationId', invLocationId); } catch {} }, [invLocationId]);
 
   // Effective tree — computed directly (no memo tricks)
   const tree = result?.tree ? (buildAll ? applyBuildAll(result.tree) : result.tree) : null;
@@ -501,7 +573,7 @@ function ProductionTree({ onError, refreshKey }) {
     if (!typeId) return;
     try {
       setLoading(true);
-      const resp = await getBuildTree(typeId, {
+      const buildParams = {
         quantity: parseInt(quantity) || 1,
         me: parseInt(meLevel) || 0,
         te: parseInt(teLevel) || 0,
@@ -515,7 +587,14 @@ function ProductionTree({ onError, refreshKey }) {
         sec: secStatus,
         taxRate: parseFloat(taxRate) || 0,
         systemId: parseInt(systemId) || 0,
-      });
+      };
+      // Inventory mode — server annotates each tree node with have/missing
+      if (invMode && invSourceId && invLocationId) {
+        buildParams.invMode = invMode;
+        buildParams.invSourceId = parseInt(invSourceId);
+        buildParams.invLocationId = parseInt(invLocationId);
+      }
+      const resp = await getBuildTree(typeId, buildParams);
       setResult(resp.data);
       setSellPrice(resp.data.summary?.sell_price > 0 ? String(resp.data.summary.sell_price) : '');
       setExpanded({});
@@ -559,7 +638,16 @@ function ProductionTree({ onError, refreshKey }) {
 
   const handleCopyBuyAll = async () => {
     if (!effectiveShoppingList) return;
-    const lines = effectiveShoppingList.map(item => `${item.name} ${item.quantity}`).join('\n');
+    // If we have inventory data AND the missing-only filter is on, copy
+    // only the shortfall. Otherwise copy the full list.
+    const hasInv = !!result?.inventory_context && !result.inventory_context.error;
+    const rows = hasInv && shoppingMissingOnly
+      ? effectiveShoppingList.filter(i => (i.missing || 0) > 0)
+      : effectiveShoppingList;
+    const lines = rows.map(item => {
+      const qty = hasInv && shoppingMissingOnly ? (item.missing || item.quantity) : item.quantity;
+      return `${item.name} ${qty}`;
+    }).join('\n');
     const ok = await copyToClipboard(lines);
     if (!ok) onError?.('Failed to copy');
   };
@@ -738,6 +826,69 @@ function ProductionTree({ onError, refreshKey }) {
             </button>
           </div>
         </div>
+
+        {/* Inventory awareness — use existing stock for have/missing */}
+        <div className="ptree-row ptree-inventory-row" style={{ marginTop: 10, gap: 12, alignItems: 'end' }}>
+          <div className="ptree-field">
+            <label>Stock check</label>
+            <select
+              value={invMode}
+              onChange={e => { setInvMode(e.target.value); setInvSourceId(''); setInvLocationId(''); }}
+            >
+              <option value="">— Off —</option>
+              <option value="personal">Personal character</option>
+              <option value="corp">Corporation hangars</option>
+            </select>
+          </div>
+          {invMode === 'personal' && (
+            <div className="ptree-field">
+              <label>Character</label>
+              <select value={invSourceId} onChange={e => setInvSourceId(e.target.value)}>
+                <option value="">Pick character…</option>
+                {(invContexts?.personal || []).map(c => (
+                  <option key={c.character_id} value={c.character_id}>{c.character_name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {invMode === 'corp' && (
+            <div className="ptree-field">
+              <label>Corporation</label>
+              <select value={invSourceId} onChange={e => setInvSourceId(e.target.value)}>
+                <option value="">Pick corp…</option>
+                {(invContexts?.corps || []).map(c => (
+                  <option
+                    key={c.corporation_id}
+                    value={c.corporation_id}
+                    disabled={!c.role_holder_character_id}
+                    title={c.role_holder_character_id ? '' : 'No linked character has asset-read role (Director / Accountant / Station Manager)'}
+                  >
+                    {c.name}{c.ticker ? ` [${c.ticker}]` : ''}{!c.role_holder_character_id ? ' — no access' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {invMode && invSourceId && (
+            <div className="ptree-field" style={{ minWidth: 260 }}>
+              <label>Location{invLoading ? ' (loading…)' : invLocations.length ? ` (${invLocations.length})` : ''}</label>
+              <select value={invLocationId} onChange={e => setInvLocationId(e.target.value)} disabled={invLoading}>
+                <option value="">Pick location…</option>
+                {invLocations.map(l => (
+                  <option key={l.location_id} value={l.location_id}>
+                    {l.name} — {l.asset_count.toLocaleString()} items
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {invMode && invSourceId && invLocationId && (
+            <div className="ptree-field" style={{ alignSelf: 'end', fontSize: 11, color: '#a0aec0' }}>
+              <label>&nbsp;</label>
+              <span>Stock check active — rebuild the tree to apply</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Results */}
@@ -874,63 +1025,98 @@ function ProductionTree({ onError, refreshKey }) {
           )}
 
           {/* Shopping List */}
-          {activeTab === 'shopping' && effectiveShoppingList && (
-            <div className="ptree-shopping">
-              <div className="shopping-header">
-                <span>Materials to buy ({effectiveShoppingList.length} items)</span>
-                <div className="shopping-actions">
-                  <button className="buy-all-btn" onClick={handleCopyBuyAll}>Copy Multi-Buy</button>
-                  <ExportButton
-                    getData={() => effectiveShoppingList.map(i => ({
-                      item: i.name, quantity: i.quantity, unit_price: i.unit_price,
-                      total_cost: i.total_cost, volume: i.total_volume,
-                    }))}
-                    columns={[
-                      { key: 'item', label: 'Item' }, { key: 'quantity', label: 'Qty' },
-                      { key: 'unit_price', label: 'Unit Price' }, { key: 'total_cost', label: 'Total' },
-                      { key: 'volume', label: 'Volume m3' },
-                    ]}
-                    filename="shopping-list"
-                  />
+          {activeTab === 'shopping' && effectiveShoppingList && (() => {
+            const hasInv = !!result?.inventory_context && !result.inventory_context.error;
+            const visibleRows = hasInv && shoppingMissingOnly
+              ? effectiveShoppingList.filter(i => (i.missing || 0) > 0)
+              : effectiveShoppingList;
+            const missingCount = effectiveShoppingList.filter(i => (i.missing || 0) > 0).length;
+            const totalCost = visibleRows.reduce((s, i) => {
+              const qty = hasInv && shoppingMissingOnly ? (i.missing || i.quantity) : i.quantity;
+              return s + (i.unit_price || 0) * qty;
+            }, 0);
+            const totalVol = visibleRows.reduce((s, i) => {
+              const qty = hasInv && shoppingMissingOnly ? (i.missing || i.quantity) : i.quantity;
+              return s + (i.volume || 0) * qty;
+            }, 0);
+            return (
+              <div className="ptree-shopping">
+                <div className="shopping-header">
+                  <span>
+                    Materials {hasInv && shoppingMissingOnly ? 'missing' : 'to buy'} ({visibleRows.length}{hasInv && !shoppingMissingOnly ? ` · ${missingCount} missing` : ''} items)
+                  </span>
+                  <div className="shopping-actions">
+                    {hasInv && (
+                      <label style={{ fontSize: 12, color: '#a0aec0', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={shoppingMissingOnly} onChange={e => setShoppingMissingOnly(e.target.checked)} />
+                        Missing only
+                      </label>
+                    )}
+                    <button className="buy-all-btn" onClick={handleCopyBuyAll}>Copy Multi-Buy</button>
+                    <ExportButton
+                      getData={() => visibleRows.map(i => ({
+                        item: i.name, quantity: i.quantity, have: i.have || 0, missing: i.missing || 0,
+                        unit_price: i.unit_price, total_cost: i.total_cost, volume: i.total_volume,
+                      }))}
+                      columns={[
+                        { key: 'item', label: 'Item' }, { key: 'quantity', label: 'Need' },
+                        { key: 'have', label: 'Have' }, { key: 'missing', label: 'Missing' },
+                        { key: 'unit_price', label: 'Unit Price' }, { key: 'total_cost', label: 'Total (need)' },
+                        { key: 'volume', label: 'Volume m3' },
+                      ]}
+                      filename={hasInv && shoppingMissingOnly ? 'shopping-list-missing' : 'shopping-list'}
+                    />
+                  </div>
                 </div>
-              </div>
-              <table className="shopping-table">
-                <thead>
-                  <tr>
-                    <th>Material</th>
-                    <th className="num">Quantity</th>
-                    <th className="num">Unit Price</th>
-                    <th className="num">Total Cost</th>
-                    <th className="num">Volume (m3)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {effectiveShoppingList.map(item => (
-                    <tr key={item.type_id}>
-                      <td className="mat-name">
-                        <img className="shop-icon" src={`https://images.evetech.net/types/${item.type_id}/icon?size=32`} alt="" loading="lazy" />
-                        {item.name}
-                        <ExternalLinks type="item" typeId={item.type_id} />
-                      </td>
-                      <td className="num">{item.quantity.toLocaleString()}</td>
-                      <td className="num">{formatISK(item.unit_price)}</td>
-                      <td className="num">{formatISK(item.total_cost)}</td>
-                      <td className="num">{item.total_volume?.toFixed(1)}</td>
+                <table className="shopping-table">
+                  <thead>
+                    <tr>
+                      <th>Material</th>
+                      <th className="num">Need</th>
+                      {hasInv && <th className="num">Have</th>}
+                      {hasInv && <th className="num">Missing</th>}
+                      <th className="num">Unit Price</th>
+                      <th className="num">Subtotal</th>
+                      <th className="num">m³</th>
                     </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td>Total</td>
-                    <td></td>
-                    <td></td>
-                    <td className="num">{formatISK(effectiveShoppingList.reduce((s, i) => s + i.total_cost, 0))}</td>
-                    <td className="num">{effectiveShoppingList.reduce((s, i) => s + (i.total_volume || 0), 0).toFixed(1)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          )}
+                  </thead>
+                  <tbody>
+                    {visibleRows.map(item => {
+                      const showQty = hasInv && shoppingMissingOnly ? (item.missing || item.quantity) : item.quantity;
+                      const subtotal = (item.unit_price || 0) * showQty;
+                      const vol = (item.volume || 0) * showQty;
+                      return (
+                        <tr key={item.type_id}>
+                          <td className="mat-name">
+                            <img className="shop-icon" src={`https://images.evetech.net/types/${item.type_id}/icon?size=32`} alt="" loading="lazy" />
+                            {item.name}
+                            <ExternalLinks type="item" typeId={item.type_id} />
+                          </td>
+                          <td className="num">{item.quantity.toLocaleString()}</td>
+                          {hasInv && <td className="num" style={{ color: '#48bb78' }}>{(item.have || 0).toLocaleString()}</td>}
+                          {hasInv && <td className="num" style={{ color: (item.missing || 0) > 0 ? '#fc8181' : '#718096' }}>{(item.missing || 0).toLocaleString()}</td>}
+                          <td className="num">{formatISK(item.unit_price)}</td>
+                          <td className="num">{formatISK(subtotal)}</td>
+                          <td className="num">{vol.toFixed(1)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td>Total</td>
+                      <td></td>
+                      {hasInv && <td></td>}
+                      {hasInv && <td></td>}
+                      <td></td>
+                      <td className="num">{formatISK(totalCost)}</td>
+                      <td className="num">{totalVol.toFixed(1)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            );
+          })()}
 
           {/* Missing Blueprints */}
           {activeTab === 'blueprints' && result.missing_blueprints && (
