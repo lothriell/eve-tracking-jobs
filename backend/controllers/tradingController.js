@@ -1099,7 +1099,11 @@ async function getBuildTree(req, res) {
 
           if (node.children) for (const c of node.children) annotateStock(c);
         }
-        annotateStock(tree);
+        // Skip the ROOT product — the user wants to build one, so any
+        // existing copies at the location aren't relevant. Otherwise
+        // having 1 Charon already would zero out the plan for the
+        // one they're trying to make.
+        if (tree.children) for (const c of tree.children) annotateStock(c);
       }
     }
 

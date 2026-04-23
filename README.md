@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.18.7 | **Build Date:** 2026-04-23
+**Current Version:** v5.18.8 | **Build Date:** 2026-04-23
 
 A comprehensive web application for tracking EVE Online industry jobs, assets, planetary industry, and character management across multiple characters and corporations.
 
@@ -212,6 +212,7 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| v5.18.8 | 2026-04-23 | Fix: stock-check no longer applies to the root product (having one in stock zeroed out the plan) |
 | v5.18.7 | 2026-04-23 | Build Tree: Stock/Qty as adjacent aligned columns, Action widened to stop badge collisions |
 | v5.18.6 | 2026-04-23 | Fix: summary cards (Materials, Shipping, Build Cost, Profit) now use missing qty when stock-check is on |
 | v5.18.5 | 2026-04-23 | Fix: BUILD ALL dropped have/missing from shopping list (Missing-only always empty) |

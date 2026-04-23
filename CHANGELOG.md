@@ -2,6 +2,12 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.18.8] - 2026-04-23
+
+### Fix: stock-check applied to the root product zeroed out the plan
+- Symptom: if the user had the product they're planning to build *already in stock* (e.g. 1 Charon at the Fusion Foundry), stock-check counted that as coverage: `missing = need - have = 0`, material cost = 0, profit inflated by ~1.3B. The tree even flipped the root decision to BUY.
+- **Fix:** annotation walk now starts from `tree.children`, not `tree`. The root product never gets `have`/`missing` — you clicked Build Tree because you want to make a NEW one, so any existing copies at the location are irrelevant to the plan. Stock-check continues to apply to every material and intermediate component as before.
+
 ## [v5.18.7] - 2026-04-23
 
 ### Build Tree — Stock/Qty as adjacent aligned columns
