@@ -979,7 +979,10 @@ async function getBuildTree(req, res) {
         if (result.hasScope) {
           for (const bp of result.blueprints) {
             const productBp = db.db.prepare(
-              'SELECT product_type_id FROM blueprint_products WHERE blueprint_id = ? AND activity_id = 1'
+              // activity 1 = manufacturing, 9 + 11 = reactions (legacy/modern). Reaction
+// formulas weren't being matched to their product, so owned formulas showed
+// as "missing" and reacted components never got `location_blueprint` set.
+'SELECT product_type_id, activity_id FROM blueprint_products WHERE blueprint_id = ? AND activity_id IN (1, 9, 11) LIMIT 1'
             ).get(bp.type_id);
             if (!productBp) continue; // Skip BPs with no product mapping in SDE
             const productTypeForBp = productBp.product_type_id;
@@ -1061,7 +1064,10 @@ async function getBuildTree(req, res) {
         const locationBPs = {};
         for (const bp of invResult.blueprints) {
           const productBp = db.db.prepare(
-            'SELECT product_type_id FROM blueprint_products WHERE blueprint_id = ? AND activity_id = 1'
+            // activity 1 = manufacturing, 9 + 11 = reactions (legacy/modern). Reaction
+// formulas weren't being matched to their product, so owned formulas showed
+// as "missing" and reacted components never got `location_blueprint` set.
+'SELECT product_type_id, activity_id FROM blueprint_products WHERE blueprint_id = ? AND activity_id IN (1, 9, 11) LIMIT 1'
           ).get(bp.type_id);
           if (!productBp) continue;
           const productTypeForBp = productBp.product_type_id;

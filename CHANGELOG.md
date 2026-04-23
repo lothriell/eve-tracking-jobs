@@ -2,6 +2,13 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.18.2] - 2026-04-23
+
+### Fix: reaction formulas now match their products in BP ownership
+- Both blueprint-ownership lookups (account-wide and location-scoped) queried `activity_id = 1` only, so **reaction formulas (activities 9 and 11) were never matched to the component they produce**. Consequence: owned reaction formulas showed as "missing" in the Blueprints tab, and reacted components never got `location_blueprint` set under the new stock-check mode.
+- Fix: widen both queries to `activity_id IN (1, 9, 11) LIMIT 1`. A given `blueprint_id` only has one product so there's no ambiguity.
+- Clarification on the shopping list's "Missing only": it filters *materials*, not blueprints. Missing BPs (including reaction formulas) still appear in the dedicated **Blueprints** tab.
+
 ## [v5.18.1] - 2026-04-23
 
 ### Production Planner — inventory-aware builds (frontend)
