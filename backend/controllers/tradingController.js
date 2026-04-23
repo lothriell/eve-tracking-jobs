@@ -1113,12 +1113,25 @@ async function getBuildTree(req, res) {
       total_volume: item.volume * item.quantity,
     })).sort((a, b) => b.total_cost - a.total_cost);
 
-    const totalMaterialCost = shoppingList.reduce((s, i) => s + i.total_cost, 0);
-    const totalVolume = shoppingList.reduce((s, i) => s + i.total_volume, 0);
+    // When stock-check mode is active, summary-level cost / volume / shipping
+    // / collateral reflect only the materials the user actually needs to
+    // *buy* — stuff already at the build location is free to use and costs
+    // nothing to ship.
+    const stockActive = !!inventoryContext && !inventoryContext.error;
+    const effQty = (i) => stockActive && i.have !== undefined
+      ? Math.max(0, i.quantity - i.have)
+      : i.quantity;
+    const totalMaterialCost = shoppingList.reduce((s, i) => s + (i.unit_price || 0) * effQty(i), 0);
+    const totalVolume = shoppingList.reduce((s, i) => s + (i.volume || 0) * effQty(i), 0);
     // Halo Logistics formula: max(minFee, volume × perM3) per contract, split by max volume
     const contracts = Math.ceil(totalVolume / maxVolumePerContract) || 1;
     const volumeShippingCost = totalVolume * shippingPerM3Rate;
-    const shippingCost = Math.max(shippingMinFee * contracts, volumeShippingCost);
+    // 25M min fee only meaningful when there IS volume to ship. With the
+    // missing-quantity filter the user might already have everything —
+    // in which case zero shipping (not 25M floor).
+    const shippingCost = totalVolume > 0
+      ? Math.max(shippingMinFee * contracts, volumeShippingCost)
+      : 0;
     const collateralCost = totalMaterialCost * collateralPct / 100;
     const totalJobs = countJobs(tree);
     const totalJobCost = Math.round(sumJobCosts(tree) * 100) / 100;

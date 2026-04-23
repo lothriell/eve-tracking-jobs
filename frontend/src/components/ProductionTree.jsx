@@ -75,11 +75,21 @@ function recalcSummary(tree, originalSummary, shippingConfig) {
     total_volume: item.volume * item.quantity,
   })).sort((a, b) => b.total_cost - a.total_cost);
 
-  const materialCost = shopList.reduce((s, i) => s + i.total_cost, 0);
-  const totalVolume = shopList.reduce((s, i) => s + i.total_volume, 0);
+  // Summary-level cost + shipping use the MISSING quantity when stock-check
+  // is on: you don't buy or ship materials you already have at the
+  // build location.
+  const stockActive = shopList.some(i => i.have !== undefined);
+  const effQty = (i) => stockActive && i.have !== undefined
+    ? Math.max(0, i.quantity - (i.have || 0))
+    : i.quantity;
+  const materialCost = shopList.reduce((s, i) => s + (i.unit_price || 0) * effQty(i), 0);
+  const totalVolume = shopList.reduce((s, i) => s + (i.volume || 0) * effQty(i), 0);
   const { shippingMinFee, shippingPerM3, collateralPct, maxVolume } = shippingConfig;
   const contracts = Math.ceil(totalVolume / maxVolume) || 1;
-  const shippingCost = Math.max(shippingMinFee * contracts, totalVolume * shippingPerM3);
+  // Zero volume to ship → zero shipping cost (no 25M floor).
+  const shippingCost = totalVolume > 0
+    ? Math.max(shippingMinFee * contracts, totalVolume * shippingPerM3)
+    : 0;
   const collateralCost = materialCost * collateralPct / 100;
 
   // Count jobs + job costs from tree

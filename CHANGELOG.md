@@ -2,6 +2,13 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.18.6] - 2026-04-23
+
+### Fix: summary cards double-counted materials you already have
+- With stock-check mode on, the top summary cards (Materials, Shipping (mats), Build Cost, Build Profit, Collateral) still summed the **full BOM** instead of the missing quantity. So if you had 4.7M of the 8.9M Pyerite needed already at the build location, the summary still charged you for 8.9M Pyerite AND for shipping 41,140 m³ of it — even though only the remaining 4.1M would actually be purchased and shipped.
+- **Fix:** when stock-check is active, summary-level `material_cost`, `total_volume`, `shipping_cost`, and `collateral_cost` all use `max(0, quantity − have)` per material. Build Profit now reflects the real out-of-pocket cost.
+- **Edge case:** if you already have everything (zero volume to ship), shipping drops to 0 instead of hitting the 25M min fee. Fixed in both the backend's `getBuildTree` and the client-side `recalcSummary` (used when Build All is on).
+
 ## [v5.18.5] - 2026-04-23
 
 ### Fix: BUILD ALL wiped stock-check `have`/`missing` from shopping list
