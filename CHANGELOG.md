@@ -2,6 +2,14 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.18.4] - 2026-04-23
+
+### Fix: type search buried ships like Rhea under Hammerhead/Warhead junk
+- `searchTypes` used `name LIKE '%query%'` sorted alphabetically with `LIMIT 20`. For a 4-char query like `Rhea`, substring `rhead` matched **Hammerhead**, **Warhead**, **Spearhead**, **Loggerhead** — in the test DB 115 rows matched and `Rhea` the ship was alphabetically #63, well beyond the top-20 cap.
+- **Fix:** relevance-scored query with 4 tiers — exact match, starts-with, word-boundary, substring — plus shortest-name tiebreaker (so `Rhea` beats `Rhea Blueprint` beats `Guristas Freighter Rhea Wreckage`).
+- **Junk filter** — SKIN / SKINR / Paragon / `Expired …` excluded by default from search results (same heuristic as Trade Finder). Pass `includeJunk=true` on the search request if you need to find one of those intentionally.
+- Limit raised from 20 → 50 rows in the backend to give the dropdown more headroom.
+
 ## [v5.18.3] - 2026-04-23
 
 ### Missing Blueprints tab — Copy Multi-Buy + CSV export

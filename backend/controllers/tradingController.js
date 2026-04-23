@@ -489,7 +489,8 @@ async function searchTypes(req, res) {
   try {
     const query = (req.query.q || '').trim();
     if (query.length < 2) return res.json({ results: [] });
-    const rows = db.searchTypes(query, 20);
+    const includeJunk = String(req.query.includeJunk || '').toLowerCase() === 'true';
+    const rows = db.searchTypes(query, 50, includeJunk);
     res.json({ results: rows.map(r => ({ type_id: r.id, name: r.name })) });
   } catch (error) {
     console.error('Type search error:', error.message);

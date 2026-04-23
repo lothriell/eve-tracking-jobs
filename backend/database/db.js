@@ -552,10 +552,33 @@ class DB {
 
   // ===== TYPE SEARCH =====
 
-  searchTypes(query, limit = 20) {
+  // Relevance-scored type search.
+  //   tier 0 = exact name match
+  //   tier 1 = starts with query
+  //   tier 2 = word-boundary match (space + query)
+  //   tier 3 = substring anywhere
+  // Ties broken by shortest name (so "Rhea" beats "Rhea Blueprint") then
+  // alphabetic. Market junk (SKINs / SKINR / Paragon / "Expired …") is
+  // hidden by default — set includeJunk=true to show it.
+  searchTypes(query, limit = 50, includeJunk = false) {
+    const q = query.trim();
+    const junkFilter = includeJunk
+      ? ''
+      : `AND name NOT LIKE '% SKIN%' AND name NOT LIKE '%SKINR%' AND name NOT LIKE '%Paragon%' AND name NOT LIKE 'Expired %'`;
     return this.db.prepare(
-      `SELECT id, name FROM name_cache WHERE category = 'type' AND name LIKE ? ORDER BY name ASC LIMIT ?`
-    ).all(`%${query}%`, limit);
+      `SELECT id, name,
+              CASE
+                WHEN LOWER(name) = LOWER(?) THEN 0
+                WHEN LOWER(name) LIKE LOWER(?) THEN 1
+                WHEN LOWER(name) LIKE LOWER(?) THEN 2
+                ELSE 3
+              END AS rank,
+              LENGTH(name) AS name_len
+       FROM name_cache
+       WHERE category = 'type' AND name LIKE ? ${junkFilter}
+       ORDER BY rank ASC, name_len ASC, name ASC
+       LIMIT ?`
+    ).all(q, `${q}%`, `% ${q}%`, `%${q}%`, limit);
   }
 
   // ===== STATION/STRUCTURE SEARCH =====
