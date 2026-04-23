@@ -2,6 +2,14 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.18.10] - 2026-04-23
+
+### Fix: Shopping List column spacing
+- Auto-layout was giving the Material column ~50% of the table and clustering every numeric column in the right half, with huge blank gaps.
+- **Fix:** added a `<colgroup>` with explicit 110px per numeric column + `table-layout: fixed` so the Material column takes the remaining width (auto). Columns now distribute evenly.
+- Header cells forced `white-space: nowrap` so "UNIT PRICE" / "SUBTOTAL" don't wrap.
+- `mat-name` cell gets `overflow: hidden; text-overflow: ellipsis` so very long type names truncate cleanly instead of blowing up the column.
+
 ## [v5.18.9] - 2026-04-23
 
 ### Fix: shopping list also stock-subtracted the root product

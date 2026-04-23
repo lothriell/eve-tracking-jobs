@@ -1108,6 +1108,15 @@ function ProductionTree({ onError, refreshKey }) {
                   </div>
                 </div>
                 <table className="shopping-table">
+                  <colgroup>
+                    <col className="col-material" />
+                    <col className="col-num" />
+                    {hasInv && <col className="col-num" />}
+                    {hasInv && <col className="col-num" />}
+                    <col className="col-num" />
+                    <col className="col-num" />
+                    <col className="col-num" />
+                  </colgroup>
                   <thead>
                     <tr>
                       <th>Material</th>
