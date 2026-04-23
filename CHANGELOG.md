@@ -2,6 +2,29 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.18.0] - 2026-04-23
+
+### Production Planner — inventory-aware builds (backend)
+Backend scaffolding for "can I build this right now with what I already have". Frontend integration lands next.
+
+- **New service `backend/services/inventoryService.js`** with:
+  - `getContexts(userId)` — returns dropdown options: all linked characters (personal) + all corps spanning those characters, each corp tagged with the chosen role-holder's character_id (or null if no linked character has asset-read role).
+  - `getLocations({mode, sourceId})` — distinct station/structure roots where the source has assets, sorted by asset count.
+  - `getStockAtLocation({mode, sourceId, locationId})` — type_id → qty map + BPs physically at the location.
+  - Follows container → hangar → root parent chain (`location_type: 'item'`) up to 10 hops.
+  - 15-minute in-memory cache per character_id / corp_id so repeated planner recalcs don't re-paginate thousands of assets.
+- **New ESI helper** `getCorporationBlueprints(corpId, token)` mirroring the character-blueprints endpoint (requires `esi-corporations.read_blueprints.v1` + Director role).
+- **Role resolver** — for corp mode, iterates user's linked characters to find one with Director / Accountant / Station_Manager (the roles ESI accepts for asset reads) and uses that character's token transparently. No re-login required to switch between personal and any of the user's corps.
+- **New endpoints:**
+  - `GET /trading/inventory-contexts` — dropdown data
+  - `GET /trading/inventory-locations?mode=&sourceId=` — location picker data
+- **Extended `GET /trading/build-tree/:typeId`** with optional `invMode`, `invSourceId`, `invLocationId` params. When set:
+  - Each tree node gets `have` (qty at the build location) + `missing` (shortfall).
+  - Each node also gets `location_blueprint` — the best BP physically at the build location (BPO or highest-run BPC). The existing `owned_blueprint` field still reflects the account-wide best.
+  - Shopping list rows get `have` + `missing` fields so the frontend can filter to just what needs purchasing.
+  - Response carries `inventory_context` with source info + any error ("no character with asset role").
+- **Token flow unchanged** — session cookie is still just the primary character; alt tokens are looked up server-side.
+
 ## [v5.17.5] - 2026-04-23
 
 ### UI polish — matched table header heights

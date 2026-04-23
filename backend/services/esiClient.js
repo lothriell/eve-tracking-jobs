@@ -871,6 +871,31 @@ async function getWalletJournal(characterId, accessToken) {
   }
 }
 
+// Get corporation blueprints (BPO/BPC). Requires esi-corporations.read_blueprints.v1
+// scope + Director role on the token's character. Paginated, 1000/page.
+async function getCorporationBlueprints(corporationId, accessToken) {
+  try {
+    const allBlueprints = [];
+    let page = 1;
+    while (true) {
+      const url = `${ESI_BASE_URL}/corporations/${corporationId}/blueprints/`;
+      const data = await makeESIRequest(url, accessToken, { page });
+      if (!data || data.length === 0) break;
+      allBlueprints.push(...data);
+      if (data.length < 1000) break;
+      page++;
+    }
+    return { blueprints: allBlueprints, hasScope: true };
+  } catch (error) {
+    const status = error.response?.status;
+    if (status === 401 || status === 403) {
+      return { blueprints: [], hasScope: false };
+    }
+    console.error(`Get corp blueprints error (${corporationId}):`, error.message);
+    return { blueprints: [], hasScope: false };
+  }
+}
+
 // Get character blueprints (BPO/BPC with ME/TE/runs)
 async function getCharacterBlueprints(characterId, accessToken) {
   try {
@@ -923,7 +948,8 @@ module.exports = {
   getCharacterWallet,
   getWalletJournal,
   getWalletTransactions,
-  getCharacterBlueprints
+  getCharacterBlueprints,
+  getCorporationBlueprints
 };
 
 // Get wallet market transactions

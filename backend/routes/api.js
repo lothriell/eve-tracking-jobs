@@ -10,7 +10,7 @@ const { requireFeature, requireAdmin, getEnabledFeatures } = require('../middlew
 // Version endpoint (for deployment verification)
 router.get('/version', (req, res) => {
   res.json({
-    version: '5.17.5',
+    version: '5.18.0',
     name: 'EVE Industry Tracker',
     buildDate: '2026-04-23'
   });
@@ -455,6 +455,8 @@ router.put('/trading/hubs/:hubId', ...tradeAuth, tradingController.toggleHub);
 router.get('/trading/compare/:typeId', ...tradeAuth, tradingController.compareItem);
 router.get('/trading/price-history', ...tradeAuth, tradingController.priceHistory);
 router.get('/trading/bp-contracts/:typeId', ...tradeAuth, tradingController.bpContracts);
+router.get('/trading/inventory-contexts', ...tradeAuth, tradingController.inventoryContexts);
+router.get('/trading/inventory-locations', ...tradeAuth, tradingController.inventoryLocations);
 router.get('/trading/find', ...tradeAuth, tradingController.findTrades);
 router.get('/trading/settings', ...tradeAuth, tradingController.getSettings);
 router.put('/trading/settings', ...tradeAuth, tradingController.updateSettings);

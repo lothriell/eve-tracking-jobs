@@ -8,6 +8,7 @@ const { getTypeNames, getCharacterSkills, getCharacterBlueprints } = require('..
 const { getValidAccessToken } = require('../services/tokenRefresh');
 const { calculateBrokerFee, calculateSalesTax, findTradeOpportunities } = require('../services/tradeCalculator');
 const { scoreOpportunity, categoryRiskTag } = require('../services/baitScore');
+const inventoryService = require('../services/inventoryService');
 
 // Ensure default hubs exist for this user (lazy init)
 function ensureHubsSeeded(req, res, next) {
@@ -126,6 +127,35 @@ async function compareItem(req, res) {
   } catch (error) {
     console.error('Compare item error:', error.message);
     res.status(500).json({ error: 'Failed to compare item' });
+  }
+}
+
+async function inventoryContexts(req, res) {
+  try {
+    const data = await inventoryService.getContexts(req.session.userId);
+    res.json(data);
+  } catch (error) {
+    console.error('Inventory contexts error:', error.message);
+    res.status(500).json({ error: 'Failed to load inventory contexts' });
+  }
+}
+
+async function inventoryLocations(req, res) {
+  try {
+    const mode = req.query.mode === 'corp' ? 'corp' : 'personal';
+    const sourceId = parseInt(req.query.sourceId);
+    if (!sourceId) return res.status(400).json({ error: 'sourceId is required' });
+
+    const data = await inventoryService.getLocations({
+      userId: req.session.userId,
+      mode,
+      sourceId,
+    });
+    if (data.error) return res.status(403).json({ error: data.error });
+    res.json(data);
+  } catch (error) {
+    console.error('Inventory locations error:', error.message);
+    res.status(500).json({ error: 'Failed to load inventory locations' });
   }
 }
 
@@ -995,10 +1025,83 @@ async function getBuildTree(req, res) {
     }
     annotateOwnership(tree);
 
-    // Shopping list
+    // === Optional inventory annotation ===
+    // When the client passes (invMode, invSourceId, invLocationId) we
+    // fetch what's physically at that location (personal character or
+    // corporation hangars) and mark each tree node with `have` and
+    // `missing`. The shopping list below is then shrunk to reflect what
+    // actually needs to be purchased.
+    const invMode = req.query.invMode === 'corp' ? 'corp' : (req.query.invMode === 'personal' ? 'personal' : null);
+    const invSourceId = parseInt(req.query.invSourceId) || null;
+    const invLocationId = parseInt(req.query.invLocationId) || null;
+    let inventoryContext = null;
+    let stockByType = {};
+    if (invMode && invSourceId && invLocationId) {
+      const invResult = await inventoryService.getStockAtLocation({
+        userId: req.session.userId,
+        mode: invMode,
+        sourceId: invSourceId,
+        locationId: invLocationId,
+      });
+      if (invResult.error) {
+        inventoryContext = { mode: invMode, error: invResult.error };
+      } else {
+        stockByType = invResult.stock_by_type_id || {};
+        inventoryContext = {
+          mode: invMode,
+          source_id: invSourceId,
+          location_id: invLocationId,
+          total_assets: invResult.total_assets,
+          hasBpScope: invResult.hasBpScope,
+        };
+
+        // Override owned_blueprint to only trust BPs physically at the
+        // build location — matches "can I start this job right now here"
+        // semantics. Map by the product the BP produces.
+        const locationBPs = {};
+        for (const bp of invResult.blueprints) {
+          const productBp = db.db.prepare(
+            'SELECT product_type_id FROM blueprint_products WHERE blueprint_id = ? AND activity_id = 1'
+          ).get(bp.type_id);
+          if (!productBp) continue;
+          const productTypeForBp = productBp.product_type_id;
+          const prev = locationBPs[productTypeForBp];
+          if (!prev || (bp.runs === -1 && !prev.is_bpo) || (!prev.is_bpo && bp.runs > (prev.runs || 0))) {
+            locationBPs[productTypeForBp] = {
+              is_bpo: bp.runs === -1,
+              me: bp.material_efficiency,
+              te: bp.time_efficiency,
+              runs: bp.runs,
+              type_id: bp.type_id,
+            };
+          }
+        }
+
+        function annotateStock(node) {
+          const have = stockByType[node.type_id] || 0;
+          node.have = have;
+          node.missing = Math.max(0, node.quantity - have);
+
+          // Re-annotate BP availability scoped to the build location
+          const bpAtLoc = locationBPs[node.type_id];
+          if (bpAtLoc) {
+            node.location_blueprint = bpAtLoc;
+          } else {
+            node.location_blueprint = null;
+          }
+
+          if (node.children) for (const c of node.children) annotateStock(c);
+        }
+        annotateStock(tree);
+      }
+    }
+
+    // Shopping list — raw items (unmodified by inventory)
     const shoppingMap = flattenShoppingList(tree);
     const shoppingList = Object.values(shoppingMap).map(item => ({
       ...item,
+      have: stockByType[item.type_id] || 0,
+      missing: Math.max(0, item.quantity - (stockByType[item.type_id] || 0)),
       total_cost: item.unit_price * item.quantity,
       total_volume: item.volume * item.quantity,
     })).sort((a, b) => b.total_cost - a.total_cost);
@@ -1114,6 +1217,7 @@ async function getBuildTree(req, res) {
       },
       shopping_list: shoppingList,
       missing_blueprints: missingBPList,
+      inventory_context: inventoryContext,
       config: { meLevel, teLevel, maxDepth, shippingMinFee, shippingPerM3Rate, collateralPct, maxVolumePerContract, structure, rig, sec, taxRate, systemId, facilityMeFactor: Math.round(facilityMeFactor * 10000) / 10000, teFactor: Math.round(teFactor * 10000) / 10000 },
     });
   } catch (error) {
@@ -1290,6 +1394,8 @@ module.exports = {
   compareItem,
   bpContracts,
   priceHistory,
+  inventoryContexts,
+  inventoryLocations,
   findTrades,
   getSettings,
   updateSettings,
