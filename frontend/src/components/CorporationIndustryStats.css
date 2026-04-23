@@ -147,6 +147,9 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 600;
+  /* Keep headers single-line so adjacent tables have matching <thead>
+     heights regardless of label length. */
+  white-space: nowrap;
 }
 
 .cis-table .num {

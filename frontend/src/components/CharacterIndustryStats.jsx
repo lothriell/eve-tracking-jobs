@@ -81,11 +81,16 @@ function sortRows(rows, col, dir, numericCols) {
   });
 }
 
-function SortableTh({ col, label, activeCol, dir, onClick, className }) {
+function SortableTh({ col, label, activeCol, dir, onClick, className, title }) {
   const isActive = activeCol === col;
   const arrow = isActive ? (dir === 'asc' ? ' ▲' : ' ▼') : '';
   return (
-    <th className={`sortable ${className || ''}`} onClick={() => onClick(col)} style={{ cursor: 'pointer', userSelect: 'none' }}>
+    <th
+      className={`sortable ${className || ''}`}
+      onClick={() => onClick(col)}
+      style={{ cursor: 'pointer', userSelect: 'none' }}
+      title={title || undefined}
+    >
       {label}{arrow}
     </th>
   );
@@ -463,8 +468,8 @@ function CharacterIndustryStats({ onError, refreshKey }) {
                     <SortableTh col="job_count" label="Jobs" activeCol={productSort.col} dir={productSort.dir} onClick={toggleProductSort} className="num" />
                     <SortableTh col="total_runs" label="Runs" activeCol={productSort.col} dir={productSort.dir} onClick={toggleProductSort} className="num" />
                     <SortableTh col="total_cost" label="Cost" activeCol={productSort.col} dir={productSort.dir} onClick={toggleProductSort} className="num" />
-                    <SortableTh col="isk_produced_est" label="Produced (est)" activeCol={productSort.col} dir={productSort.dir} onClick={toggleProductSort} className="num" />
-                    <SortableTh col="isk_sold" label="Sold (real)" activeCol={productSort.col} dir={productSort.dir} onClick={toggleProductSort} className="num" />
+                    <SortableTh col="isk_produced_est" label="Produced" activeCol={productSort.col} dir={productSort.dir} onClick={toggleProductSort} className="num" title="Σ runs × current Jita sell (manufacturing + reactions only)" />
+                    <SortableTh col="isk_sold" label="Sold" activeCol={productSort.col} dir={productSort.dir} onClick={toggleProductSort} className="num" title="Σ wallet sales (is_buy=0) in this window — actual ISK earned from selling these types" />
                   </tr>
                 </thead>
                 <tbody>

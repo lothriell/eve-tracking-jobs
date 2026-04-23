@@ -2,6 +2,13 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.17.5] - 2026-04-23
+
+### UI polish — matched table header heights
+- **`white-space: nowrap`** on `.cis-table th` — "Produced (est)" and "Sold (real)" were wrapping to 2 lines in the narrower Top Products column, making its `<thead>` taller than Top Installers' and the rows visually misaligned across the two columns.
+- **Short labels** — "Produced (est)" → "Produced", "Sold (real)" → "Sold". Original context moved into hover tooltips ("Σ runs × current Jita sell…", "Σ wallet sales in this window…").
+- **SortableTh now supports `title`** so future columns can carry tooltips the same way.
+
 ## [v5.17.4] - 2026-04-22
 
 ### Sortable tables + header alignment
