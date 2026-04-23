@@ -10,7 +10,7 @@ const { requireFeature, requireAdmin, getEnabledFeatures } = require('../middlew
 // Version endpoint (for deployment verification)
 router.get('/version', (req, res) => {
   res.json({
-    version: '5.18.6',
+    version: '5.18.7',
     name: 'EVE Industry Tracker',
     buildDate: '2026-04-23'
   });

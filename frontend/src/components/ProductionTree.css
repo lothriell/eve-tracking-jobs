@@ -103,8 +103,9 @@
   background: rgba(0,0,0,0.2);
 }
 .tree-header-name { flex: 1; }
+.tree-header-stock { width: 80px; text-align: right; padding-right: 4px; }
 .tree-header-qty { width: 80px; text-align: right; }
-.tree-header-decision { width: 130px; text-align: center; }
+.tree-header-decision { width: 180px; text-align: center; }
 .tree-header-cost { width: 80px; text-align: right; }
 .tree-header-savings { width: 65px; text-align: right; }
 .tree-header-time { width: 40px; text-align: right; }
@@ -127,7 +128,7 @@
 .tree-name { flex: 1; display: flex; align-items: center; gap: 4px; min-width: 0; }
 .tree-qty { width: 80px; text-align: right; color: #a0aec0; font-size: 12px; flex-shrink: 0; }
 
-.tree-action { width: 130px; display: flex; align-items: center; justify-content: flex-end; gap: 4px; flex-shrink: 0; }
+.tree-action { width: 180px; display: flex; align-items: center; justify-content: flex-end; gap: 4px; flex-shrink: 0; flex-wrap: nowrap; }
 
 .tree-decision {
   padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;
@@ -305,19 +306,28 @@
 .ptree-empty { text-align: center; padding: 60px 20px; color: #718096; }
 .ptree-hint { font-size: 12px; color: #4a5568; margin-top: 4px; }
 
-/* Inventory-awareness stock status chips on tree nodes */
-.tree-stock {
+/* Inventory-awareness "Stock" column — sits immediately left of the
+   Qty column so you read "have → need" at a glance. Same 80px width +
+   right-align as Qty for a clean table look. */
+.tree-have {
+  width: 80px;
   font-size: 11px;
-  padding: 2px 6px;
+  padding: 2px 4px;
   border-radius: 4px;
   font-weight: 600;
-  margin-left: 6px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
   cursor: help;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  font-variant-numeric: tabular-nums;
 }
-.tree-stock.ok      { background: rgba(72, 187, 120, 0.14); color: #48bb78; }
-.tree-stock.partial { background: rgba(246, 173, 85, 0.16); color: #f6ad55; }
-.tree-stock.missing { background: rgba(245, 101, 101, 0.16); color: #fc8181; }
+.tree-have.empty { background: transparent; cursor: default; }
+.tree-have.ok      { background: rgba(72, 187, 120, 0.14); color: #48bb78; }
+.tree-have.partial { background: rgba(246, 173, 85, 0.16); color: #f6ad55; }
+.tree-have.missing { background: rgba(245, 101, 101, 0.16); color: #fc8181; }
 .tree-owned.offsite { background: rgba(246, 173, 85, 0.14); color: #f6ad55; border: 1px dashed rgba(246, 173, 85, 0.4); }
 
 /* Inventory config row */

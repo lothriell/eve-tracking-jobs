@@ -2,6 +2,16 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.18.7] - 2026-04-23
+
+### Build Tree — Stock/Qty as adjacent aligned columns
+- Stock chip used to render as a free-floating element between the Qty and Action cells, colliding with the REACT category badge when multiple action pills stacked up.
+- **Redesigned as a proper column:** when stock-check is on, a new `Stock` column sits immediately left of `Qty`. Both are 80px right-aligned with identical font/alignment so you read *have → need* at a glance.
+- **Numbers abbreviate** — `18,973` → `18.9K`, `1,234,567` → `1.2M` — so the fixed-width chip never truncates. Full values in the hover tooltip.
+- **Row alignment guaranteed** — when stock-mode is on but a node has no stock data, we render an empty placeholder so subsequent columns don't jump.
+- **Header matches** — `Stock` column added to the header conditionally; `Action` column widened to 180px to stop the REACT + BUILD + BPO ME0 + off-site badges spilling into neighbours.
+- No visual change when stock-check is off — column layout identical to before.
+
 ## [v5.18.6] - 2026-04-23
 
 ### Fix: summary cards double-counted materials you already have

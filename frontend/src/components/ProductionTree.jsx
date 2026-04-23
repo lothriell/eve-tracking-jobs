@@ -271,7 +271,7 @@ function scheduleJobs(tree, mfgSlots, reactionSlots, maxJobSeconds) {
 }
 
 // Recursive tree node component
-function TreeNode({ node, depth, expanded, onToggleExpand, onToggleDecision }) {
+function TreeNode({ node, depth, expanded, onToggleExpand, onToggleDecision, stockActive }) {
   const isExpanded = expanded[node.type_id + '_' + depth] !== false; // default expanded for depth 0-1
   const hasChildren = node.children && node.children.length > 0;
   const indent = depth * 24;
@@ -293,20 +293,27 @@ function TreeNode({ node, depth, expanded, onToggleExpand, onToggleDecision }) {
           <ExternalLinks type="item" typeId={node.type_id} />
         </span>
 
-        {/* Quantity */}
-        <span className="tree-qty">x{node.quantity.toLocaleString()}</span>
-
-        {/* Stock status — only when inventory mode is annotated on the node */}
-        {node.have !== undefined && (() => {
+        {/* Stock column — shown only when stock-check is on. Sits immediately
+            left of Qty so you see "have | need" side by side at a glance.
+            Abbreviated (18.9K) with color coding; full numbers in tooltip. */}
+        {stockActive && (node.have !== undefined ? (() => {
           const have = node.have || 0;
           const need = node.quantity || 0;
-          let cls = 'tree-stock ok';
+          const abbr = (n) => {
+            if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
+            if (n >= 1_000) return `${(n / 1_000).toFixed(n >= 10_000 ? 0 : 1)}K`;
+            return String(n);
+          };
+          let cls = 'tree-have ok';
           let text;
-          if (have >= need) { cls = 'tree-stock ok'; text = `✓ ${have.toLocaleString()}`; }
-          else if (have > 0) { cls = 'tree-stock partial'; text = `⚠ ${have.toLocaleString()} / need ${need.toLocaleString()}`; }
-          else { cls = 'tree-stock missing'; text = `✗ ${need.toLocaleString()}`; }
+          if (have >= need) { cls = 'tree-have ok'; text = `✓ ${abbr(have)}`; }
+          else if (have > 0) { cls = 'tree-have partial'; text = `⚠ ${abbr(have)}`; }
+          else { cls = 'tree-have missing'; text = `✗ 0`; }
           return <span className={cls} title={`Have ${have.toLocaleString()} of ${need.toLocaleString()} at build location${have < need ? ` · missing ${(need - have).toLocaleString()}` : ''}`}>{text}</span>;
-        })()}
+        })() : <span className="tree-have empty" />)}
+
+        {/* Quantity — needed */}
+        <span className="tree-qty">x{node.quantity.toLocaleString()}</span>
 
         {/* Action: category badge + decision toggle */}
         <span className="tree-action">
@@ -359,6 +366,7 @@ function TreeNode({ node, depth, expanded, onToggleExpand, onToggleDecision }) {
               expanded={expanded}
               onToggleExpand={onToggleExpand}
               onToggleDecision={onToggleDecision}
+              stockActive={stockActive}
             />
           ))}
         </div>
@@ -1029,26 +1037,31 @@ function ProductionTree({ onError, refreshKey }) {
           </div>
 
           {/* Tree View */}
-          {activeTab === 'tree' && tree && (
-            <div className="ptree-tree">
-              <div className="tree-header">
-                <span className="tree-header-name">Item</span>
-                <span className="tree-header-qty">Qty</span>
-                <span className="tree-header-decision">Action</span>
-                <span className="tree-header-cost">Cost</span>
-                <span className="tree-header-savings">Savings</span>
-                <span className="tree-header-time">Time</span>
-                <span className="tree-header-jobcost">Job Cost</span>
+          {activeTab === 'tree' && tree && (() => {
+            const stockActive = !!result?.inventory_context && !result.inventory_context.error;
+            return (
+              <div className="ptree-tree">
+                <div className="tree-header">
+                  <span className="tree-header-name">Item</span>
+                  {stockActive && <span className="tree-header-stock">Stock</span>}
+                  <span className="tree-header-qty">Qty</span>
+                  <span className="tree-header-decision">Action</span>
+                  <span className="tree-header-cost">Cost</span>
+                  <span className="tree-header-savings">Savings</span>
+                  <span className="tree-header-time">Time</span>
+                  <span className="tree-header-jobcost">Job Cost</span>
+                </div>
+                <TreeNode
+                  node={tree}
+                  depth={0}
+                  expanded={expanded}
+                  onToggleExpand={handleToggleExpand}
+                  onToggleDecision={handleToggleDecision}
+                  stockActive={stockActive}
+                />
               </div>
-              <TreeNode
-                node={tree}
-                depth={0}
-                expanded={expanded}
-                onToggleExpand={handleToggleExpand}
-                onToggleDecision={handleToggleDecision}
-              />
-            </div>
-          )}
+            );
+          })()}
 
           {/* Shopping List */}
           {activeTab === 'shopping' && effectiveShoppingList && (() => {
