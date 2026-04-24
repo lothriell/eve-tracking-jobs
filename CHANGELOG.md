@@ -2,6 +2,13 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.19.1] - 2026-04-24
+
+### UX polish — inline icon buttons match input height
+- The 📈 and ↻ buttons next to **BP Cost/Run** were squatty at ~24px while the input beside them was 34px, so they looked tacked on.
+- **New shared `.ptree-inline-btn` class**: 34px tall × 34px min-wide, matching input padding and border-radius, with `.active` state for the toggled 📈.
+- Icon font-size bumped 13 → 16px so the glyph actually reads at a glance. Visually symmetric now on both sides of the input.
+
 ## [v5.19.0] - 2026-04-24
 
 ### BPC contract price history — trend chart in Production Planner

@@ -811,20 +811,20 @@ function ProductionTree({ onError, refreshKey }) {
               {result?.tree?.blueprint_id && (
                 <button
                   type="button"
+                  className={`ptree-inline-btn${showBpTrend ? ' active' : ''}`}
                   title="Show BPC price history — min/median/max per run over time"
                   onClick={() => setShowBpTrend(s => !s)}
-                  style={{ padding: '4px 8px', background: showBpTrend ? 'rgba(77,166,255,0.15)' : 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#a0aec0', cursor: 'pointer', borderRadius: 4 }}
                 >📈</button>
               )}
               {bpCostManual && bpContractData?.summary?.min_price_per_run > 0 && (
                 <button
                   type="button"
+                  className="ptree-inline-btn"
                   title="Reset to cheapest contract price"
                   onClick={() => {
                     setBpCostPerRun(String(Math.round(bpContractData.summary.min_price_per_run)));
                     setBpCostManual(false);
                   }}
-                  style={{ padding: '4px 8px', background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#a0aec0', cursor: 'pointer', borderRadius: 4 }}
                 >↻</button>
               )}
             </div>

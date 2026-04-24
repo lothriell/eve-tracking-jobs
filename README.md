@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.19.0 | **Build Date:** 2026-04-24
+**Current Version:** v5.19.1 | **Build Date:** 2026-04-24
 
 A comprehensive web application for tracking EVE Online industry jobs, assets, planetary industry, and character management across multiple characters and corporations.
 
@@ -212,6 +212,7 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| v5.19.1 | 2026-04-24 | UX: inline 📈 / ↻ buttons match input height, shared .ptree-inline-btn class |
 | v5.19.0 | 2026-04-24 | BPC contract price history: daily snapshot per type + trend chart (min/median/max/run) in Production Planner |
 | v5.18.10 | 2026-04-23 | Fix: Shopping List column spacing (table-layout: fixed + colgroup, 110px per numeric col) |
 | v5.18.9 | 2026-04-23 | Fix: shopping list also stock-subtracted the root (v5.18.8 only fixed the tree annotation, not the list) |

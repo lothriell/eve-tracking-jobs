@@ -36,6 +36,29 @@
   border-radius: 6px; color: #e2e8f0; font-size: 13px; height: 34px; box-sizing: border-box;
 }
 .ptree-field input:focus, .ptree-field select:focus { outline: none; border-color: rgba(99,179,237,0.5); }
+
+/* Inline icon buttons sitting next to a field input (📈 / ↻ etc). Match
+   the input height exactly so they visually align and don't feel tacked
+   on. Active state has a subtle blue tint. */
+.ptree-inline-btn {
+  height: 34px;
+  min-width: 34px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  color: #a0aec0;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+.ptree-inline-btn:hover { background: rgba(255,255,255,0.06); color: #e2e8f0; }
+.ptree-inline-btn.active { background: rgba(77,166,255,0.15); border-color: rgba(77,166,255,0.4); color: #90cdf4; }
 .ptree-calc-btn {
   padding: 7px 24px; background: rgba(99,179,237,0.25); border: 1px solid rgba(99,179,237,0.5);
   border-radius: 6px; color: #90cdf4; cursor: pointer; font-size: 13px; font-weight: 600;
