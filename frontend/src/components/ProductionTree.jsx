@@ -771,7 +771,7 @@ function ProductionTree({ onError, refreshKey }) {
           </div>
         </div>
         <div className="ptree-row" style={{ marginTop: 10 }}>
-          <div className="ptree-field">
+          <div className="ptree-field narrow">
             <label>Quantity</label>
             <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} />
           </div>
@@ -829,11 +829,14 @@ function ProductionTree({ onError, refreshKey }) {
               >↻</button>
             </div>
           </div>
+          {/* Explicit row break — keeps Min Fee + ISK/m³ together at the
+              start of row 3 regardless of viewport width. */}
+          <div style={{ flexBasis: '100%', height: 0, margin: 0, padding: 0 }} />
           <div className="ptree-field">
             <label>Min Fee</label>
             <input type="number" value={shippingMinFee} onChange={e => saveConfig('shippingMinFee', e.target.value, setShippingMinFee)} placeholder="25M" />
           </div>
-          <div className="ptree-field">
+          <div className="ptree-field narrow">
             <label>ISK/m³</label>
             <input type="number" value={shippingPerM3} onChange={e => saveConfig('shippingPerM3', e.target.value, setShippingPerM3)} placeholder="600" />
           </div>

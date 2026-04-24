@@ -30,6 +30,7 @@
 }
 .ptree-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
 .ptree-field { display: flex; flex-direction: column; gap: 4px; min-width: 100px; }
+.ptree-field.narrow { min-width: 80px; max-width: 110px; }
 .ptree-field label { font-size: 11px; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; }
 .ptree-field input, .ptree-field select {
   padding: 7px 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15);

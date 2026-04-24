@@ -2,6 +2,14 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.19.3] - 2026-04-24
+
+### UX: Production Planner field layout tightening
+- **Min Fee + ISK/m³ now share a row** (start of row 3) — the shipping-config duo travels together instead of Min Fee dangling at end of row 2. Achieved via an explicit flex row-break rather than resizing columns so it holds at any viewport width.
+- **Quantity narrower** (80–110px) since it's usually a 1-2 digit number.
+- **ISK/m³ narrower** same reason — 3-4 digit rate like 600.
+- New `.ptree-field.narrow` modifier class for future use.
+
 ## [v5.19.2] - 2026-04-24
 
 ### UX: layout stability — no more field reflow on conditional renders

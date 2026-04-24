@@ -1,6 +1,6 @@
 # EVE Industry Tracker
 
-**Current Version:** v5.19.2 | **Build Date:** 2026-04-24
+**Current Version:** v5.19.3 | **Build Date:** 2026-04-24
 
 A comprehensive web application for tracking EVE Online industry jobs, assets, planetary industry, and character management across multiple characters and corporations.
 
@@ -212,6 +212,7 @@ Browser → Cloudflare Tunnel → Nginx (frontend pod)
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| v5.19.3 | 2026-04-24 | UX: Min Fee + ISK/m³ share a row; Quantity + ISK/m³ narrower |
 | v5.19.2 | 2026-04-24 | UX: layout stability — no field reflow on conditional renders (BP Cost buttons, Stock Check cascade, char/corp filters) |
 | v5.19.1 | 2026-04-24 | UX: inline 📈 / ↻ buttons match input height, shared .ptree-inline-btn class |
 | v5.19.0 | 2026-04-24 | BPC contract price history: daily snapshot per type + trend chart (min/median/max/run) in Production Planner |
