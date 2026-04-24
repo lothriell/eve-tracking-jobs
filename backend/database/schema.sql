@@ -387,3 +387,22 @@ CREATE TABLE IF NOT EXISTS contract_scraper_state (
     error TEXT,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Daily aggregate snapshots of BPC contract prices per type. Captured at
+-- the end of each contract scrape; PK+INSERT OR IGNORE ensures only the
+-- first snapshot of each UTC day actually stores (subsequent same-day
+-- scrapes no-op). Enables the per-type price-trend chart — "Revelation
+-- Navy Issue was 900M-1B, now it's 1.1B-1.2B" etc.
+CREATE TABLE IF NOT EXISTS contract_bpc_price_history (
+    type_id INTEGER NOT NULL,
+    capture_date TEXT NOT NULL,
+    min_per_run REAL,
+    median_per_run REAL,
+    avg_per_run REAL,
+    max_per_run REAL,
+    offer_count INTEGER DEFAULT 0,
+    captured_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (type_id, capture_date)
+);
+CREATE INDEX IF NOT EXISTS idx_bpc_hist_date ON contract_bpc_price_history(capture_date);
+CREATE INDEX IF NOT EXISTS idx_bpc_hist_type ON contract_bpc_price_history(type_id, capture_date);

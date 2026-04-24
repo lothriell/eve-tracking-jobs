@@ -253,6 +253,10 @@ export const getBpContracts = (typeId) => {
   return api.get(`/api/trading/bp-contracts/${typeId}`);
 };
 
+export const getBpcPriceHistory = (typeId, days = 180) => {
+  return api.get(`/api/trading/bpc-price-history/${typeId}`, { params: { days } });
+};
+
 export const getInventoryContexts = () => {
   return api.get('/api/trading/inventory-contexts');
 };

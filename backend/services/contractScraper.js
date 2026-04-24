@@ -168,6 +168,24 @@ async function runScrape() {
     const prunedGone = db.pruneGoneContractOffers(live);
     const prunedExpired = db.pruneExpiredContractOffers();
 
+    // Daily price snapshot per type (min/median/avg/max price-per-run +
+    // offer count). PK + INSERT OR IGNORE means only the first scrape of
+    // each UTC day actually stores — subsequent scrapes no-op. Feeds
+    // the per-BP price-trend chart in the Production Planner.
+    let snapshotRows = 0;
+    try {
+      snapshotRows = db.snapshotContractBpcPrices();
+      if (snapshotRows > 0) {
+        console.log(`[CONTRACTS]   Snapshotted ${snapshotRows} types into contract_bpc_price_history`);
+      }
+      const prunedHist = db.pruneContractBpcPriceHistory(180);
+      if (prunedHist > 0) {
+        console.log(`[CONTRACTS]   Pruned ${prunedHist} history rows older than 180 days`);
+      }
+    } catch (err) {
+      console.warn('[CONTRACTS] Price history snapshot failed:', err.message);
+    }
+
     // Summary row count.
     const countRow = db.db.prepare('SELECT COUNT(*) as n FROM contract_bpc_offers').get();
 

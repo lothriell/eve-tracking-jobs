@@ -869,6 +869,68 @@ class DB {
     return this.db.prepare('SELECT * FROM contract_scraper_state WHERE region_id = ?').get(regionId);
   }
 
+  // Snapshot today's BPC contract prices per type — one row per (type_id,
+  // today-UTC). INSERT OR IGNORE so subsequent same-day scrapes no-op.
+  // Median is computed per type via a SQLite window function (PERCENTILE
+  // isn't available in SQLite; we approximate with a sorted-offset pick).
+  snapshotContractBpcPrices() {
+    // Step 1: collect today's aggregate per type_id with sorted prices so
+    // we can derive min/avg/max + a median pick. Done in JS because
+    // SQLite lacks PERCENTILE_CONT, and row counts here are modest
+    // (~500 types with active offers at any time).
+    const rows = this.db.prepare(
+      `SELECT type_id, (price / MAX(runs, 1)) AS price_per_run
+       FROM contract_bpc_offers
+       ORDER BY type_id ASC, price_per_run ASC`
+    ).all();
+    if (rows.length === 0) return 0;
+
+    const byType = new Map();
+    for (const r of rows) {
+      if (!byType.has(r.type_id)) byType.set(r.type_id, []);
+      byType.get(r.type_id).push(r.price_per_run);
+    }
+
+    const insert = this.db.prepare(
+      `INSERT OR IGNORE INTO contract_bpc_price_history
+       (type_id, capture_date, min_per_run, median_per_run, avg_per_run, max_per_run, offer_count)
+       VALUES (?, date('now'), ?, ?, ?, ?, ?)`
+    );
+    let stored = 0;
+    const txn = this.db.transaction(() => {
+      for (const [typeId, prices] of byType) {
+        const min = prices[0];
+        const max = prices[prices.length - 1];
+        const sum = prices.reduce((s, p) => s + p, 0);
+        const avg = sum / prices.length;
+        const mid = Math.floor(prices.length / 2);
+        const median = prices.length % 2 === 0
+          ? (prices[mid - 1] + prices[mid]) / 2
+          : prices[mid];
+        const r = insert.run(typeId, min, median, avg, max, prices.length);
+        stored += r.changes;
+      }
+    });
+    txn();
+    return stored;
+  }
+
+  queryContractBpcPriceHistory(typeId, days = 180) {
+    return this.db.prepare(
+      `SELECT capture_date, min_per_run, median_per_run, avg_per_run, max_per_run, offer_count
+       FROM contract_bpc_price_history
+       WHERE type_id = ? AND capture_date >= date('now', ?)
+       ORDER BY capture_date ASC`
+    ).all(typeId, `-${days} days`);
+  }
+
+  pruneContractBpcPriceHistory(keepDays = 180) {
+    const res = this.db.prepare(
+      `DELETE FROM contract_bpc_price_history WHERE capture_date < date('now', ?)`
+    ).run(`-${keepDays} days`);
+    return res.changes;
+  }
+
   setContractScraperState(regionId, fields) {
     const existing = this.getContractScraperState(regionId);
     if (existing) {

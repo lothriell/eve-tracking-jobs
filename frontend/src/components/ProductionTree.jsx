@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import { getBuildTree, searchTypes, searchSystems, getJobSlots, getBpContracts, getInventoryContexts, getInventoryLocations } from '../services/api';
 import ExternalLinks from './ExternalLinks';
 import ExportButton from './ExportButton';
+import BpcPriceTrendChart from './BpcPriceTrendChart';
 import { copyToClipboard } from '../services/export';
 import './ProductionTree.css';
 
@@ -431,6 +432,7 @@ function ProductionTree({ onError, refreshKey }) {
   const [bpCostPerRun, setBpCostPerRun] = useState('');
   const [bpContractData, setBpContractData] = useState(null);
   const [bpCostManual, setBpCostManual] = useState(false);
+  const [showBpTrend, setShowBpTrend] = useState(false);
 
   // Inventory awareness — "what do I already have at this location?"
   // Personal mode: source is a character_id. Corp: source is a corp_id,
@@ -806,6 +808,14 @@ function ProductionTree({ onError, refreshKey }) {
                 placeholder={bpContractData?.summary?.min_price_per_run ? 'ISK' : 'no contracts yet'}
                 style={{ flex: 1 }}
               />
+              {result?.tree?.blueprint_id && (
+                <button
+                  type="button"
+                  title="Show BPC price history — min/median/max per run over time"
+                  onClick={() => setShowBpTrend(s => !s)}
+                  style={{ padding: '4px 8px', background: showBpTrend ? 'rgba(77,166,255,0.15)' : 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#a0aec0', cursor: 'pointer', borderRadius: 4 }}
+                >📈</button>
+              )}
               {bpCostManual && bpContractData?.summary?.min_price_per_run > 0 && (
                 <button
                   type="button"
@@ -923,6 +933,16 @@ function ProductionTree({ onError, refreshKey }) {
             </div>
           )}
         </div>
+
+        {/* BPC price-history chart — toggled via 📈 button on BP Cost/Run */}
+        {showBpTrend && result?.tree?.blueprint_id && (
+          <div style={{ marginTop: 10, padding: 12, background: 'rgba(0,0,0,0.15)', borderRadius: 6, border: '1px solid rgba(255,255,255,0.05)' }}>
+            <BpcPriceTrendChart
+              typeId={result.tree.blueprint_id}
+              typeName={result.product?.name}
+            />
+          </div>
+        )}
       </div>
 
       {/* Results */}

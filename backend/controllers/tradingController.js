@@ -180,6 +180,19 @@ async function bpContracts(req, res) {
   }
 }
 
+async function bpcPriceHistory(req, res) {
+  try {
+    const typeId = parseInt(req.params.typeId || req.query.type_id);
+    const days = Math.min(Math.max(parseInt(req.query.days) || 180, 1), 365);
+    if (!typeId) return res.status(400).json({ error: 'typeId is required' });
+    const rows = db.queryContractBpcPriceHistory(typeId, days);
+    res.json({ type_id: typeId, days, rows });
+  } catch (error) {
+    console.error('BPC price history error:', error.message);
+    res.status(500).json({ error: 'Failed to load BPC price history' });
+  }
+}
+
 async function priceHistory(req, res) {
   try {
     const typeId = parseInt(req.query.type_id);
@@ -1426,6 +1439,7 @@ module.exports = {
   toggleHub,
   compareItem,
   bpContracts,
+  bpcPriceHistory,
   priceHistory,
   inventoryContexts,
   inventoryLocations,

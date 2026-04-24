@@ -2,6 +2,16 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.19.0] - 2026-04-24
+
+### BPC contract price history — trend chart in Production Planner
+- **New `contract_bpc_price_history` table** — one row per (type_id, UTC day) capturing min / median / avg / max price-per-run plus offer count across all current Jita contracts for that BP.
+- **Snapshot runs at the end of each BPC scrape** (`contractScraper.js`). PK + INSERT OR IGNORE means only the first scrape of each day actually stores; subsequent same-day scrapes no-op. 180-day retention with auto-prune.
+- **New endpoint** `GET /trading/bpc-price-history/:typeId?days=N` returns the series.
+- **New `BpcPriceTrendChart` component** — hand-rolled Canvas2D matching `WealthChart` style. Three lines: cheapest (green), median (amber), priciest (red). Offer count shown in legend. 1M / 3M / 6M range toggle.
+- **Integrated into Production Planner** — new 📈 button next to the BP Cost/Run field. Click to expand the chart inline; perfect for the "is this BP trending up or down?" decision before paying ~1B ISK for a capital BPC.
+- **Caveat** — history starts from first snapshot after deploy. The "Revelation Navy Issue used to be 900M, now 1.1B" trend will only become visible in 2-3 months as data accrues.
+
 ## [v5.18.10] - 2026-04-23
 
 ### Fix: Shopping List column spacing
