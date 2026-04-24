@@ -840,13 +840,13 @@ function ProductionTree({ onError, refreshKey }) {
             <label>ISK/m³</label>
             <input type="number" value={shippingPerM3} onChange={e => saveConfig('shippingPerM3', e.target.value, setShippingPerM3)} placeholder="600" />
           </div>
-          <div className="ptree-field">
+          <div className="ptree-field narrow">
             <label>Collateral %</label>
             <input type="number" value={collateralPct} onChange={e => saveConfig('collateralPct', e.target.value, setCollateralPct)} placeholder="0" />
           </div>
-          <div className="ptree-field">
+          <div className="ptree-field narrow">
             <label>Max m³</label>
-            <input type="number" value={maxVolume} onChange={e => saveConfig('maxVolume', e.target.value, setMaxVolume)} placeholder="375000" />
+            <input type="number" value={maxVolume} onChange={e => saveConfig('maxVolume', e.target.value, setMaxVolume)} placeholder="1250000" />
           </div>
           <div className="ptree-field">
             <label>MFG Slots {detectedSlots && <span className="slot-detected">({detectedSlots.manufacturing.max} detected)</span>}</label>

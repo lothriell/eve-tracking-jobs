@@ -2,6 +2,12 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.19.4] - 2026-04-24
+
+### UX: Production Planner — Collateral & Max m³ narrower
+- `Collateral %` and `Max m³` now use `.narrow` (80–110px) to match Quantity and ISK/m³.
+- `Max m³` placeholder updated to 1,250,000 (freighter capacity with fit) since that's the typical cap users enter.
+
 ## [v5.19.3] - 2026-04-24
 
 ### UX: Production Planner field layout tightening
