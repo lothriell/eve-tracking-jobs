@@ -239,14 +239,17 @@ function CorporationIndustryStats({ onError, refreshKey }) {
             <option value="3">Researching Time Efficiency</option>
             <option value="4">Researching Material Efficiency</option>
           </select>
-          {corporations.length > 1 && (
-            <select value={corpId} onChange={(e) => setCorpId(e.target.value)}>
-              <option value="">All my corps</option>
-              {corporations.map(c => (
-                <option key={c.corporation_id} value={c.corporation_id}>{c.name}</option>
-              ))}
-            </select>
-          )}
+          <select
+            value={corpId}
+            onChange={(e) => setCorpId(e.target.value)}
+            disabled={corporations.length <= 1}
+            title={corporations.length <= 1 ? 'Only one corporation in your account' : ''}
+          >
+            <option value="">{corporations.length > 1 ? 'All my corps' : (corporations[0]?.name || 'All my corps')}</option>
+            {corporations.length > 1 && corporations.map(c => (
+              <option key={c.corporation_id} value={c.corporation_id}>{c.name}</option>
+            ))}
+          </select>
           <button
             type="button"
             className="cis-export-all"

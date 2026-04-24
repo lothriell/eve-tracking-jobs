@@ -2,6 +2,18 @@
 
 All notable changes to the EVE Industry Tracker will be documented in this file.
 
+## [v5.19.2] - 2026-04-24
+
+### UX: layout stability — no more field reflow on conditional renders
+Across multiple views, fields/buttons were mounted/unmounted conditionally causing neighbouring elements to shift whenever a toggle state changed. Fixed by reserving space (visibility / disabled state) instead of conditional mount.
+
+- **Production Planner BP Cost/Run row**: 📈 and ↻ buttons always render; hidden via `.ptree-inline-btn.invisible` when disabled. The input keeps its width + right-edge position pinned.
+- **Production Planner Stock Check row**: all three dropdowns (Stock check / Character|Corp / Location) always render. When Stock Check is off, the Character and Location dropdowns are disabled with `—` placeholder; switching stock-check mode no longer causes the row to re-compose.
+- **Corp Industry Stats / My Industry Stats**: corporation and character selectors always render — disabled when only 1 corp/character on the account (with tooltip explaining why). Export button no longer jumps when data loads for single-character users.
+- **Assets + Planets**: character filter dropdown always visible; auto-disabled for single-character accounts.
+- New CSS: `.ptree-inline-btn.invisible` and `.ptree-field select:disabled { opacity: 0.45 }`.
+- **Not changed** (intentional — these shifts are direct consequences of explicit user choices): mode toggles (arbitrage ↔ stock), Show/Hide panel expanders, click-to-expand table rows, inventory-mode-only columns.
+
 ## [v5.19.1] - 2026-04-24
 
 ### UX polish — inline icon buttons match input height

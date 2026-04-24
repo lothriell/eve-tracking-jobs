@@ -800,6 +800,8 @@ function ProductionTree({ onError, refreshKey }) {
                 </span>
               )}
             </label>
+            {/* Buttons always render so the input width + right edge stay
+                pinned; we toggle visibility instead of mount/unmount. */}
             <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
               <input
                 type="number"
@@ -808,25 +810,23 @@ function ProductionTree({ onError, refreshKey }) {
                 placeholder={bpContractData?.summary?.min_price_per_run ? 'ISK' : 'no contracts yet'}
                 style={{ flex: 1 }}
               />
-              {result?.tree?.blueprint_id && (
-                <button
-                  type="button"
-                  className={`ptree-inline-btn${showBpTrend ? ' active' : ''}`}
-                  title="Show BPC price history — min/median/max per run over time"
-                  onClick={() => setShowBpTrend(s => !s)}
-                >📈</button>
-              )}
-              {bpCostManual && bpContractData?.summary?.min_price_per_run > 0 && (
-                <button
-                  type="button"
-                  className="ptree-inline-btn"
-                  title="Reset to cheapest contract price"
-                  onClick={() => {
+              <button
+                type="button"
+                className={`ptree-inline-btn${showBpTrend ? ' active' : ''}${result?.tree?.blueprint_id ? '' : ' invisible'}`}
+                title="Show BPC price history — min/median/max per run over time"
+                onClick={() => setShowBpTrend(s => !s)}
+              >📈</button>
+              <button
+                type="button"
+                className={`ptree-inline-btn${bpCostManual && bpContractData?.summary?.min_price_per_run > 0 ? '' : ' invisible'}`}
+                title="Reset to cheapest contract price"
+                onClick={() => {
+                  if (bpContractData?.summary?.min_price_per_run > 0) {
                     setBpCostPerRun(String(Math.round(bpContractData.summary.min_price_per_run)));
                     setBpCostManual(false);
-                  }}
-                >↻</button>
-              )}
+                  }
+                }}
+              >↻</button>
             </div>
           </div>
           <div className="ptree-field">
@@ -871,9 +871,11 @@ function ProductionTree({ onError, refreshKey }) {
           </div>
         </div>
 
-        {/* Inventory awareness — use existing stock for have/missing */}
+        {/* Inventory awareness — all three selectors always render with a
+            fixed layout; disabled/empty state when not applicable so the
+            row doesn't reflow as the user makes choices. */}
         <div className="ptree-row ptree-inventory-row" style={{ marginTop: 10, gap: 12, alignItems: 'end' }}>
-          <div className="ptree-field">
+          <div className="ptree-field" style={{ minWidth: 180 }}>
             <label>Stock check</label>
             <select
               value={invMode}
@@ -884,54 +886,50 @@ function ProductionTree({ onError, refreshKey }) {
               <option value="corp">Corporation hangars</option>
             </select>
           </div>
-          {invMode === 'personal' && (
-            <div className="ptree-field">
-              <label>Character</label>
-              <select value={invSourceId} onChange={e => setInvSourceId(e.target.value)}>
-                <option value="">Pick character…</option>
-                {(invContexts?.personal || []).map(c => (
-                  <option key={c.character_id} value={c.character_id}>{c.character_name}</option>
-                ))}
-              </select>
-            </div>
-          )}
-          {invMode === 'corp' && (
-            <div className="ptree-field">
-              <label>Corporation</label>
-              <select value={invSourceId} onChange={e => setInvSourceId(e.target.value)}>
-                <option value="">Pick corp…</option>
-                {(invContexts?.corps || []).map(c => (
-                  <option
-                    key={c.corporation_id}
-                    value={c.corporation_id}
-                    disabled={!c.role_holder_character_id}
-                    title={c.role_holder_character_id ? '' : 'No linked character has asset-read role (Director / Accountant / Station Manager)'}
-                  >
-                    {c.name}{c.ticker ? ` [${c.ticker}]` : ''}{!c.role_holder_character_id ? ' — no access' : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          {invMode && invSourceId && (
-            <div className="ptree-field" style={{ minWidth: 260 }}>
-              <label>Location{invLoading ? ' (loading…)' : invLocations.length ? ` (${invLocations.length})` : ''}</label>
-              <select value={invLocationId} onChange={e => setInvLocationId(e.target.value)} disabled={invLoading}>
-                <option value="">Pick location…</option>
-                {invLocations.map(l => (
-                  <option key={l.location_id} value={l.location_id}>
-                    {l.name} — {l.asset_count.toLocaleString()} items
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          {invMode && invSourceId && invLocationId && (
-            <div className="ptree-field" style={{ alignSelf: 'end', fontSize: 11, color: '#a0aec0' }}>
-              <label>&nbsp;</label>
-              <span>Stock check active — rebuild the tree to apply</span>
-            </div>
-          )}
+          <div className="ptree-field" style={{ minWidth: 200 }}>
+            <label>{invMode === 'corp' ? 'Corporation' : 'Character'}</label>
+            <select
+              value={invSourceId}
+              onChange={e => setInvSourceId(e.target.value)}
+              disabled={!invMode}
+            >
+              <option value="">{invMode ? `Pick ${invMode === 'corp' ? 'corp' : 'character'}…` : '—'}</option>
+              {invMode === 'personal' && (invContexts?.personal || []).map(c => (
+                <option key={c.character_id} value={c.character_id}>{c.character_name}</option>
+              ))}
+              {invMode === 'corp' && (invContexts?.corps || []).map(c => (
+                <option
+                  key={c.corporation_id}
+                  value={c.corporation_id}
+                  disabled={!c.role_holder_character_id}
+                  title={c.role_holder_character_id ? '' : 'No linked character has asset-read role (Director / Accountant / Station Manager)'}
+                >
+                  {c.name}{c.ticker ? ` [${c.ticker}]` : ''}{!c.role_holder_character_id ? ' — no access' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="ptree-field" style={{ minWidth: 280 }}>
+            <label>Location{invLoading ? ' (loading…)' : invLocations.length ? ` (${invLocations.length})` : ''}</label>
+            <select
+              value={invLocationId}
+              onChange={e => setInvLocationId(e.target.value)}
+              disabled={!invMode || !invSourceId || invLoading}
+            >
+              <option value="">{!invMode || !invSourceId ? '—' : 'Pick location…'}</option>
+              {invLocations.map(l => (
+                <option key={l.location_id} value={l.location_id}>
+                  {l.name} — {l.asset_count.toLocaleString()} items
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="ptree-field" style={{ alignSelf: 'end', fontSize: 11, color: '#a0aec0', flex: 1, minWidth: 0 }}>
+            <label>&nbsp;</label>
+            <span style={{ visibility: invMode && invSourceId && invLocationId ? 'visible' : 'hidden' }}>
+              Stock check active — rebuild the tree to apply
+            </span>
+          </div>
         </div>
 
         {/* BPC price-history chart — toggled via 📈 button on BP Cost/Run */}

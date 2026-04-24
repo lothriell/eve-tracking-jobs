@@ -234,14 +234,17 @@ function CharacterIndustryStats({ onError, refreshKey }) {
             <option value="3">Researching Time Efficiency</option>
             <option value="4">Researching Material Efficiency</option>
           </select>
-          {characters.length > 1 && (
-            <select value={charId} onChange={(e) => setCharId(e.target.value)}>
-              <option value="">All my characters</option>
-              {characters.map(c => (
-                <option key={c.character_id} value={c.character_id}>{c.character_name}</option>
-              ))}
-            </select>
-          )}
+          <select
+            value={charId}
+            onChange={(e) => setCharId(e.target.value)}
+            disabled={characters.length <= 1}
+            title={characters.length <= 1 ? 'Only one character on your account' : ''}
+          >
+            <option value="">{characters.length > 1 ? 'All my characters' : (characters[0]?.character_name || 'All my characters')}</option>
+            {characters.length > 1 && characters.map(c => (
+              <option key={c.character_id} value={c.character_id}>{c.character_name}</option>
+            ))}
+          </select>
           <button
             type="button"
             className="cis-export-all"

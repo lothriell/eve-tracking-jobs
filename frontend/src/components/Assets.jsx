@@ -326,12 +326,16 @@ function Assets({ onError, refreshKey }) {
           <button className={`assets-tab ${activeTab === 'corp' ? 'active' : ''}`} onClick={() => { setActiveTab('corp'); setFilter(''); }}>
             Corporation Assets
           </button>
-          {characters.length > 1 && (
-            <select className="assets-char-filter" value={characterFilter} onChange={e => setCharacterFilter(e.target.value)}>
-              <option value="all">All Characters</option>
-              {characters.map(c => <option key={c.character_id} value={c.character_id}>{c.name}</option>)}
-            </select>
-          )}
+          <select
+            className="assets-char-filter"
+            value={characterFilter}
+            onChange={e => setCharacterFilter(e.target.value)}
+            disabled={characters.length <= 1}
+            title={characters.length <= 1 ? 'Only one character on your account' : ''}
+          >
+            <option value="all">{characters.length > 1 ? 'All Characters' : (characters[0]?.name || 'All Characters')}</option>
+            {characters.length > 1 && characters.map(c => <option key={c.character_id} value={c.character_id}>{c.name}</option>)}
+          </select>
         </div>
         <div className="assets-toolbar-right">
           <select className="assets-price-mode" value={priceMode} onChange={e => setPriceMode(e.target.value)} title="Price source">

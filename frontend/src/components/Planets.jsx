@@ -1313,12 +1313,16 @@ function Planets({ onError, refreshKey }) {
       {!allEmpty && (
         <div className="pi-toolbar">
           <div className="pi-toolbar-left">
-            {characters.length > 1 && (
-              <select className="pi-char-filter" value={characterFilter} onChange={e => setCharacterFilter(e.target.value)}>
-                <option value="all">All Characters</option>
-                {characters.map(c => <option key={c.character_id} value={c.character_id}>{c.character_name}</option>)}
-              </select>
-            )}
+            <select
+              className="pi-char-filter"
+              value={characterFilter}
+              onChange={e => setCharacterFilter(e.target.value)}
+              disabled={characters.length <= 1}
+              title={characters.length <= 1 ? 'Only one character on your account' : ''}
+            >
+              <option value="all">{characters.length > 1 ? 'All Characters' : (characters[0]?.character_name || 'All Characters')}</option>
+              {characters.length > 1 && characters.map(c => <option key={c.character_id} value={c.character_id}>{c.character_name}</option>)}
+            </select>
             <button
               className={`pi-view-btn ${viewMode === 'list' ? 'active' : ''}`}
               onClick={() => setViewMode('list')}

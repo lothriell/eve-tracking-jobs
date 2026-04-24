@@ -59,6 +59,17 @@
 }
 .ptree-inline-btn:hover { background: rgba(255,255,255,0.06); color: #e2e8f0; }
 .ptree-inline-btn.active { background: rgba(77,166,255,0.15); border-color: rgba(77,166,255,0.4); color: #90cdf4; }
+/* Reserve space — visually hidden but still in the layout so neighbours
+   don't shift when the button's condition flips. */
+.ptree-inline-btn.invisible { visibility: hidden; pointer-events: none; }
+
+/* Stock-check row dropdowns — dim + disable when not in use, keeps the
+   grid of three selectors pinned regardless of mode selection. */
+.ptree-field select:disabled,
+.ptree-field input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .ptree-calc-btn {
   padding: 7px 24px; background: rgba(99,179,237,0.25); border: 1px solid rgba(99,179,237,0.5);
   border-radius: 6px; color: #90cdf4; cursor: pointer; font-size: 13px; font-weight: 600;
