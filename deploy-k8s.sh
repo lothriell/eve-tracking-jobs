@@ -8,9 +8,9 @@ TAG=$(git rev-parse --short HEAD)
 # Determine environment
 ENV="prod"
 EXTRA_TAG="latest"
-if [[ "$1" == "--dev" ]]; then
-  ENV="dev"
-  EXTRA_TAG="dev"
+if [[ "$1" == "--test" ]]; then
+  ENV="test"
+  EXTRA_TAG="test"
 fi
 
 echo "=== EVE Industry Tracker — K8s Deploy ($ENV) ==="

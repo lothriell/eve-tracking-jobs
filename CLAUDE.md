@@ -6,34 +6,38 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build & Deploy
 
-### K8s (production + dev) — primary deployment
+Deploy chain: **dev → test → prod.** Dev (Docker Compose on minisforum) is the fast iteration loop. Test and prod are K8s and take ~2 min each via ArgoCD.
+
+### Dev — Docker Compose on minisforum (fast loop)
+
+```bash
+ssh ansible@100.82.8.96 "sudo su - sann -c 'cd ~/docker/eve_esi_app && git pull origin main && docker-compose up -d --build'"
+docker-compose logs -f backend
+```
+
+URL: http://100.82.8.96:9000
+
+### Test + Prod — K8s
 
 ```bash
 # Build and push images to Gitea registry (ARM64 for Pi cluster)
 ./deploy-k8s.sh          # prod: tags :latest
-./deploy-k8s.sh --dev    # dev: tags :dev
+./deploy-k8s.sh --test   # test: tags :test
 
 # ArgoCD Image Updater auto-detects new digests and syncs pods (~2 min)
 ```
 
 Images: `gitea.homielab.omg/sann/eve-tracking-jobs-{backend,frontend}`
 
-K8s manifests live in a separate repo: `sann/eve-tracker-k8s` on Gitea, managed via Kustomize overlays (`base/`, `overlays/prod/`, `overlays/dev/`).
-
-### Docker Compose (old test environment)
-
-```bash
-docker-compose down && git pull origin main && docker-compose up -d --build
-docker-compose logs -f backend
-```
+K8s manifests live in a separate repo: `sann/eve-tracker-k8s` on Gitea, managed via Kustomize overlays (`base/`, `overlays/prod/`, `overlays/test/`).
 
 ### Environments
 
-| Environment | URL | Namespace |
+| Environment | URL | Host / Namespace |
 |---|---|---|
-| Production | https://eve.lothriell.com | eve-tracker |
-| Dev | https://dev-eve.lothriell.com | eve-tracker-dev |
-| Old test | http://100.82.8.96:9000 | N/A (Docker Compose) |
+| Dev | http://100.82.8.96:9000 | minisforum (Docker Compose) |
+| Test | https://test-eve.lothriell.com | K8s `eve-tracker-test` |
+| Production | https://eve.lothriell.com | K8s `eve-tracker` |
 
 ## Architecture
 
@@ -115,9 +119,9 @@ esi-contracts.read_character_contracts.v1
 ```
 
 **Three EVE Developer Applications** — all must have these scopes enabled:
-1. Old test: callback `http://100.82.8.96:9000/auth/callback`
+1. Dev: callback `http://100.82.8.96:9000/auth/callback`
 2. Prod: callback `https://eve.lothriell.com/auth/callback`
-3. Dev: callback `https://dev-eve.lothriell.com/auth/callback`
+3. Test: callback `https://test-eve.lothriell.com/auth/callback`
 
 **Note:** EVE Developer Application scope changes can take several minutes to propagate at CCP's end.
 

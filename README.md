@@ -11,7 +11,8 @@ A comprehensive web application for tracking EVE Online industry jobs, assets, p
 | Environment | URL |
 |---|---|
 | Production | https://eve.lothriell.com |
-| Development | https://dev-eve.lothriell.com |
+| Test | https://test-eve.lothriell.com |
+| Development | http://100.82.8.96:9000 (Docker on minisforum) |
 
 ---
 
