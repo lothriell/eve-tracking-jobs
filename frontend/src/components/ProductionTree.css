@@ -179,6 +179,33 @@
 }
 .tree-category.reaction { background: rgba(159,122,234,0.2); color: #b794f4; }
 
+/* Per-row 📈 button — sized to sit between the BUILD/BUY badge and the
+   ownership badges without bumping .tree-action's 180px width. */
+.tree-trend-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 4px;
+  color: #a0aec0;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+.tree-trend-btn:hover { background: rgba(255,255,255,0.06); color: #e2e8f0; }
+.tree-trend-btn.active { background: rgba(77,166,255,0.15); border-color: rgba(77,166,255,0.4); color: #90cdf4; }
+
+/* Inline chart panel rendered immediately below a tree row when its 📈 is
+   active. Indented to match the row's depth so it visually attaches. */
+.tree-trend-panel {
+  margin-top: 6px;
+  margin-bottom: 10px;
+  padding: 10px;
+  background: rgba(0,0,0,0.18);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 6px;
+}
+
 .tree-children-dimmed { opacity: 0.4; border-left: 2px solid rgba(99,179,237,0.2); margin-left: 12px; }
 
 .tree-icon { width: 20px; height: 20px; flex-shrink: 0; border-radius: 2px; vertical-align: middle; }

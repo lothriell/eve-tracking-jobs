@@ -272,12 +272,15 @@ function scheduleJobs(tree, mfgSlots, reactionSlots, maxJobSeconds) {
 }
 
 // Recursive tree node component
-function TreeNode({ node, depth, expanded, onToggleExpand, onToggleDecision, stockActive }) {
+function TreeNode({ node, depth, expanded, onToggleExpand, onToggleDecision, stockActive, activeBpcKey, onToggleBpc }) {
   const isExpanded = expanded[node.type_id + '_' + depth] !== false; // default expanded for depth 0-1
   const hasChildren = node.children && node.children.length > 0;
   const indent = depth * 24;
   const cost = node.decision === 'build' && node.build_cost !== null ? node.build_cost : node.buy_cost;
   const savings = node.build_cost !== null && node.buy_cost > 0 ? node.buy_cost - node.build_cost : 0;
+  const bpcKey = node.type_id + '_' + depth;
+  const bpcOpen = activeBpcKey === bpcKey;
+  const canShowTrend = node.is_buildable && !!node.blueprint_id;
 
   return (
     <>
@@ -331,6 +334,14 @@ function TreeNode({ node, depth, expanded, onToggleExpand, onToggleDecision, sto
             </button>
           )}
           {!node.is_buildable && <span className="tree-decision buy-only">BUY</span>}
+          {canShowTrend && (
+            <button
+              type="button"
+              className={`tree-trend-btn${bpcOpen ? ' active' : ''}`}
+              title="Show BPC contract price trend (min/median/max per run)"
+              onClick={() => onToggleBpc(bpcKey)}
+            >📈</button>
+          )}
           {node.owned_blueprint && (
             <span className={`tree-owned ${node.owned_blueprint.is_bpo ? 'bpo' : 'bpc'}`} title={`${node.owned_blueprint.owner}: ${node.owned_blueprint.is_bpo ? 'BPO' : 'BPC'} ME${node.owned_blueprint.me}/TE${node.owned_blueprint.te}${node.owned_blueprint.runs > 0 ? ' (' + node.owned_blueprint.runs + ' runs)' : ''}`}>
               {node.owned_blueprint.is_bpo ? 'BPO' : 'BPC'} ME{node.owned_blueprint.me}
@@ -356,6 +367,16 @@ function TreeNode({ node, depth, expanded, onToggleExpand, onToggleDecision, sto
         <span className="tree-job-cost">{node.job_cost > 0 && node.decision === 'build' ? formatISK(node.job_cost) : ''}</span>
       </div>
 
+      {/* Inline BPC trend chart for this row */}
+      {bpcOpen && canShowTrend && (
+        <div
+          className="tree-trend-panel"
+          style={{ marginLeft: indent + 32, marginRight: 8 }}
+        >
+          <BpcPriceTrendChart typeId={node.blueprint_id} typeName={node.name} />
+        </div>
+      )}
+
       {/* Children */}
       {hasChildren && isExpanded && (
         <div className={node.decision === 'buy' ? 'tree-children-dimmed' : ''}>
@@ -368,6 +389,8 @@ function TreeNode({ node, depth, expanded, onToggleExpand, onToggleDecision, sto
               onToggleExpand={onToggleExpand}
               onToggleDecision={onToggleDecision}
               stockActive={stockActive}
+              activeBpcKey={activeBpcKey}
+              onToggleBpc={onToggleBpc}
             />
           ))}
         </div>
@@ -433,6 +456,12 @@ function ProductionTree({ onError, refreshKey }) {
   const [bpContractData, setBpContractData] = useState(null);
   const [bpCostManual, setBpCostManual] = useState(false);
   const [showBpTrend, setShowBpTrend] = useState(false);
+
+  // Per-row BPC trend chart — keyed by `${type_id}_${depth}` so the same
+  // type appearing twice at different depths gets its own toggle. One open
+  // at a time keeps layout predictable.
+  const [activeBpcKey, setActiveBpcKey] = useState(null);
+  const handleToggleBpc = (key) => setActiveBpcKey(prev => prev === key ? null : key);
 
   // Inventory awareness — "what do I already have at this location?"
   // Personal mode: source is a character_id. Corp: source is a corp_id,
@@ -1079,6 +1108,8 @@ function ProductionTree({ onError, refreshKey }) {
                   onToggleExpand={handleToggleExpand}
                   onToggleDecision={handleToggleDecision}
                   stockActive={stockActive}
+                  activeBpcKey={activeBpcKey}
+                  onToggleBpc={handleToggleBpc}
                 />
               </div>
             );
